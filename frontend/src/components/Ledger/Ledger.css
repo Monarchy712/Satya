@@ -1,0 +1,156 @@
+/* ── Ledger Section ── */
+.ledger {
+  position: relative;
+  min-height: 100vh;
+  padding: var(--space-3xl) var(--space-xl);
+  background: var(--ivory);
+  background-image: 
+    radial-gradient(var(--pink-100) 1px, transparent 1px);
+  background-size: 20px 20px;
+  display: flex;
+  justify-content: center;
+}
+
+.ledger__container {
+  width: 100%;
+  max-width: 1200px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+  animation: fadeIn 1s var(--ease-out);
+}
+
+/* ── Contractor Profile ── */
+.ledger__profile {
+  background: var(--white);
+  border: 1px solid var(--pink-200);
+  border-radius: var(--radius-xl);
+  padding: var(--space-xl);
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  overflow: hidden;
+}
+
+.ledger__profile::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 6px;
+  background: linear-gradient(90deg, var(--pink-400), var(--pink-600), var(--gold));
+}
+
+.ledger__profile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: var(--space-lg);
+  padding-bottom: var(--space-lg);
+  border-bottom: 2px dashed var(--pink-100);
+}
+
+.ledger__profile-name {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 4vw, 2.5rem);
+  color: var(--pink-900);
+  line-height: 1.1;
+}
+
+.ledger__profile-rating {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: var(--gray-800);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--gold-light);
+  padding: 8px 16px;
+  border-radius: var(--radius-pill);
+}
+
+.ledger__profile-rating-star {
+  color: #bfa145;
+  font-size: 1.4rem;
+}
+
+.ledger__profile-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-lg);
+}
+
+.ledger__profile-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ledger__profile-meta-label {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  color: var(--pink-500);
+  text-transform: uppercase;
+}
+
+.ledger__profile-meta-value {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 1.1rem;
+  color: var(--gray-800);
+}
+
+.ledger__profile-meta-value--mono {
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+}
+
+/* ── Section Title ── */
+.ledger__section-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin-top: var(--space-lg);
+}
+
+.ledger__section-title h3 {
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  letter-spacing: 0.3em;
+  color: var(--pink-800);
+  white-space: nowrap;
+}
+
+.ledger__section-title-line {
+  height: 1px;
+  flex: 1;
+  background: var(--pink-200);
+}
+
+/* ── Contracts List ── */
+.ledger__contracts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.ledger__empty-state {
+  text-align: center;
+  padding: var(--space-3xl);
+  background: var(--white);
+  border: 1px dashed var(--pink-200);
+  border-radius: var(--radius-lg);
+  font-family: var(--font-mono);
+  color: var(--gray-500);
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .ledger__profile-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-md);
+  }
+}

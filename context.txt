@@ -1,0 +1,30 @@
+## User stories:
+
+1. citizens should be able to login . user should be able to login 
+2. each user should have linked crypto wallet 
+3. user should be able to login only for oversight reports.
+4. there should be a public dashboard for users to see infra projects near there geolocation with scoring and contractor trust rating visible 
+5. all contractors will have a linied crypto wallet and a trust score based on past contracts and completion status 
+6. there should be an admin panel with ability to start a contract with net amount pay out and payout at each state while keeping number of stages and name of stages and amount payed out at each stage dynamic 
+7. contractors should be a able to bid for government tenders. 
+8. goverment should be able to accpet one of the bidders 
+9. smart contracts should be intitaited automatically afterwards 
+10. citizens should be able to view contractor analysis and spot red harrings 
+11. citizen analysis based on immutable blockchain records 
+12. for fund approval photos and 5 signatures will be required 
+13. users should be able to use adhaar to register
+
+
+ 📌 The Problem
+India loses an estimated ₹2.17 trillion annually to corruption in public infrastructure projects. The core issues include rampant cost overruns with no accountability, contractors facing zero real consequences for shoddy work (simply rebranding and winning new tenders), disappearing investigation reports, altered approval records, and silenced whistleblowers — all enabled by single-point approval systems with zero transparency.
+
+💡 The Solution — Project Sentinel
+Project Sentinel is a blockchain-powered accountability platform designed to bring radical transparency and cryptographic trust to India's infrastructure procurement and delivery ecosystem. It leverages decentralized trust networks to make corruption visible, traceable, and financially painful.
+Key Features:
+
+Blockchain-Anchored Audit Trail — Every tender decision, approval signature, inspection report, and payment authorization is recorded with cryptographic timestamps on a public ledger, making evidence destruction mathematically impossible.
+Smart Contract Performance Bonds — 20% of every project's value is automatically locked in escrow for 5 years, with programmatic slashing triggered by quality failures — removing the need for slow, corruptible bank guarantees.
+Multi-Party Cryptographic Approvals — Payment releases require a 4-of-6 digital signature from independent stakeholders (government engineer, insurance company, third-party auditor, community representative, contractor QA, and environmental auditor), eliminating single-point corruption.
+Permanent Reputation Ledger — Immutable, career-long performance scores for every contractor and inspector, making shell-company rebranding ineffective.
+AI-Powered Risk Scoring & Public Dashboard — A citizen-facing transparency portal with real-time risk detection, empowering 1.4 billion taxpayers to flag corruption before bridges collapse.
+

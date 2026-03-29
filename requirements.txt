@@ -1,0 +1,7 @@
+# Satya Backend Dependencies (Placeholder)
+fastapi==0.104.1
+uvicorn==0.24.0
+pydantic==2.5.2
+python-dotenv==1.0.0
+sqlalchemy==2.0.23
+alembic==1.13.0
