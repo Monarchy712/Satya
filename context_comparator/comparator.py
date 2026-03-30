@@ -11,8 +11,11 @@ def cosine_similarity(a, b):
 
 def compare_texts(text1, text2):
     
+    with open('api_key.txt', 'r') as f:
+        api_key = f.read()
+
     # Configure API
-    client = genai.Client(api_key="AIzaSyAu5XJkIQ1ExCuVG9jUSpMNjDEBQc9OAXM")
+    client = genai.Client(api_key=api_key)
 
     # Generate embeddings
     emb1 = client.models.embed_content(
