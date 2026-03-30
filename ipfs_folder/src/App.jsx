@@ -13,7 +13,7 @@ export default function App() {
   const PINATA_SECRET_KEY = "35e2636d1a81f2673f53ed1938100037b995cc53aaa16bed6b844e1f57b39fec";
 
   // 🔗 Your contract
-  const CONTRACT_ADDRESS = "0x32eACcE2E756Fdaf84dE2abe2b968e06dE4b7F3e";
+  const CONTRACT_ADDRESS = "0x889479cD233699D5289AFb0eaC760b74e54f0cc7";
 
 
   const ABI = [

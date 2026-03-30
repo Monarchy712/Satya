@@ -3,41 +3,33 @@ pragma solidity ^0.8.20;
 
 contract Report {
 
-    // ---------------- VARIABLES ----------------
     address public owner;
 
-    // ---------------- STRUCTS ----------------
     struct ReportData {
-        bytes32 cid;
+        string cid;
         bytes32 identityHash;
-        uint256 confidence;   // 0–100
+        uint256 confidence;
         uint256 timestamp;
     }
 
-    // ---------------- STORAGE ----------------
     mapping(bytes32 => bool) public registered;
     mapping(bytes32 => uint256) public banUntil;
+    mapping(bytes32 => uint256) public lastReportTime;
 
     ReportData[] public reports;
 
-    // ---------------- EVENTS ----------------
     event UserRegistered(bytes32 identityHash);
-    event ReportSubmitted(bytes32 cid, bytes32 identityHash, uint256 confidence);
+    event ReportSubmitted(string cid, bytes32 identityHash, uint256 confidence);
     event UserBanned(bytes32 identityHash, uint256 until);
-    event ReputationUpdated(bytes32 identityHash, int256 newScore);
 
-    // ---------------- CONSTRUCTOR ----------------
     constructor() {
         owner = msg.sender;
     }
 
-    // ---------------- MODIFIER ----------------
     modifier onlyBackend() {
         require(msg.sender == owner, "Not backend");
         _;
     }
-
-    // ---------------- USER MANAGEMENT ----------------
 
     function registerUser(bytes32 identityHash) external onlyBackend {
         require(!registered[identityHash], "Already registered");
@@ -51,19 +43,17 @@ contract Report {
     }
 
     function banUser(bytes32 identityHash) external onlyBackend {
-        banUntil[identityHash] = block.timestamp +2592000; // Ban for 30 days
-
+        banUntil[identityHash] = block.timestamp + 30 days;
         emit UserBanned(identityHash, banUntil[identityHash]);
     }
 
-    // ---------------- REPORT SUBMISSION ----------------
-
     function submitReport(
-        bytes32 cid,
+        string memory cid,
         bytes32 identityHash,
         uint256 confidence
     ) external onlyBackend {
 
+        require(registered[identityHash], "Not registered");
         require(!isBanned(identityHash), "User banned");
         require(confidence <= 100, "Invalid confidence");
 
@@ -76,12 +66,10 @@ contract Report {
             })
         );
 
+        lastReportTime[identityHash] = block.timestamp;
+
         emit ReportSubmitted(cid, identityHash, confidence);
     }
-
-
-
-    // ---------------- VIEW FUNCTIONS ----------------
 
     function getReport(uint256 index) external view returns (ReportData memory) {
         return reports[index];
@@ -89,5 +77,9 @@ contract Report {
 
     function totalReports() external view returns (uint256) {
         return reports.length;
+    }
+
+    function getLatestReportTimestamp(bytes32 identityHash) external view returns (uint256) {
+        return lastReportTime[identityHash];
     }
 }
