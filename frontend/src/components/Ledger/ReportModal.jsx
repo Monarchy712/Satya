@@ -71,10 +71,18 @@ export default function ReportModal({ contract, onClose }) {
     setStatus("Analysing images with AI...");
 
     try {
-      // 0. ML Validation Step (Mock)
-      const mlResult = await validateReport(description);
-      if (mlResult.confidence < 0.4) {
-        throw new Error(`AI Validation failed: Confidence score ${Math.round(mlResult.confidence * 100)}% is too low. Please provide clearer photos.`);
+      // 0. ML Validation Step (Real)
+      // Pass the selected files for multi-image validation
+      const mlResult = await validateReport(files);
+      
+      if (!mlResult.success) {
+        if (mlResult.banned) {
+          setError(`🚨 FRAUD DETECTED: ${mlResult.message}`);
+          setTimeout(() => window.location.href = '/login', 5000);
+        } else {
+          setError(`AI Validation failed: ${mlResult.message}`);
+        }
+        return;
       }
 
       setStatus(`AI Analysis: ${Math.round(mlResult.confidence * 100)}% Confidence. Uploading...`);
@@ -108,7 +116,8 @@ export default function ReportModal({ contract, onClose }) {
       setStatus("Recording on blockchain...");
 
       // 3. Submit to our backend (which handles the blockchain tx)
-      await submitReport(contract.id, finalCID);
+      // Passing the confidence score from ML step for blockchain scaling
+      await submitReport(contract.id, finalCID, mlResult.confidence);
 
       setStatus("✅ Report securely recorded!");
       setTimeout(() => onClose(), 2000);

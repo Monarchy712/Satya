@@ -9,3 +9,6 @@ eth-account
 web3==6.11.3
 passlib
 setuptools
+pillow
+requests
+python-multipart

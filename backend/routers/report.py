@@ -1,18 +1,18 @@
 from fastapi import APIRouter, HTTPException, Depends, Header
 from pydantic import BaseModel
-import hmac
-import hashlib
-from passlib.context import CryptContext
-from web3 import Web3
 from auth import decode_token
-from config import JWT_SECRET, CONTRACT_ADDRESS, RPC_URL, PRIVATE_KEY
-from eth_utils import keccak
+from config import JWT_SECRET, ROBOFLOW_API_KEY, PRIVATE_KEY
+from blockchain import contract, w3, account, get_identity_hash
+from ml_utils import analyze_image, get_best_confidence
+from fastapi import UploadFile, File
+from typing import List
 
 router = APIRouter(prefix="/api/reports", tags=["Reports"])
 
 class ReportSubmit(BaseModel):
     contract_id: str
     cid: str
+    confidence: float
 
 class MLValidateRequest(BaseModel):
     description: str
@@ -28,56 +28,83 @@ def get_current_user(authorization: str = Header(None)):
         raise HTTPException(status_code=401, detail="Invalid token")
     return payload
 
-# Ethereum Contract details (from implementation.md)
-
-
-ABI = [
-    {
-      "inputs": [{"internalType": "bytes32", "name": "identityHash", "type": "bytes32"}],
-      "name": "isBanned",
-      "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [{"internalType": "bytes32", "name": "", "type": "bytes32"}],
-      "name": "lastReportTime",
-      "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {"internalType": "string", "name": "cid", "type": "string"},
-        {"internalType": "bytes32", "name": "identityHash", "type": "bytes32"},
-        {"internalType": "uint256", "name": "confidence", "type": "uint256"}
-      ],
-      "name": "submitReport",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    }
-]
-
-w3 = Web3(Web3.HTTPProvider(RPC_URL))
-try:
-    account = w3.eth.account.from_key(PRIVATE_KEY)
-    contract = w3.eth.contract(address=w3.to_checksum_address(CONTRACT_ADDRESS), abi=ABI)
-except Exception as e:
-    print(f"Web3 Initialisation Warning: {e}")
-    contract = None
+# Blockchain logic is now handled in blockchain.py
 
 
 @router.post("/validate")
-def validate_report(payload: MLValidateRequest, user=Depends(get_current_user)):
+async def validate_report(
+    files: List[UploadFile] = File(...),
+    user=Depends(get_current_user)
+):
     """
-    Mock ML Validation Service.
-    In the next step, the user will add a real ML server.
-    For now, we return a mock confidence score.
+    Real ML Validation Service using Roboflow.
+    Checks images for construction defects.
+    If NO defects are found across any images, the user is BANNED.
     """
-    import random
-    confidence = random.uniform(0.65, 0.95)
-    return {"success": True, "confidence": confidence, "message": "ML analysis complete."}
+    if user.get("role") != "citizen":
+        raise HTTPException(status_code=403, detail="Only citizens can validate reports")
+
+    max_confidence = 0.0
+    all_results = []
+    
+    # Process each image until we find one that passes the threshold (0.4)
+    # We limit to 3 images to prevent API abuse
+    for file in files[:3]:
+        content = await file.read()
+        res = analyze_image(content)
+        conf = get_best_confidence(res)
+        
+        all_results.append({
+            "filename": file.filename,
+            "confidence": conf,
+            "predictions": res.get("predictions", [])
+        })
+        
+        if conf > max_confidence:
+            max_confidence = conf
+            
+        if max_confidence >= 0.4:
+            break
+
+    # 🚨 Automated Banning Logic (User Requirement)
+    # If no defects detected (max_confidence < 0.4), BAN the user on-chain.
+    if max_confidence < 0.4:
+        # Get unique identity hash from JWT
+        identity_hash = get_identity_hash(user.get("sub"))
+        
+        try:
+            print(f"FRAUD DETECTED: Banning user {identity_hash.hex()}...")
+            # We need to ensure account/contract are initialized (handled globally in this file)
+            if not contract:
+                raise Exception("Contract not initialized")
+
+            ban_tx = contract.functions.banUser(identity_hash).build_transaction({
+                'from': account.address,
+                'nonce': w3.eth.get_transaction_count(account.address),
+                'maxFeePerGas': w3.eth.gas_price * 2,
+                'maxPriorityFeePerGas': w3.eth.max_priority_fee or w3.to_wei(1, 'gwei'),
+            })
+            ban_signed = w3.eth.account.sign_transaction(ban_tx, private_key=PRIVATE_KEY)
+            ban_hash = w3.eth.send_raw_transaction(ban_signed.rawTransaction)
+            w3.eth.wait_for_transaction_receipt(ban_hash)
+            
+            return {
+                "success": False,
+                "confidence": max_confidence,
+                "message": "AI rejected your report as No Defects Found. You have been BANNED for 30 days for fraudulent reporting.",
+                "banned": True,
+                "txHash": ban_hash.hex()
+            }
+        except Exception as e:
+            print(f"Failed to ban user on-chain: {e}")
+            raise HTTPException(status_code=500, detail=f"AI Validation failed. User ban attempt errored: {str(e)}")
+
+    return {
+        "success": True, 
+        "confidence": max_confidence, 
+        "message": "AI analysis complete. Construction defects detected.",
+        "results": all_results
+    }
 
 @router.post("/submit")
 def submit_report(payload: ReportSubmit, user=Depends(get_current_user)):
@@ -89,7 +116,7 @@ def submit_report(payload: ReportSubmit, user=Depends(get_current_user)):
         raise HTTPException(status_code=400, detail="Missing aadhaar context")
 
     # identity_hash = hmac.new(JWT_SECRET.encode(), aadhaar_last4.encode(), hashlib.sha256).digest()
-    identity_hash = keccak(text="demo-user") # bytes32 format for solidity, matching ipfs_folder/src/App.jsx for MVP
+    identity_hash = get_identity_hash(user.get("sub")) # bytes32 format for solidity
 
 
     if not w3.is_connected() or not contract:
@@ -100,22 +127,40 @@ def submit_report(payload: ReportSubmit, user=Depends(get_current_user)):
     if is_banned:
         raise HTTPException(status_code=403, detail="You are currently banned from reporting.")
 
-    # 2. Check 7-day rate limit
-    last_report = contract.functions.lastReportTime(identity_hash).call()
+    # 2. Check registration and register if needed (Contract requirement)
+    is_registered = contract.functions.registered(identity_hash).call()
+    if not is_registered:
+        print(f"Registering identity {identity_hash.hex()}...")
+        reg_tx = contract.functions.registerUser(identity_hash).build_transaction({
+            'from': account.address,
+            'nonce': w3.eth.get_transaction_count(account.address),
+            'maxFeePerGas': w3.eth.gas_price * 2,
+            'maxPriorityFeePerGas': w3.eth.max_priority_fee or w3.to_wei(1, 'gwei'),
+        })
+        reg_signed = w3.eth.account.sign_transaction(reg_tx, private_key=PRIVATE_KEY)
+        reg_hash = w3.eth.send_raw_transaction(reg_signed.rawTransaction)
+        w3.eth.wait_for_transaction_receipt(reg_hash)
+
+    # 3. Check 7-day rate limit using getLatestReportTimestamp
+    last_report = contract.functions.getLatestReportTimestamp(identity_hash).call()
     current_time = w3.eth.get_block('latest').timestamp
     
     limit_seconds = 7 * 24 * 60 * 60
     if last_report > 0 and (current_time - last_report) < limit_seconds:
         raise HTTPException(status_code=429, detail="Limit exceeded: Only 1 report per week allowed.")
 
-    # 3. Process Transaction
+
+    # 4. Process Transaction
     try:
-        confidence = 80 # default for MVP as per implementation
+        # Scale 0-1 confidence from ML to 0-100 for Blockchain
+        confidence_scaled = int(payload.confidence * 100)
+        # Ensure it stays within bounds [0, 100]
+        confidence_final = max(0, min(100, confidence_scaled))
         
         tx = contract.functions.submitReport(
             payload.cid,
             identity_hash,
-            confidence
+            confidence_final
         ).build_transaction({
             'from': account.address,
             'nonce': w3.eth.get_transaction_count(account.address),

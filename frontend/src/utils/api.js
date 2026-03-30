@@ -2,12 +2,17 @@ const API_BASE = 'http://localhost:8000';
 
 async function request(endpoint, options = {}) {
   const url = `${API_BASE}${endpoint}`;
+  
+  // For FormData, we must let the browser set the Content-Type with the correct boundary
+  const isFormData = options.body instanceof FormData;
+  const headers = { ...options.headers };
+  if (!isFormData) {
+    headers['Content-Type'] = 'application/json';
+  }
+
   const config = {
     ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
+    headers
   };
 
   const res = await fetch(url, config);
@@ -62,24 +67,33 @@ export function listContractors() {
   return request('/api/contractors/list', { method: 'GET' });
 }
 
-export function validateReport(description, imageUrls = []) {
+export function validateReport(files) {
   const token = localStorage.getItem('satya_token');
+  const formData = new FormData();
+  
+  // Append up to 3 files for validation
+  const filesArray = Array.from(files);
+  filesArray.slice(0, 3).forEach((file) => {
+    formData.append('files', file);
+  });
+
   return request('/api/reports/validate', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${token}`
+      'Authorization': `Bearer ${token}`,
+      // 'Content-Type' should NOT be set manually for FormData to let the browser set the boundary
     },
-    body: JSON.stringify({ description, image_urls: imageUrls }),
+    body: formData,
   });
 }
 
-export function submitReport(contract_id, cid) {
+export function submitReport(contract_id, cid, confidence) {
   const token = localStorage.getItem('satya_token');
   return request('/api/reports/submit', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${token}`
     },
-    body: JSON.stringify({ contract_id, cid }),
+    body: JSON.stringify({ contract_id, cid, confidence }),
   });
 }
