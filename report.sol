@@ -8,7 +8,7 @@ contract Report {
 
     // ---------------- STRUCTS ----------------
     struct ReportData {
-        bytes32 cid;
+        string cid;
         bytes32 identityHash;
         uint256 confidence;   // 0–100
         uint256 timestamp;
@@ -17,12 +17,13 @@ contract Report {
     // ---------------- STORAGE ----------------
     mapping(bytes32 => bool) public registered;
     mapping(bytes32 => uint256) public banUntil;
+    mapping(bytes32 => uint256) public lastReportTime;
 
     ReportData[] public reports;
 
     // ---------------- EVENTS ----------------
     event UserRegistered(bytes32 identityHash);
-    event ReportSubmitted(bytes32 cid, bytes32 identityHash, uint256 confidence);
+    event ReportSubmitted(string cid, bytes32 identityHash, uint256 confidence);
     event UserBanned(bytes32 identityHash, uint256 until);
     event ReputationUpdated(bytes32 identityHash, int256 newScore);
 
@@ -59,7 +60,7 @@ contract Report {
     // ---------------- REPORT SUBMISSION ----------------
 
     function submitReport(
-        bytes32 cid,
+        string memory cid,
         bytes32 identityHash,
         uint256 confidence
     ) external onlyBackend {
@@ -75,6 +76,8 @@ contract Report {
                 timestamp: block.timestamp
             })
         );
+
+        lastReportTime[identityHash] = block.timestamp;
 
         emit ReportSubmitted(cid, identityHash, confidence);
     }

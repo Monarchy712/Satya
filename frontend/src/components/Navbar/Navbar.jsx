@@ -1,9 +1,18 @@
 import { useState, useEffect } from 'react';
+import FullScreenLoader from '../UI/FullScreenLoader';
 import './Navbar.css';
 
-export default function Navbar() {
+export default function Navbar({ user, onLogout }) {
   const [scrolled, setScrolled] = useState(false);
   const [time, setTime] = useState(new Date());
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const handleLogoutClick = async () => {
+    setIsLoggingOut(true);
+    await new Promise(r => setTimeout(r, 800));
+    onLogout();
+    setIsLoggingOut(false);
+  };
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -26,6 +35,8 @@ export default function Navbar() {
   };
 
   return (
+    <>
+    <FullScreenLoader isVisible={isLoggingOut} text="Securing Session..." />
     <nav className={`navbar ${scrolled ? 'navbar--scrolled' : ''}`}>
       <div className="navbar__inner">
         {/* Logo */}
@@ -46,6 +57,21 @@ export default function Navbar() {
 
         {/* Right side */}
         <div className="navbar__right">
+          {user ? (
+            <div className="navbar__user">
+              <span className="navbar__user-name">{user.name || user.role}</span>
+              <button className="navbar__logout-btn" onClick={handleLogoutClick}>
+                Logout
+              </button>
+            </div>
+          ) : (
+            <button
+              className="navbar__login-btn"
+              onClick={() => window.location.href = '/login'}
+            >
+              Sign In
+            </button>
+          )}
           <div className="navbar__clock">
             <span className="navbar__clock-label">IST</span>
             <span className="navbar__clock-time">{formatTime(time)}</span>
@@ -54,5 +80,6 @@ export default function Navbar() {
         </div>
       </div>
     </nav>
+    </>
   );
 }

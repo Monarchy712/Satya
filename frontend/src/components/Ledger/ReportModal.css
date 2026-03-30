@@ -1,0 +1,137 @@
+/* ReportModal.css */
+.report-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(254, 232, 217, 0.85); /* cream semi-transparent */
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.report-modal {
+  background: var(--white);
+  border: 1px solid var(--pink-200);
+  border-radius: var(--radius-xl);
+  padding: 2.5rem;
+  width: 100%;
+  max-width: 500px;
+  box-shadow: 
+    0 16px 32px -8px rgba(84, 107, 43, 0.15),
+    0 0 0 1px var(--pink-100) inset;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  position: relative;
+}
+
+.report-modal__close {
+  position: absolute;
+  top: 1rem;
+  right: 1.5rem;
+  background: none;
+  border: none;
+  font-size: 2rem;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--pink-400);
+  transition: color 0.2s;
+}
+.report-modal__close:hover {
+  color: var(--pink-800);
+}
+
+.report-modal__title {
+  font-family: var(--font-display);
+  color: var(--pink-900);
+  font-size: 2rem;
+  margin: 0;
+}
+
+.report-modal__input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.report-modal__label {
+  font-weight: 600;
+  color: var(--pink-800);
+  font-size: 0.9rem;
+}
+
+.report-modal__textarea {
+  border: 1px solid var(--pink-200);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 80px;
+}
+
+.report-modal__textarea:focus {
+  outline: none;
+  border-color: var(--pink-500);
+  box-shadow: 0 0 0 3px rgba(220,175,189,0.2);
+}
+
+.report-modal__file-input {
+  font-size: 0.9rem;
+  color: var(--pink-700);
+}
+
+.report-modal__file-input::file-selector-button {
+  background: var(--pink-100);
+  border: 1px solid var(--pink-300);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 1rem;
+  color: var(--pink-900);
+  font-weight: 600;
+  cursor: pointer;
+  margin-right: 1rem;
+  transition: background var(--duration-fast) ease;
+}
+
+.report-modal__file-input::file-selector-button:hover {
+  background: var(--pink-200);
+}
+
+.report-modal__submit {
+  background: var(--pink-700);
+  color: var(--white);
+  border: none;
+  padding: 0.8rem;
+  border-radius: var(--radius-md);
+  font-weight: bold;
+  cursor: pointer;
+  transition: all var(--duration-fast) ease;
+}
+
+.report-modal__submit:hover:not(:disabled) {
+  background: var(--pink-800);
+}
+
+.report-modal__submit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.report-modal__status {
+  text-align: center;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--pink-800);
+  padding: 0.5rem;
+  border-radius: var(--radius-sm);
+  background: var(--pink-50);
+}
+.report-modal__status.error {
+  color: #c92a2a;
+  background: #fff5f5;
+}
+.report-modal__status.success {
+  color: #2b8a3e;
+  background: #ebfbee;
+}

@@ -21,7 +21,7 @@ ML validates images + text
 ↓  
 If valid → upload to IPFS  
 ↓  
-Generate CID  
+Generatex CID  
 ↓  
 Backend signs transaction  
 ↓  

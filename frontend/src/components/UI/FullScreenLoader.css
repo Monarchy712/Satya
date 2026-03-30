@@ -1,0 +1,60 @@
+/* ===== FullScreenLoader CSS ===== */
+.fs-loader-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(254, 232, 217, 0.85); /* cream semi-transparent */
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fsFadeIn 0.3s var(--ease-out) forwards;
+}
+
+.fs-loader-card {
+  background: var(--white);
+  border: 1px solid var(--pink-200);
+  padding: 2.5rem 4rem;
+  border-radius: var(--radius-xl);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-xl);
+  box-shadow: 
+    0 16px 32px -8px rgba(84, 107, 43, 0.15),
+    0 4px 12px rgba(84, 107, 43, 0.05),
+    0 0 0 1px var(--pink-100) inset;
+  animation: fsSlideUp 0.4s var(--ease-out) forwards;
+}
+
+.fs-loader-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid var(--pink-100);
+  border-top-color: var(--pink-700);
+  border-radius: 50%;
+  animation: fsSpin 0.8s linear infinite;
+}
+
+.fs-loader-text {
+  font-family: var(--font-mono);
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: var(--pink-900);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+@keyframes fsFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fsSlideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes fsSpin {
+  to { transform: rotate(360deg); }
+}

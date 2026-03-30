@@ -1,8 +1,12 @@
 import { useState } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import ReportModal from './ReportModal';
 import './ContractCard.css';
 
 export default function ContractCard({ contract }) {
   const [expanded, setExpanded] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const { user } = useAuth();
 
   const formatCurrency = (n) => {
     if (n >= 1e9) return `₹${(n / 1e9).toFixed(1)}B`;
@@ -102,7 +106,31 @@ export default function ContractCard({ contract }) {
               ))}
             </div>
           </div>
+
+          {/* Report Button for Citizens */}
+          {user?.role === 'citizen' && contract.status === 'completed' && (
+            <div className="contract-card__report-section">
+              <div className="contract-card__divider" />
+              <button 
+                className="contract-card__report-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowReportModal(true);
+                }}
+              >
+                <span className="contract-card__report-icon">🚩</span>
+                Report Quality Issue
+              </button>
+            </div>
+          )}
         </div>
+      )}
+
+      {showReportModal && (
+        <ReportModal 
+          contract={contract} 
+          onClose={() => setShowReportModal(false)} 
+        />
       )}
     </div>
   );

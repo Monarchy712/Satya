@@ -349,3 +349,53 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ── Report Section ── */
+.contract-card__report-section {
+  margin-top: var(--space-xl);
+}
+
+.contract-card__report-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  padding: 16px;
+  background: var(--pink-700);
+  color: var(--white);
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.1rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-out);
+  box-shadow: 
+    0 8px 20px -6px rgba(184, 52, 98, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+}
+
+.contract-card__report-btn:hover {
+  background: var(--pink-800);
+  transform: translateY(-2px);
+  box-shadow: 
+    0 12px 28px -8px rgba(184, 52, 98, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+}
+
+.contract-card__report-btn:active {
+  transform: translateY(0);
+}
+
+.contract-card__report-icon {
+  font-size: 1.3rem;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.4); opacity: 0.5; }
+  100% { transform: scale(1); opacity: 1; }
+}

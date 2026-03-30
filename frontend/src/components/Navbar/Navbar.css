@@ -139,3 +139,57 @@
     display: none;
   }
 }
+
+/* ── User & Logout ── */
+.navbar__user {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin-right: var(--space-lg);
+  padding-right: var(--space-lg);
+  border-right: 1px solid rgba(164, 183, 120, 0.2);
+}
+
+.navbar__user-name {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--pink-700);
+  font-weight: bold;
+  letter-spacing: 0.05em;
+}
+
+.navbar__logout-btn {
+  padding: 4px 10px;
+  background: rgba(255, 107, 107, 0.1);
+  border: 1px solid rgba(255, 107, 107, 0.3);
+  color: #ff6b6b;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.navbar__logout-btn:hover {
+  background: rgba(255, 107, 107, 0.2);
+}
+
+.navbar__login-btn {
+  padding: 6px 16px;
+  background: var(--pink-700);
+  color: var(--white);
+  border: none;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: bold;
+  letter-spacing: 0.05em;
+  border-radius: var(--radius-md);
+  margin-right: var(--space-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.navbar__login-btn:hover {
+  background: var(--pink-600);
+  transform: translateY(-1px);
+}
