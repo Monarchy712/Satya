@@ -55,7 +55,7 @@ contract TenderFactory {
 
     // ---------------- CREATE TENDER ----------------
     function createTender(
-        address[] memory _admins,
+        address[] memory _admins,              // 🔥 array to avoid stack too deep
         uint256 _startTime,
         uint256 _endTime,
         uint256 _biddingEndTime,
@@ -65,8 +65,10 @@ contract TenderFactory {
         uint256[] memory _deadlines
     ) external onlyGovernment returns (address) {
 
+        require(_admins.length == 4, "Need 4 admins");
+
         Tender newTender = new Tender(
-            address(this), // 🔥 pass factory instead
+            address(this),                     // factory reference
             _admins,
             _startTime,
             _endTime,
@@ -92,5 +94,9 @@ contract TenderFactory {
     // ---------------- GETTERS ----------------
     function getAllTenders() external view returns (TenderMeta[] memory) {
         return tenders;
+    }
+
+    function getGovernmentList() external view returns (address[] memory) {
+        return governmentList;
     }
 }
