@@ -4,6 +4,7 @@ from routers.citizen import router as citizen_router
 from routers.wallet import router as wallet_router, contractor_router
 from routers.report import router as report_router
 from routers.admin_tasks import router as admin_tasks_router
+from routers.tenders import router as tenders_router
 
 
 app = FastAPI(
@@ -27,6 +28,7 @@ app.include_router(wallet_router)
 app.include_router(contractor_router)
 app.include_router(report_router)
 app.include_router(admin_tasks_router)
+app.include_router(tenders_router)
 
 
 

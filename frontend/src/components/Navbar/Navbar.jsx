@@ -40,6 +40,11 @@ export default function Navbar({ user, onLogout }) {
 
   const isActive = (path) => location.pathname === path;
 
+  // Role-based link logic
+  const showAdminLink = user?.role === 'super_admin' || user?.role === 'admin';
+  const showSignatoryLink = user?.role === 'signatory';
+  const showContractorLink = user?.role === 'contractor';
+
   return (
     <>
     <FullScreenLoader isVisible={isLoggingOut} text="Securing Session..." />
@@ -71,13 +76,46 @@ export default function Navbar({ user, onLogout }) {
             >
               Tenders
             </button>
-            {user && user.access_level === 0 && (
+
+            {/* Dynamic Context-Aware Dashboard Links */}
+            {showAdminLink && (
               <button
                 className={`navbar__nav-link navbar__nav-link--admin ${isActive('/admin') ? 'navbar__nav-link--active' : ''}`}
                 onClick={() => navigate('/admin')}
               >
                 <span className="navbar__nav-link-icon">🏛️</span>
-                Admin
+                Governance
+              </button>
+            )}
+
+            {showSignatoryLink && (
+              <button
+                className={`navbar__nav-link navbar__nav-link--admin ${isActive('/signatory-portal') ? 'navbar__nav-link--active' : ''}`}
+                onClick={() => navigate('/signatory-portal')}
+                style={{borderColor: 'var(--status-ongoing)', color: 'var(--status-ongoing)'}}
+              >
+                <span className="navbar__nav-link-icon">🖋️</span>
+                Signing
+              </button>
+            )}
+
+            {showContractorLink && (
+              <button
+                className={`navbar__nav-link navbar__nav-link--admin ${isActive('/contractor') ? 'navbar__nav-link--active' : ''}`}
+                onClick={() => navigate('/contractor')}
+                style={{borderColor: '#4ecdc4', color: '#4ecdc4'}}
+              >
+                <span className="navbar__nav-link-icon">🏗️</span>
+                Dashboard
+              </button>
+            )}
+
+            {(user?.role === 'committee' || user?.role === 'super_admin') && (
+              <button
+                className={`navbar__nav-link ${isActive('/oversight') ? 'navbar__nav-link--active' : ''}`}
+                onClick={() => navigate('/oversight')}
+              >
+                Oversight
               </button>
             )}
           </div>

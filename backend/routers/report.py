@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends, Header
 from pydantic import BaseModel
-from auth import decode_token
+from auth import decode_token, get_current_user
 from config import JWT_SECRET, ROBOFLOW_API_KEY, PRIVATE_KEY
 from blockchain import contract, w3, account, get_identity_hash
 from ml_utils import analyze_image, get_average_confidence
@@ -19,14 +19,6 @@ class MLValidateRequest(BaseModel):
     image_urls: list[str] = []
 
 
-def get_current_user(authorization: str = Header(None)):
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Unauthorized")
-    token = authorization.split(" ")[1]
-    payload = decode_token(token)
-    if not payload:
-        raise HTTPException(status_code=401, detail="Invalid token")
-    return payload
 
 # Blockchain logic is now handled in blockchain.py
 

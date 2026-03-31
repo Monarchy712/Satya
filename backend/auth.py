@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+from fastapi import HTTPException, Header
 from jose import jwt, JWTError
 from eth_account.messages import encode_defunct
 from eth_account import Account
@@ -42,3 +43,14 @@ def build_sign_message(nonce: str) -> str:
         f"Nonce: {nonce}\n"
         f"This signature will not trigger a blockchain transaction."
     )
+
+
+def get_current_user(authorization: str = Header(None)):
+    """FastAPI dependency to get the current user from JWT in Authorization header."""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    token = authorization.split(" ")[1]
+    payload = decode_token(token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    return payload

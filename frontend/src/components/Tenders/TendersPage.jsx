@@ -1,75 +1,50 @@
 import { useState, useEffect } from 'react';
-import { getFactoryContract, getTenderContract, getProvider, getSigner, TENDER_STATUS } from '../../utils/contracts';
+import { 
+  getTenderContract, 
+  getSigner, 
+} from '../../utils/contracts';
 import { useAuth } from '../../context/AuthContext';
 import './TendersPage.css';
 
-
 export default function TendersPage() {
-  const { user, isAuthenticated } = useAuth();
+  const { user } = useAuth();
   const [tenders, setTenders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedTender, setExpandedTender] = useState(null);
   const [bidAmount, setBidAmount] = useState('');
   const [bidding, setBidding] = useState(false);
   const [txStatus, setTxStatus] = useState('');
-
+  const [now, setNow] = useState(Math.floor(Date.now() / 1000));
+  
+  // -- Sync Status --
+  const [syncStatus, setSyncStatus] = useState('FETCHING...');
 
   useEffect(() => {
     loadTenders();
+    const interval = setInterval(() => setNow(Math.floor(Date.now() / 1000)), 1000);
+    return () => clearInterval(interval);
   }, []);
 
   async function loadTenders() {
     setLoading(true);
+    setSyncStatus('Syncing with Backend...');
     try {
-      const provider = getProvider();
-      const factory = getFactoryContract(provider);
-      const metas = await factory.getAllTenders();
-
-      const enriched = await Promise.all(
-        metas.map(async (meta) => {
-          try {
-            const tender = getTenderContract(meta.tender, provider);
-            const [statusNum, bids, contractor, winBid, retainedPct, currentMs] = await Promise.all([
-              tender.tenderStatus(),
-              tender.getAllBids(),
-              tender.contractor(),
-              tender.winningBid(),
-              tender.retainedPercent(),
-              tender.currentMilestone(),
-            ]);
-
-            return {
-              address: meta.tender,
-              startTime: Number(meta.startTime),
-              endTime: Number(meta.endTime),
-              biddingEndTime: Number(meta.biddingEndTime),
-              status: TENDER_STATUS[Number(statusNum)] || 'UNKNOWN',
-              bids: bids.map(b => ({ bidder: b.bidder, amount: b.amount.toString() })),
-              contractor,
-              winningBid: winBid.toString(),
-              retainedPercent: Number(retainedPct),
-              currentMilestone: Number(currentMs),
-            };
-          } catch {
-            return {
-              address: meta.tender,
-              startTime: Number(meta.startTime),
-              endTime: Number(meta.endTime),
-              biddingEndTime: Number(meta.biddingEndTime),
-              status: 'ERROR',
-              bids: [],
-              contractor: '0x0',
-              winningBid: '0',
-              retainedPercent: 0,
-              currentMilestone: 0,
-            };
-          }
-        })
-      );
-
-      setTenders(enriched);
+      const response = await fetch('http://localhost:8000/api/tenders/list');
+      if (!response.ok) throw new Error('Backend aggregation failed');
+      const data = await response.json();
+      
+      setTenders(data.map(t => ({
+        address: t.tender_address,
+        status: t.status,
+        biddingEndTime: Number(t.bidding_end_time),
+        bidCount: t.bids.length,
+        bids: t.bids
+      })));
+      
+      setSyncStatus(`Synced ${data.length} Assets`);
     } catch (err) {
-      console.error('Failed to load tenders:', err);
+      console.error('[Satya] Sync error:', err);
+      setSyncStatus('Sync Error');
     } finally {
       setLoading(false);
     }
@@ -78,225 +53,162 @@ export default function TendersPage() {
   async function handlePlaceBid(tenderAddr) {
     if (!bidAmount) return;
     setBidding(true);
-    setTxStatus('Requesting MetaMask signature...');
+    setTxStatus('Awaiting Signature...');
     try {
       const signer = await getSigner();
       const tender = getTenderContract(tenderAddr, signer);
       
-      setTxStatus('Submitting bid to blockchain...');
+      // Submit bid to blockchain
       const tx = await tender.placeBid(BigInt(bidAmount));
+      setTxStatus('🚀 Transaction sent! Waiting for confirmation...');
       await tx.wait();
       
-      setTxStatus('✅ Bid placed successfully!');
+      setTxStatus('✅ Bid successfully recorded on-chain!');
       setBidAmount('');
       loadTenders();
     } catch (err) {
-      console.error('Bid failed:', err);
-      setTxStatus(`❌ Error: ${err.message}`);
+      setTxStatus(`❌ Failed: ${err.message}`);
     } finally {
       setBidding(false);
     }
   }
 
-  function formatDate(ts) {
-    if (!ts) return '—';
-    return new Date(ts * 1000).toLocaleDateString('en-IN', {
-      day: 'numeric', month: 'short', year: 'numeric'
-    });
-  }
+  // --- Sorting & Categorization ---
+  const activeTenders = tenders.filter(t => t.status === 'BIDDING' && now < t.biddingEndTime);
+  const expiredTenders = tenders.filter(t => t.status === 'BIDDING' && now >= t.biddingEndTime);
+  const otherTenders = tenders.filter(t => t.status !== 'BIDDING');
 
-  function formatTime(ts) {
-    if (!ts) return '';
-    return new Date(ts * 1000).toLocaleTimeString('en-IN', {
-      hour: '2-digit', minute: '2-digit', hour12: false
-    });
-  }
+  const renderTenderCard = (t, i, type = 'active') => {
+    const isBiddingActive = type === 'active';
+    const isAwaitingSelection = type === 'expired';
+    const isContractor = user?.role?.toLowerCase() === 'contractor';
+    
+    return (
+      <div key={t.address} className={`tenders-card ${isAwaitingSelection ? 'tenders-card--expired' : ''}`} onClick={() => setExpandedTender(expandedTender === t.address ? null : t.address)}>
+        <div className="tenders-card__main">
+          <div className="tenders-card__left">
+             <div className="tenders-card__top">
+                {isBiddingActive ? (
+                  <span className="tenders-card__status tenders-card__status--bidding">Bidding Open</span>
+                ) : isAwaitingSelection ? (
+                  <span className="tenders-card__status tenders-card__status--pending">Selection Pending</span>
+                ) : (
+                  <span className={`tenders-card__status tenders-card__status--${t.status?.toLowerCase()}`}>{t.status}</span>
+                )}
+                <span className="tenders-card__id">Asset #{i+1}</span>
+             </div>
+             <p className="tenders-card__address">{t.address}</p>
+          </div>
+          <div className="tenders-card__right">
+             <div className="tenders-card__bid-count">
+                <span className="tenders-card__bid-number">{t.bidCount}</span>
+                <span className="tenders-card__bid-text">Bids</span>
+             </div>
+          </div>
+        </div>
+        
+        {expandedTender === t.address && (
+          <div className="tenders-card__details" onClick={e => e.stopPropagation()}>
+             <div className="tenders-card__info-row" style={{marginBottom:'15px', color: isAwaitingSelection ? 'var(--pink-700)' : 'inherit'}}>
+               <span>{isAwaitingSelection ? 'Bidding Closed At:' : 'Deadline:'} <strong>{new Date(t.biddingEndTime * 1000).toLocaleString()}</strong></span>
+             </div>
 
-  function getTimeRemaining(ts) {
-    const now = Date.now() / 1000;
-    const diff = ts - now;
-    if (diff <= 0) return 'Ended';
-    const days = Math.floor(diff / 86400);
-    const hours = Math.floor((diff % 86400) / 3600);
-    if (days > 0) return `${days}d ${hours}h remaining`;
-    return `${hours}h remaining`;
-  }
-
-  const isZeroAddr = (addr) => addr === '0x0000000000000000000000000000000000000000';
+             <div className="tenders-card__cta">
+               {isBiddingActive && isContractor ? (
+                 <div style={{display:'flex', flexDirection:'column', gap:'10px'}}>
+                    <div style={{display:'flex', gap:'10px'}}>
+                      <input 
+                        type="number" 
+                        className="admin-form__input"
+                        style={{flex:1}}
+                        value={bidAmount} 
+                        onChange={e => setBidAmount(e.target.value)} 
+                        placeholder="Enter bid amount (Wei)" 
+                      />
+                      <button 
+                        className="admin-header__back" 
+                        style={{background:'var(--pink-600)', color:'white', border:'none', padding:'0 20px'}}
+                        onClick={() => handlePlaceBid(t.address)} 
+                        disabled={bidding}
+                      >
+                        {bidding ? 'Signing...' : 'Submit Bid'}
+                      </button>
+                    </div>
+                    {txStatus && <p style={{fontSize:'0.8rem', color:'var(--pink-700)', fontWeight:'500'}}>{txStatus}</p>}
+                 </div>
+               ) : (
+                 <div style={{padding:'15px', background: isAwaitingSelection ? 'var(--pink-50)' : 'var(--gray-50)', borderRadius:'4px', border: isAwaitingSelection ? '1px solid var(--pink-200)' : 'none'}}>
+                    <p style={{fontSize:'0.85rem', color: isAwaitingSelection ? 'var(--pink-700)' : 'var(--gray-500)', fontWeight:'500'}}>
+                       {isBiddingActive 
+                         ? `Read-only for ${user?.role || 'Guest'}. Contractors only.` 
+                         : isAwaitingSelection 
+                         ? `Bidding time has expired. This infrastructure project is now under administrative evaluation for selection.`
+                         : `This project is now ${t.status}.`}
+                    </p>
+                 </div>
+               )}
+             </div>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="tenders-page">
       <div className="tenders-page__container">
-        {/* Header */}
-        <div className="tenders-page__header">
-          <div className="tenders-page__header-info">
-            <h1 className="tenders-page__title">Public Tenders</h1>
-            <p className="tenders-page__subtitle">
-              Transparent government infrastructure contracts on Ethereum
-            </p>
+        <header className="tenders-page__header">
+          <div>
+            <h1 className="tenders-page__title">Industrial Tenders Marketplace</h1>
+            <p className="tenders-page__subtitle">Blockchain Sync: <strong>{syncStatus}</strong></p>
           </div>
           <button className="tenders-page__refresh" onClick={loadTenders} disabled={loading}>
-            {loading ? '⟳ Loading...' : '⟳ Refresh'}
+            {loading ? 'Refreshing...' : '↻ Re-Sync Chain'}
           </button>
-        </div>
+        </header>
 
-        {/* Stats Bar */}
-        {!loading && tenders.length > 0 && (
-          <div className="tenders-page__stats">
-            <div className="tenders-page__stat">
-              <span className="tenders-page__stat-value">{tenders.length}</span>
-              <span className="tenders-page__stat-label">Total Tenders</span>
-            </div>
-            <div className="tenders-page__stat">
-              <span className="tenders-page__stat-value tenders-page__stat-value--bidding">
-                {tenders.filter(t => t.status === 'BIDDING').length}
-              </span>
-              <span className="tenders-page__stat-label">Open for Bids</span>
-            </div>
-            <div className="tenders-page__stat">
-              <span className="tenders-page__stat-value tenders-page__stat-value--active">
-                {tenders.filter(t => t.status === 'ACTIVE').length}
-              </span>
-              <span className="tenders-page__stat-label">Active</span>
-            </div>
-            <div className="tenders-page__stat">
-              <span className="tenders-page__stat-value tenders-page__stat-value--completed">
-                {tenders.filter(t => t.status === 'COMPLETED').length}
-              </span>
-              <span className="tenders-page__stat-label">Completed</span>
-            </div>
-          </div>
-        )}
-
-        {/* Content */}
         {loading ? (
           <div className="tenders-page__loading">
-            <div className="tenders-page__loading-spinner" />
-            <p>Fetching tenders from blockchain...</p>
-          </div>
-        ) : tenders.length === 0 ? (
-          <div className="tenders-page__empty">
-            <span className="tenders-page__empty-icon">📭</span>
-            <h3>No Tenders Available</h3>
-            <p>Government tenders will appear here once deployed on-chain.</p>
+             <div className="app__spinner" />
+             <p>Coordinating decentralized ledger states...</p>
           </div>
         ) : (
           <div className="tenders-page__list">
-            {tenders.map((t, i) => (
-              <div
-                key={i}
-                className={`tenders-card ${expandedTender === i ? 'tenders-card--expanded' : ''}`}
-                onClick={() => setExpandedTender(expandedTender === i ? null : i)}
-              >
-                <div className="tenders-card__main">
-                  <div className="tenders-card__left">
-                    <div className="tenders-card__top">
-                      <span className={`tenders-card__status tenders-card__status--${t.status.toLowerCase()}`}>
-                        {t.status}
-                      </span>
-                      <span className="tenders-card__id">Tender #{i + 1}</span>
-                    </div>
-                    <div className="tenders-card__address" title={t.address}>
-                      📄 {t.address.slice(0, 10)}...{t.address.slice(-8)}
-                    </div>
+            
+            {activeTenders.length > 0 && (
+               <div className="tenders-section">
+                  <h2 className="tenders-section__title">LIVE FOR BIDDING</h2>
+                  <div className="tenders-section__grid">
+                    {activeTenders.map((t, i) => renderTenderCard(t, i, 'active'))}
                   </div>
+               </div>
+            )}
 
-                  <div className="tenders-card__right">
-                    <div className="tenders-card__meta-group">
-                      <div className="tenders-card__meta-item">
-                        <span className="tenders-card__meta-label">Bidding Ends</span>
-                        <span className="tenders-card__meta-value">{formatDate(t.biddingEndTime)}</span>
-                        {t.status === 'BIDDING' && (
-                          <span className="tenders-card__countdown">{getTimeRemaining(t.biddingEndTime)}</span>
-                        )}
-                      </div>
-                      <div className="tenders-card__meta-item">
-                        <span className="tenders-card__meta-label">Project Period</span>
-                        <span className="tenders-card__meta-value">{formatDate(t.startTime)} — {formatDate(t.endTime)}</span>
-                      </div>
-                    </div>
-                    <div className="tenders-card__bid-count">
-                      <span className="tenders-card__bid-number">{t.bids.length}</span>
-                      <span className="tenders-card__bid-text">Bid{t.bids.length !== 1 ? 's' : ''}</span>
-                    </div>
+            {expiredTenders.length > 0 && (
+               <div className="tenders-section" style={{marginTop:'40px'}}>
+                  <h2 className="tenders-section__title" style={{color:'var(--pink-700)', borderColor:'var(--pink-300)'}}>AWAITING ARBITRATION</h2>
+                  <div className="tenders-section__grid tenders-section__grid--expired">
+                    {expiredTenders.map((t, i) => renderTenderCard(t, i, 'expired'))}
                   </div>
-                </div>
+               </div>
+            )}
 
-                {/* Expanded Details */}
-                {expandedTender === i && (
-                  <div className="tenders-card__details">
-                    {!isZeroAddr(t.contractor) && (
-                      <div className="tenders-card__detail-row">
-                        <span className="tenders-card__detail-label">Selected Contractor</span>
-                        <span className="tenders-card__detail-value">{t.contractor.slice(0, 8)}...{t.contractor.slice(-6)}</span>
-                      </div>
-                    )}
-                    {t.winningBid !== '0' && (
-                      <div className="tenders-card__detail-row">
-                        <span className="tenders-card__detail-label">Winning Bid</span>
-                        <span className="tenders-card__detail-value">{t.winningBid} Wei</span>
-                      </div>
-                    )}
-                    <div className="tenders-card__detail-row">
-                      <span className="tenders-card__detail-label">Retained %</span>
-                      <span className="tenders-card__detail-value">{t.retainedPercent}%</span>
-                    </div>
-                    <div className="tenders-card__detail-row">
-                      <span className="tenders-card__detail-label">Current Milestone</span>
-                      <span className="tenders-card__detail-value">#{t.currentMilestone}</span>
-                    </div>
-
-                    {t.bids.length > 0 && (
-                      <div className="tenders-card__bids-section">
-                        <h4 className="tenders-card__bids-title">Bids</h4>
-                        <div className="tenders-card__bids-list">
-                          {t.bids.map((bid, bi) => (
-                            <div key={bi} className="tenders-card__bid-row">
-                              <span className="tenders-card__bid-bidder">{bid.bidder.slice(0, 6)}...{bid.bidder.slice(-4)}</span>
-                              <span className="tenders-card__bid-amount">{bid.amount} Wei</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="tenders-card__cta">
-                      {t.status === 'BIDDING' && (
-                        <div className="tenders-card__bid-action">
-                          {user?.role === 'contractor' ? (
-                            <>
-                              <input 
-                                type="number" 
-                                placeholder="Enter Bid Amount (Wei)" 
-                                value={bidAmount}
-                                onChange={(e) => setBidAmount(e.target.value)}
-                                className="tenders-card__bid-input"
-                              />
-                              <button 
-                                className="tenders-card__bid-btn"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handlePlaceBid(t.address);
-                                }}
-                                disabled={bidding}
-                              >
-                                {bidding ? 'Submitting...' : '🦊 Place Bid via MetaMask'}
-                              </button>
-                            </>
-                          ) : (
-                            <button className="tenders-card__bid-btn" disabled>
-                              🔒 Only registered contractors can bid
-                            </button>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                    {txStatus && <div className="tenders-card__tx-status">{txStatus}</div>}
+            {otherTenders.length > 0 && (
+               <div className="tenders-section" style={{marginTop:'40px'}}>
+                  <h2 className="tenders-section__title" style={{color:'var(--gray-400)', borderColor:'var(--gray-200)'}}>ARCHIVED ASSETS</h2>
+                  <div className="tenders-section__grid tenders-section__grid--archived">
+                    {otherTenders.map((t, i) => renderTenderCard(t, i, 'other'))}
                   </div>
+               </div>
+            )}
 
-                )}
+            {tenders.length === 0 && (
+              <div className="tenders-page__empty">
+                <span className="tenders-page__empty-icon">📁</span>
+                <h3>No Ledger Data</h3>
+                <p>The platform is online but no infrastructure projects were identified locally.</p>
               </div>
-            ))}
+            )}
           </div>
         )}
       </div>

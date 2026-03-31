@@ -1,5 +1,5 @@
 from pydantic import BaseModel, field_validator
-from typing import Optional
+from typing import Optional, List
 import re
 
 
@@ -65,6 +65,41 @@ class NonceResponse(BaseModel):
 class MessageResponse(BaseModel):
     message: str
     success: bool = True
+
+
+# ── Tender Data (Aggregated from Blockchain) ──
+
+class BidData(BaseModel):
+    bidder: str
+    amount: str
+
+
+class MilestoneData(BaseModel):
+    name: str
+    percentage: int
+    deadline: int
+    completion_percent: int
+    deposit_share: str
+    status: int
+
+
+class TenderDetail(BaseModel):
+    tender_address: str
+    status: str
+    contractor: str
+    start_time: int
+    end_time: int
+    bidding_end_time: int
+    winning_bid: str
+    contractor_deposit: str
+    retained_percent: int
+    current_milestone: int
+    on_site_engineer: str
+    compliance_officer: str
+    financial_auditor: str
+    sanctioning_authority: str
+    bids: List[BidData]
+    milestones: List[MilestoneData]
 
 
 # ── Contractor Registration ──

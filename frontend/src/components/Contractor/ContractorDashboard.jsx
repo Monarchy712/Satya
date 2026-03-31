@@ -1,163 +1,161 @@
 import { useState, useEffect } from 'react';
+import { 
+  getTenderContract, 
+  getSigner,
+} from '../../utils/contracts';
 import { useAuth } from '../../context/AuthContext';
-import { getFactoryContract, getTenderContract, getProvider, getSigner, TENDER_STATUS } from '../../utils/contracts';
 import './ContractorDashboard.css';
 
 export default function ContractorDashboard() {
   const { user } = useAuth();
+  const [myBids, setMyBids] = useState([]);
   const [myContracts, setMyContracts] = useState([]);
-  const [biddingTenders, setBiddingTenders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState(false);
-  const [message, setMessage] = useState('');
+  const [submittingId, setSubmittingId] = useState(null);
+  const [now] = useState(Math.floor(Date.now() / 1000));
 
   useEffect(() => {
-    loadData();
-  }, [user]);
+    loadContractorData();
+  }, []);
 
-  async function loadData() {
-    if (!user?.wallet) return;
+  async function loadContractorData() {
     setLoading(true);
     try {
-      const provider = getProvider();
-      const factory = getFactoryContract(provider);
-      const metas = await factory.getAllTenders();
+      const response = await fetch('http://localhost:8000/api/tenders/list');
+      if (!response.ok) throw new Error('Failed to load contractor data');
+      const allTenders = await response.json();
       
-      const won = [];
-      const bidding = [];
-
-      await Promise.all(metas.map(async (meta) => {
-        const tender = getTenderContract(meta.tender, provider);
-        const statusNum = await tender.tenderStatus();
-        const status = TENDER_STATUS[Number(statusNum)];
-        const contractorAddr = await tender.contractor();
-        
-        const isMe = contractorAddr.toLowerCase() === user.wallet.toLowerCase();
-        
-        if (isMe && status !== 'BIDDING') {
-          const currentIdx = await tender.currentMilestone();
-          won.push({
-            address: meta.tender,
-            status,
-            currentMilestone: Number(currentIdx),
-            startTime: Number(meta.startTime),
-            endTime: Number(meta.endTime)
-          });
-        } else if (status === 'BIDDING') {
-          const hasBid = await tender.hasBid(user.wallet);
-          const bids = await tender.getAllBids();
-          // Find my bid if it exists
-          const myBid = bids.find(b => b.bidder.toLowerCase() === user.wallet.toLowerCase());
-          
-          bidding.push({
-            address: meta.tender,
-            hasBid,
-            myBid: myBid ? myBid.amount.toString() : null,
-            bidCount: bids.length,
-            endTime: Number(meta.biddingEndTime)
-          });
-        }
-      }));
-
-      setMyContracts(won);
-      setBiddingTenders(bidding);
+      const myAddress = user.wallet.toLowerCase();
+      
+      // Filter for Bids vs Won Contracts
+      const bids = allTenders.filter(t => t.bids.some(b => b.bidder.toLowerCase() === myAddress));
+      const contracts = allTenders.filter(t => t.contractor.toLowerCase() === myAddress);
+      
+      setMyBids(bids);
+      setMyContracts(contracts);
     } catch (err) {
-      console.error('Failed to load contractor data:', err);
+      console.error('[Contractor] Load error:', err);
     } finally {
       setLoading(false);
     }
   }
 
-  async function handleApplyMilestone(tenderAddr, milestoneId) {
-    setActionLoading(true);
-    setMessage('Submitting work for review...');
+  const handleSubmitMilestone = async (tenderAddr, mIdx) => {
+    setSubmittingId(`${tenderAddr}-${mIdx}`);
     try {
       const signer = await getSigner();
       const tender = getTenderContract(tenderAddr, signer);
-      // Note: In our current Tender.sol, submitWorkForReview is onlyGovernment.
-      // We will relay this via the backend if needed, or if the contract was updated.
-      // For now, let's assume the backend handles the coordination.
-      
-      const res = await fetch('http://localhost:8000/api/contractor/apply-milestone', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('satya_token')}`
-        },
-        body: JSON.stringify({ tender_address: tenderAddr, milestone_id: milestoneId })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.detail);
-      
-      setMessage('✅ Milestone submitted for review!');
-      loadData();
+      const tx = await tender.submitWorkForReview(BigInt(mIdx));
+      await tx.wait();
+      alert('Proof of Work Submitted! Signatories will be notified.');
+      loadContractorData();
     } catch (err) {
-      setMessage(`❌ Error: ${err.message}`);
+      alert(`Submission failed: ${err.message}`);
     } finally {
-      setActionLoading(false);
+      setSubmittingId(null);
     }
-  }
-
-  if (loading) return <div className="contractor-view__loading">Loading Workspace...</div>;
+  };
 
   return (
-    <div className="contractor-view">
-      <header className="contractor-view__header">
-        <h1>Contractor Portal</h1>
-        <div className="contractor-view__badge">Verified Partner</div>
-      </header>
+    <div className="contractor-dashboard">
+      <div className="contractor-dashboard__container">
+        <header className="contractor-header">
+           <div>
+             <h1 className="contractor-header__title">Industrial Contractor Workspace</h1>
+             <p className="contractor-header__subtitle">Managing {myContracts.length} Registered State Contracts</p>
+           </div>
+        </header>
 
-      <section className="contractor-view__section">
-        <h2>Active Project & Milestones</h2>
-        {myContracts.length === 0 ? (
-          <p className="contractor-view__empty">No active projects assigned yet.</p>
-        ) : (
-          <div className="contractor-view__grid">
-            {myContracts.map(c => (
-              <div key={c.address} className="contractor-card">
-                <h3>Project {c.address.slice(0, 8)}...</h3>
-                <div className="contractor-card__status">{c.status}</div>
-                <div className="contractor-card__meta">
-                  <span>Current Milestone: #{c.currentMilestone + 1}</span>
-                </div>
-                <button 
-                  className="contractor-card__btn"
-                  onClick={() => handleApplyMilestone(c.address, c.currentMilestone)}
-                  disabled={actionLoading}
-                >
-                  Apply for Milestone Review
-                </button>
-              </div>
-            ))}
+        {loading ? (
+          <div className="app__loading-screen">
+             <div className="app__spinner" />
+             <p>Scanning Ledger Hub for Your Assets...</p>
           </div>
-        )}
-      </section>
+        ) : (
+          <div className="contractor-dashboard__grid">
+            
+            {/* Section: Active Projects */}
+            <section className="contractor-section">
+              <h2 className="contractor-section__title">Won Projects & Execution</h2>
+              {myContracts.length > 0 ? (
+                <div className="contractor-contracts-list">
+                  {myContracts.map(t => (
+                    <div key={t.tender_address} className="contractor-card contractor-card--active">
+                       <div className="contractor-card__header">
+                          <div className={`contractor-card__tag contractor-card__tag--${t.status.toLowerCase()}`}>{t.status}</div>
+                          <span className="contractor-card__addr">{t.tender_address.slice(0,20)}...</span>
+                       </div>
+                       
+                       <div className="contractor-milestones">
+                          {t.milestones.map((m, idx) => {
+                            const isPending = m.status === 0;
+                            const isSubmitted = m.status === 1;
+                            const isCompleted = m.status === 2;
+                            const hasTime = now < m.deadline;
 
-      <section className="contractor-view__section">
-        <h2>Open Bids</h2>
-        <div className="contractor-view__grid">
-          {biddingTenders.map(t => (
-            <div key={t.address} className="contractor-card contractor-card--bidding">
-              <h3>Tender {t.address.slice(0, 8)}...</h3>
-              <div className="contractor-card__meta">
-                <span>Ends: {new Date(t.endTime * 1000).toLocaleDateString()}</span>
-                <span>Total Bids: {t.bidCount}</span>
-              </div>
-              {t.hasBid ? (
-                <div className="contractor-card__bid-status">
-                  Your Bid: ₹{t.myBid} (Placed)
+                            return (
+                              <div key={idx} className="contractor-milestone-row">
+                                 <div className="contractor-milestone-info">
+                                    <span className={`contractor-milestone-status contractor-milestone-status--${m.status === 2 ? 'done' : m.status === 1 ? 'wait' : 'todo'}`}>
+                                      {m.status === 2 ? '✓' : m.status === 1 ? '…' : '○'}
+                                    </span>
+                                    <div style={{display:'flex', flexDirection:'column'}}>
+                                       <strong>{m.name}</strong>
+                                       <span style={{fontSize:'0.7rem', color:'var(--gray-500)'}}>Weight: {m.percentage}% | Due: {new Date(m.deadline * 1000).toLocaleDateString()}</span>
+                                    </div>
+                                 </div>
+                                 
+                                 {isPending && hasTime && (
+                                   <button 
+                                     className="contractor-milestone-btn" 
+                                     disabled={submittingId === `${t.tender_address}-${idx}`}
+                                     onClick={() => handleSubmitMilestone(t.tender_address, idx)}
+                                   >
+                                     Request Approval
+                                   </button>
+                                 )}
+                                 {isSubmitted && <span className="contractor-milestone-indicator">Awaiting Signature</span>}
+                                 {isCompleted && <span className="contractor-milestone-indicator" style={{color:'var(--status-completed)'}}>Compliant</span>}
+                                 {isPending && !hasTime && <span className="contractor-milestone-indicator" style={{color:'var(--pink-600)'}}>Delayed</span>}
+                              </div>
+                            );
+                          })}
+                       </div>
+                    </div>
+                  ))}
                 </div>
               ) : (
-                <button className="contractor-card__btn contractor-card__btn--alt" onClick={() => window.location.href='/tenders'}>
-                  Place Bid
-                </button>
+                <div className="contractor-empty">No active contracts assigned to this wallet. Visit Tenders to bid!</div>
               )}
-            </div>
-          ))}
-        </div>
-      </section>
+            </section>
 
-      {message && <div className="contractor-view__toast">{message}</div>}
+            {/* Section: My Bids Status */}
+            <section className="contractor-section">
+               <h2 className="contractor-section__title">Bid Envelope Status</h2>
+               <div className="contractor-bids-list">
+                 {myBids.map(t => {
+                   const myBid = t.bids.find(b => b.bidder.toLowerCase() === user.wallet.toLowerCase());
+                   const isWinning = t.contractor.toLowerCase() === user.wallet.toLowerCase();
+                   
+                   return (
+                     <div key={t.tender_address} className="contractor-bid-item">
+                        <div className="contractor-bid-info">
+                           <strong>Asset: {t.tender_address.slice(0,10)}...</strong>
+                           <span>Amount: <strong>{myBid?.amount} Wei</strong></span>
+                        </div>
+                        <div className={`contractor-bid-badge contractor-bid-badge--${isWinning ? 'won' : t.status === 'BIDDING' ? 'pending' : 'lost'}`}>
+                          {isWinning ? 'WON' : t.status === 'BIDDING' ? 'PENDING' : 'LOST'}
+                        </div>
+                     </div>
+                   );
+                 })}
+                 {myBids.length === 0 && <div className="contractor-empty">You haven't placed any bids yet.</div>}
+               </div>
+            </section>
+
+          </div>
+        )}
+      </div>
     </div>
   );
 }

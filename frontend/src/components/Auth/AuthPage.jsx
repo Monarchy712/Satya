@@ -115,13 +115,14 @@ export default function AuthPage() {
     try {
       const signature = await signMessage(walletMessage);
       const res = await walletVerify(walletAddress, signature);
-      login(res.access_token, {
+      const redirect = login(res.access_token, {
         role: res.role,
         name: res.name,
         access_level: res.access_level,
-        wallet: walletAddress,
-      });
-      navigate('/');
+        wallet: walletAddress.toLowerCase(),
+      }, res.redirect_path);
+      navigate(redirect || '/');
+
     } catch (err) {
       setError(err.message);
       setPageLoadingVisible(false);

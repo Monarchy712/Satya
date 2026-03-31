@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import AuthPage from './components/Auth/AuthPage';
@@ -9,6 +9,7 @@ import Hero from './components/Hero/Hero';
 import Ledger from './components/Ledger/Ledger';
 import TendersPage from './components/Tenders/TendersPage';
 import AdminDashboard from './components/Admin/AdminDashboard';
+import SignatoryDashboard from './components/Admin/SignatoryDashboard';
 import ContractorDashboard from './components/Contractor/ContractorDashboard';
 import OversightDashboard from './components/Oversight/OversightDashboard';
 import { contractors as staticContractors, ledgerStats as staticStats } from './data/contractors';
@@ -16,10 +17,22 @@ import { getUnifiedLedgerData } from './utils/ledgerData';
 
 import './App.css';
 
-function ProtectedRoute({ children }) {
-  const { isAuthenticated, loading } = useAuth();
+/**
+ * Enhanced Protected Route supporting granular role access.
+ * If user does not meet role requirements, redirects to home or login.
+ */
+function ProtectedRoute({ children, allowedRoles = [] }) {
+  const { isAuthenticated, loading, user } = useAuth();
+  
   if (loading) return null;
-  return isAuthenticated ? children : <Navigate to="/login" replace />;
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  
+  if (allowedRoles.length > 0 && !allowedRoles.includes(user?.role)) {
+    console.warn(`[Satya] Access denied for role: ${user?.role}. Required: ${allowedRoles}`);
+    return <Navigate to="/" replace />;
+  }
+  
+  return children;
 }
 
 function Dashboard() {
@@ -35,7 +48,6 @@ function Dashboard() {
       setUnifiedContractors(data);
       if (data.length > 0) setActiveContractorId(data[0].id);
       
-      // Dynamic stats calculation
       const ongoing = data.reduce((sum, c) => sum + c.contracts.filter(t => t.status === 'active' || t.status === 'ongoing').length, 0);
       const pending = data.reduce((sum, c) => sum + c.contracts.filter(t => t.status === 'bidding' || t.status === 'pending').length, 0);
       setStats({ ...staticStats, ongoingContracts: ongoing, pendingContracts: pending, totalContractors: data.length });
@@ -46,7 +58,6 @@ function Dashboard() {
   }, []);
 
   const handleContractorClick = (id) => {
-
     setActiveContractorId(id);
     document.getElementById('ledger-view')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
@@ -76,8 +87,6 @@ function Dashboard() {
               </div>
             </>
           )}
-
-
           <footer className="app__footer">
             <p>Satya Transparency Ledger © {new Date().getFullYear()} — Public Data Initiative</p>
             <p className="app__footer-sub">Bringing truth to public contracts</p>
@@ -88,60 +97,63 @@ function Dashboard() {
   );
 }
 
-function TendersRoute() {
+function GlobalRoute({ children }) {
   const { user, logout } = useAuth();
   return (
     <>
       <Navbar user={user} onLogout={logout} />
-      <TendersPage />
+      {children}
     </>
   );
 }
-
-function AdminRoute() {
-  const { user, logout } = useAuth();
-  return (
-    <ProtectedRoute>
-      <Navbar user={user} onLogout={logout} />
-      <AdminDashboard />
-    </ProtectedRoute>
-  );
-}
-
-function ContractorRoute() {
-  const { user, logout } = useAuth();
-  return (
-    <ProtectedRoute>
-      <Navbar user={user} onLogout={logout} />
-      <ContractorDashboard />
-    </ProtectedRoute>
-  );
-}
-
-function OversightRoute() {
-  const { user, logout } = useAuth();
-  return (
-    <ProtectedRoute>
-      <Navbar user={user} onLogout={logout} />
-      <OversightDashboard />
-    </ProtectedRoute>
-  );
-}
-
 
 function App() {
   return (
     <Routes>
       <Route path="/login" element={<AuthPage />} />
       <Route path="/register-contractor" element={<ContractorRegister />} />
-      <Route path="/tenders" element={<TendersRoute />} />
-      <Route path="/admin" element={<AdminRoute />} />
-      <Route path="/contractor" element={<ContractorRoute />} />
-      <Route path="/oversight" element={<OversightRoute />} />
-      <Route
-        path="/*"
-        element={<Dashboard />}
+      
+      {/* Public Pages */}
+      <Route path="/tenders" element={<GlobalRoute><TendersPage /></GlobalRoute>} />
+      
+      {/* Role-Specific Protected Routes */}
+      <Route 
+        path="/admin" 
+        element={
+          <ProtectedRoute allowedRoles={['super_admin', 'admin']}>
+            <GlobalRoute><AdminDashboard /></GlobalRoute>
+          </ProtectedRoute>
+        } 
       />
+      
+      <Route 
+        path="/signatory-portal" 
+        element={
+          <ProtectedRoute allowedRoles={['signatory']}>
+            <GlobalRoute><SignatoryDashboard /></GlobalRoute>
+          </ProtectedRoute>
+        } 
+      />
+
+      <Route 
+        path="/contractor" 
+        element={
+          <ProtectedRoute allowedRoles={['contractor']}>
+            <GlobalRoute><ContractorDashboard /></GlobalRoute>
+          </ProtectedRoute>
+        } 
+      />
+
+      <Route 
+        path="/oversight" 
+        element={
+          <ProtectedRoute allowedRoles={['committee', 'super_admin']}>
+            <GlobalRoute><OversightDashboard /></GlobalRoute>
+          </ProtectedRoute>
+        } 
+      />
+
+      <Route path="/*" element={<Dashboard />} />
     </Routes>
   );
 }

@@ -123,38 +123,24 @@ export const TENDER_ABI = [
     stateMutability: "view", type: "function"
   },
   {
-    inputs: [],
-    name: "getAllBids",
+    inputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    name: "bids",
     outputs: [
-      {
-        components: [
-          { internalType: "address", name: "bidder", type: "address" },
-          { internalType: "uint256", name: "amount", type: "uint256" }
-        ],
-        internalType: "struct Tender.Bid[]",
-        name: "",
-        type: "tuple[]"
-      }
+      { internalType: "address", name: "bidder", type: "address" },
+      { internalType: "uint256", name: "amount", type: "uint256" }
     ],
     stateMutability: "view", type: "function"
   },
   {
-    inputs: [{ internalType: "uint256", name: "id", type: "uint256" }],
-    name: "getMilestone",
+    inputs: [{ internalType: "uint256", name: "", "type": "uint256" }],
+    name: "milestones",
     outputs: [
-      {
-        components: [
-          { internalType: "string", name: "name", type: "string" },
-          { internalType: "uint256", name: "percentage", type: "uint256" },
-          { internalType: "uint256", name: "deadline", type: "uint256" },
-          { internalType: "uint256", name: "completionPercent", type: "uint256" },
-          { internalType: "uint256", name: "depositShare", type: "uint256" },
-          { internalType: "enum Tender.MilestoneStatus", name: "status", type: "uint8" }
-        ],
-        internalType: "struct Tender.Milestone",
-        name: "",
-        type: "tuple"
-      }
+      { internalType: "string", name: "name", type: "string" },
+      { internalType: "uint256", name: "percentage", type: "uint256" },
+      { internalType: "uint256", name: "deadline", type: "uint256" },
+      { internalType: "uint256", name: "completionPercent", type: "uint256" },
+      { internalType: "uint256", name: "depositShare", type: "uint256" },
+      { internalType: "enum Tender.MilestoneStatus", name: "status", type: "uint8" }
     ],
     stateMutability: "view", type: "function"
   },

@@ -262,5 +262,14 @@ contract Tender {
         }
     }
 
+    // ---------------- GETTERS ----------------
+    function getAllBids() external view returns (Bid[] memory) {
+        return bids;
+    }
+
+    function getMilestones() external view returns (Milestone[] memory) {
+        return milestones;
+    }
+
     receive() external payable {}
 }
