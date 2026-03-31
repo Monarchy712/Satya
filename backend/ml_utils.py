@@ -39,3 +39,15 @@ def get_best_confidence(results):
         return 0.0
         
     return max([p.get("confidence", 0.0) for p in predictions])
+
+def get_average_confidence(results):
+    """
+    Extracts the average confidence score from all detections.
+    If multiple cracks/defects are found, we average their scores.
+    """
+    predictions = results.get("predictions", [])
+    if not predictions:
+        return 0.0
+        
+    confidences = [p.get("confidence", 0.0) for p in predictions]
+    return sum(confidences) / len(confidences)

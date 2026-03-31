@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from auth import decode_token
 from config import JWT_SECRET, ROBOFLOW_API_KEY, PRIVATE_KEY
 from blockchain import contract, w3, account, get_identity_hash
-from ml_utils import analyze_image, get_best_confidence
+from ml_utils import analyze_image, get_average_confidence
 from fastapi import UploadFile, File
 from typing import List
 
@@ -44,36 +44,38 @@ async def validate_report(
     if user.get("role") != "citizen":
         raise HTTPException(status_code=403, detail="Only citizens can validate reports")
 
-    max_confidence = 0.0
+    best_score = 0.0
     all_results = []
     
-    # Process each image until we find one that passes the threshold (0.4)
-    # We limit to 3 images to prevent API abuse
+    # Process each image, calculating average confidence for each
     for file in files[:3]:
         content = await file.read()
         res = analyze_image(content)
-        conf = get_best_confidence(res)
+        avg_conf = get_average_confidence(res)
+        score = avg_conf * 100
         
         all_results.append({
             "filename": file.filename,
-            "confidence": conf,
+            "confidence": avg_conf,
+            "score": score,
             "predictions": res.get("predictions", [])
         })
         
-        if conf > max_confidence:
-            max_confidence = conf
+        if score > best_score:
+            best_score = score
             
-        if max_confidence >= 0.4:
+        if best_score >= 30:
             break
 
+
     # 🚨 Automated Banning Logic (User Requirement)
-    # If no defects detected (max_confidence < 0.4), BAN the user on-chain.
-    if max_confidence < 0.4:
+    # If no defects detected (best_score < 30), BAN the user on-chain.
+    if best_score < 30:
         # Get unique identity hash from JWT
         identity_hash = get_identity_hash(user.get("sub"))
         
         try:
-            print(f"FRAUD DETECTED: Banning user {identity_hash.hex()}...")
+            print(f"FRAUD DETECTED: Score {best_score} < 30. Banning user {identity_hash.hex()}...")
             # We need to ensure account/contract are initialized (handled globally in this file)
             if not contract:
                 raise Exception("Contract not initialized")
@@ -90,8 +92,8 @@ async def validate_report(
             
             return {
                 "success": False,
-                "confidence": max_confidence,
-                "message": "AI rejected your report as No Defects Found. You have been BANNED for 30 days for fraudulent reporting.",
+                "score": best_score,
+                "message": f"AI rejected your report with a score of {round(best_score, 1)}. Threshold is 30. You have been BANNED for 30 days for fraudulent reporting.",
                 "banned": True,
                 "txHash": ban_hash.hex()
             }
@@ -101,8 +103,9 @@ async def validate_report(
 
     return {
         "success": True, 
-        "confidence": max_confidence, 
-        "message": "AI analysis complete. Construction defects detected.",
+        "score": best_score,
+        "confidence": best_score / 100, # for compatibility
+        "message": "AI analysis complete. Construction defects detected and verified.",
         "results": all_results
     }
 

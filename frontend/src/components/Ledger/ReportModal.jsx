@@ -85,7 +85,7 @@ export default function ReportModal({ contract, onClose }) {
         return;
       }
 
-      setStatus(`AI Analysis: ${Math.round(mlResult.confidence * 100)}% Confidence. Uploading...`);
+      setStatus(`AI Analysis: Score ${Math.round(mlResult.score)}/100. Verification passed. Uploading...`);
       const timestamp = Date.now();
       let imagesData = [];
 
