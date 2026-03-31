@@ -7,6 +7,8 @@ import Navbar from './components/Navbar/Navbar';
 import Sidebar from './components/Sidebar/Sidebar';
 import Hero from './components/Hero/Hero';
 import Ledger from './components/Ledger/Ledger';
+import TendersPage from './components/Tenders/TendersPage';
+import AdminDashboard from './components/Admin/AdminDashboard';
 import { contractors, ledgerStats } from './data/contractors';
 import './App.css';
 
@@ -53,11 +55,33 @@ function Dashboard() {
   );
 }
 
+function TendersRoute() {
+  const { user, logout } = useAuth();
+  return (
+    <>
+      <Navbar user={user} onLogout={logout} />
+      <TendersPage />
+    </>
+  );
+}
+
+function AdminRoute() {
+  const { user, logout } = useAuth();
+  return (
+    <ProtectedRoute>
+      <Navbar user={user} onLogout={logout} />
+      <AdminDashboard />
+    </ProtectedRoute>
+  );
+}
+
 function App() {
   return (
     <Routes>
       <Route path="/login" element={<AuthPage />} />
       <Route path="/register-contractor" element={<ContractorRegister />} />
+      <Route path="/tenders" element={<TendersRoute />} />
+      <Route path="/admin" element={<AdminRoute />} />
       <Route
         path="/*"
         element={<Dashboard />}

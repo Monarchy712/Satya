@@ -2,6 +2,19 @@ from web3 import Web3
 from config import CONTRACT_ADDRESS, RPC_URL, PRIVATE_KEY
 import json
 from eth_utils import keccak
+from eth_utils import keccak
+
+# ── Factory Info ──
+FACTORY_ADDRESS = "0x557f0988F9cD626799eb35E4D0a1b4B7fC484B11"
+FACTORY_ABI = [
+    {
+        "inputs": [{"internalType": "address", "name": "", "type": "address"}],
+        "name": "isGovernment",
+        "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
+        "stateMutability": "view",
+        "type": "function"
+    }
+]
 
 # Shared ABI from report.py
 ABI = json.loads("""
@@ -320,11 +333,27 @@ w3 = Web3(Web3.HTTPProvider(RPC_URL))
 try:
     account = w3.eth.account.from_key(PRIVATE_KEY)
     contract = w3.eth.contract(address=w3.to_checksum_address(CONTRACT_ADDRESS), abi=ABI)
+    factory_contract = w3.eth.contract(address=w3.to_checksum_address(FACTORY_ADDRESS), abi=FACTORY_ABI)
 except Exception as e:
     print(f"Blockchain module warned: {e}")
+    contract = None
+    factory_contract = None
     contract = None
     account = None
 
 def get_identity_hash(identifier: str):
     """Generates a keccak256 hash for a given identifier (email, wallet, etc.)"""
     return keccak(text=identifier)
+
+def check_is_government(wallet_address: str) -> bool:
+    """Queries the TenderFactory contract to check if a wallet is registered as a robust on-chain government entity."""
+    if not factory_contract:
+        print("Warning: Factory contract is not initialized.")
+        return False
+    
+    try:
+        checksummed = w3.to_checksum_address(wallet_address)
+        return factory_contract.functions.isGovernment(checksummed).call()
+    except Exception as e:
+        print(f"Failed to verify isGovernment on-chain: {e}")
+        return False

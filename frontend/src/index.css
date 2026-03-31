@@ -1,7 +1,7 @@
 /* ===== SATYA — Retro Transparency Ledger ===== */
 /* Design System: Pink / White / Retro */
 
-@import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Playfair+Display:wght@400;600;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap');
 
 :root {
   /* ── Core Palette (Mapped from Pink to requested palette) ── */
@@ -50,9 +50,9 @@
   --surface-glass:     rgba(255, 255, 255, 0.72);
 
   /* ── Typography ── */
-  --font-display: 'Playfair Display', Georgia, serif;
-  --font-mono:    'Space Mono', 'Courier New', monospace;
-  --font-body:    'DM Sans', -apple-system, sans-serif;
+  --font-display: 'Space Grotesk', -apple-system, sans-serif;
+  --font-mono:    'Fira Code', 'Courier New', monospace;
+  --font-body:    'Plus Jakarta Sans', -apple-system, sans-serif;
 
   /* ── Spacing ── */
   --space-xs:  0.25rem;
@@ -96,7 +96,7 @@
 
 html {
   scroll-behavior: smooth;
-  font-size: 16px;
+  font-size: 18px;
 }
 
 body {
