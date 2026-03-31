@@ -3,11 +3,7 @@ from pydantic import BaseModel
 from auth import decode_token
 from config import JWT_SECRET, ROBOFLOW_API_KEY, PRIVATE_KEY
 from blockchain import contract, w3, account, get_identity_hash
-<<<<<<< HEAD
 from ml_utils import analyze_image, calculate_image_score
-=======
-from ml_utils import analyze_image, get_average_confidence
->>>>>>> dda2beef1bc31841292d5565c9351bfde69d0992
 from fastapi import UploadFile, File
 from typing import List
 
