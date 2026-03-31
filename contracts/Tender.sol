@@ -19,6 +19,8 @@ contract Tender {
     uint256 public contractorDeposit;
     uint256 public retainedPercent;
 
+    uint256 public currentMilestone;
+
     TenderStatus public tenderStatus;
 
     // ---------------- ROLES ----------------
@@ -44,13 +46,9 @@ contract Tender {
         uint256 completionPercent;
         uint256 depositShare;
         MilestoneStatus status;
-        string[] ipfsCIDs;
     }
 
     Milestone[] public milestones;
-
-    mapping(uint256 => mapping(address => bool)) public approvals;
-    mapping(uint256 => uint256) public approvalCount;
 
     // ---------------- MODIFIERS ----------------
     modifier onlyGovernment() {
@@ -63,25 +61,8 @@ contract Tender {
         _;
     }
 
-    modifier onlyDuringBidding() {
-        require(block.timestamp < biddingEndTime, "Bidding ended");
-        _;
-    }
-
-    modifier onlyAfterBidding() {
-        require(block.timestamp >= biddingEndTime, "Bidding not over");
-        _;
-    }
-
-    modifier onlyAdmin() {
-        require(
-            msg.sender == onSiteEngineer ||
-            msg.sender == complianceOfficer ||
-            msg.sender == financialAuditor ||
-            msg.sender == sanctioningAuthority ||
-            msg.sender == government,
-            "Not admin"
-        );
+    modifier onlyActive() {
+        require(tenderStatus == TenderStatus.ACTIVE, "Not active");
         _;
     }
 
@@ -100,6 +81,17 @@ contract Tender {
         require(_admins.length == 4, "Need 4 admins");
         require(_startTime < _endTime, "Invalid time");
         require(_biddingEndTime < _startTime, "Bidding must end first");
+        require(
+            _names.length == _percentages.length &&
+            _names.length == _deadlines.length,
+            "Array mismatch"
+        );
+
+        uint256 totalPercent;
+        for (uint i = 0; i < _percentages.length; i++) {
+            totalPercent += _percentages[i];
+        }
+        require(totalPercent == 100, "Percent must be 100");
 
         government = _government;
 
@@ -121,8 +113,7 @@ contract Tender {
                 deadline: _deadlines[i],
                 completionPercent: 0,
                 depositShare: 0,
-                status: MilestoneStatus.PENDING,
-                ipfsCIDs: new string
+                status: MilestoneStatus.PENDING
             }));
         }
 
@@ -133,42 +124,32 @@ contract Tender {
     function fundContract() external payable onlyGovernment {}
 
     // ---------------- BIDDING ----------------
-    function placeBid(uint256 _amount) external onlyDuringBidding {
+    function placeBid(uint256 _amount) external {
+        require(block.timestamp < biddingEndTime, "Bidding ended");
         require(!hasBid[msg.sender], "Already bid");
+
         bids.push(Bid(msg.sender, _amount));
         hasBid[msg.sender] = true;
     }
 
-    function getTop3Bidders() external view onlyAfterBidding returns (Bid[] memory) {
-        require(bids.length >= 3, "Not enough bids");
-
-        Bid[] memory temp = bids;
-
-        for (uint i = 0; i < temp.length; i++) {
-            for (uint j = i + 1; j < temp.length; j++) {
-                if (temp[j].amount < temp[i].amount) {
-                    Bid memory t = temp[i];
-                    temp[i] = temp[j];
-                    temp[j] = t;
-                }
-            }
-        }
-
-        Bid;
-        for (uint i = 0; i < 3; i++) {
-            top3[i] = temp[i];
-        }
-
-        return top3;
-    }
-
-    // ---------------- SELECTION ----------------
     function selectContractor(address _contractor, uint256 _winningBid)
         external
         onlyGovernment
-        onlyAfterBidding
     {
+        require(block.timestamp >= biddingEndTime, "Bidding not over");
         require(hasBid[_contractor], "Not bidder");
+
+        bool validBid = false;
+        for (uint i = 0; i < bids.length; i++) {
+            if (
+                bids[i].bidder == _contractor &&
+                bids[i].amount == _winningBid
+            ) {
+                validBid = true;
+                break;
+            }
+        }
+        require(validBid, "Bid mismatch");
 
         contractor = _contractor;
         winningBid = _winningBid;
@@ -198,69 +179,95 @@ contract Tender {
         }
     }
 
-    // ---------------- WORK SUBMISSION ----------------
-    function uploadWork(uint256 id, string[] memory cids) external onlyContractor {
-        Milestone storage m = milestones[id];
-        require(m.status == MilestoneStatus.PENDING, "Already submitted");
+    // ---------------- START REVIEW ----------------
+    function submitWorkForReview(uint256 id)
+        external
+        onlyGovernment
+        onlyActive
+    {
+        require(id == currentMilestone, "Wrong milestone");
 
-        for (uint i = 0; i < cids.length; i++) {
-            m.ipfsCIDs.push(cids[i]);
-        }
+        Milestone storage m = milestones[id];
+        require(m.status == MilestoneStatus.PENDING, "Invalid state");
 
         m.status = MilestoneStatus.UNDER_REVIEW;
     }
 
-    // ---------------- ML RESULT ----------------
-    function submitMLResult(uint256 id, uint256 percent) external {
+    // ---------------- BACKEND EVALUATION ----------------
+    function evaluateMilestone(uint256 id, uint256 percent)
+        external
+        onlyGovernment
+        onlyActive
+    {
+        require(id == currentMilestone, "Wrong milestone");
+        require(percent <= 100, "Invalid percent");
+
         Milestone storage m = milestones[id];
         require(m.status == MilestoneStatus.UNDER_REVIEW, "Invalid state");
+
         m.completionPercent = percent;
-    }
 
-    // ---------------- APPROVAL ----------------
-    function approveMilestone(uint256 id, bool approve) external onlyAdmin {
-        require(!approvals[id][msg.sender], "Already voted");
-
-        approvals[id][msg.sender] = true;
-
-        if (!approve) {
-            _slash(id, 100);
-            milestones[id].status = MilestoneStatus.APPROVED;
-            return;
-        }
-
-        approvalCount[id]++;
-
-        if (approvalCount[id] == 5) {
+        if (percent >= 90 && block.timestamp <= m.deadline) {
+            _finalize(id);
+        } else if (percent < 90 && block.timestamp <= m.deadline) {
+            m.status = MilestoneStatus.PENDING;
+        } else {
             _finalize(id);
         }
     }
 
-    // ---------------- INTERNAL ----------------
+    // ---------------- FINALIZE ----------------
     function _finalize(uint256 id) internal {
         Milestone storage m = milestones[id];
 
-        uint256 penalty = 100 - m.completionPercent;
+        uint256 penalty = 0;
 
         if (block.timestamp > m.deadline) {
-            penalty += 50;
-            if (penalty > 100) penalty = 100;
+            penalty = 50;
         }
 
-        _slash(id, penalty);
+        uint256 slashAmount = (m.depositShare * penalty) / 100;
+        uint256 returnAmount = m.depositShare - slashAmount;
+
+        if (slashAmount > 0) {
+            (bool successGov, ) = government.call{value: slashAmount}("");
+            require(successGov, "Payment to government failed");
+            contractorDeposit -= slashAmount;
+        }
+
+        if (returnAmount > 0) {
+            (bool successCont, ) = contractor.call{value: returnAmount}("");
+            require(successCont, "Payment to contractor failed");
+            contractorDeposit -= returnAmount;
+        }
 
         uint256 payout = (winningBid * m.percentage) / 100;
-        payable(contractor).transfer(payout);
+        require(address(this).balance >= payout, "Insufficient funds");
+
+        (bool successPay, ) = contractor.call{value: payout}("");
+        require(successPay, "Milestone payout failed");
 
         m.status = MilestoneStatus.APPROVED;
+
+        currentMilestone++;
+
+        if (currentMilestone == milestones.length) {
+            tenderStatus = TenderStatus.COMPLETED;
+        }
     }
 
-    function _slash(uint256 id, uint256 percent) internal {
-        uint256 amount = (milestones[id].depositShare * percent) / 100;
+    // ---------------- CANCEL ----------------
+    function cancelTender() external onlyGovernment {
+        require(tenderStatus != TenderStatus.COMPLETED, "Already completed");
 
-        if (amount > 0) {
-            payable(government).transfer(amount);
-            contractorDeposit -= amount;
+        tenderStatus = TenderStatus.CANCELLED;
+
+        if (contractorDeposit > 0) {
+            uint256 refund = contractorDeposit;
+            contractorDeposit = 0;
+
+            (bool success, ) = contractor.call{value: refund}("");
+            require(success, "Refund failed");
         }
     }
 

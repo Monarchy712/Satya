@@ -5,7 +5,6 @@ import "./Tender.sol";
 
 contract TenderFactory {
 
-    // ---------------- STATE ----------------
     address public government;
 
     struct TenderMeta {
@@ -17,21 +16,17 @@ contract TenderFactory {
 
     TenderMeta[] public tenders;
 
-    // ---------------- EVENTS ----------------
     event TenderCreated(address tenderAddress);
 
-    // ---------------- MODIFIERS ----------------
     modifier onlyGovernment() {
         require(msg.sender == government, "Not government");
         _;
     }
 
-    // ---------------- CONSTRUCTOR ----------------
     constructor() {
         government = msg.sender;
     }
 
-    // ---------------- CREATE ----------------
     function createTender(
         address[] memory _admins,
         uint256 _startTime,
@@ -67,7 +62,6 @@ contract TenderFactory {
         return address(newTender);
     }
 
-    // ---------------- GETTERS ----------------
     function getAllTenders() external view returns (TenderMeta[] memory) {
         return tenders;
     }
