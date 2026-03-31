@@ -1,3 +1,5 @@
+import requests
+import urllib3
 from web3 import Web3
 from config import CONTRACT_ADDRESS, RPC_URL, PRIVATE_KEY
 import json
@@ -329,7 +331,11 @@ ABI = json.loads("""
 ]
 """)
 
-w3 = Web3(Web3.HTTPProvider(RPC_URL))
+# Setup Web3 Provider resolving SSL Verify Issues for Alchemy
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+session = requests.Session()
+session.verify = False
+w3 = Web3(Web3.HTTPProvider(RPC_URL, session=session))
 try:
     account = w3.eth.account.from_key(PRIVATE_KEY)
     contract = w3.eth.contract(address=w3.to_checksum_address(CONTRACT_ADDRESS), abi=ABI)

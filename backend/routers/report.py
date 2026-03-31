@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from auth import decode_token
 from config import JWT_SECRET, ROBOFLOW_API_KEY, PRIVATE_KEY
 from blockchain import contract, w3, account, get_identity_hash
-from ml_utils import analyze_image, get_best_confidence
+from ml_utils import analyze_image, calculate_image_score
 from fastapi import UploadFile, File
 from typing import List
 
@@ -47,12 +47,12 @@ async def validate_report(
     max_confidence = 0.0
     all_results = []
     
-    # Process each image until we find one that passes the threshold (0.4)
+    # Process each image until we find one that passes the threshold (20)
     # We limit to 3 images to prevent API abuse
     for file in files[:3]:
         content = await file.read()
         res = analyze_image(content)
-        conf = get_best_confidence(res)
+        conf = calculate_image_score(res)
         
         all_results.append({
             "filename": file.filename,
@@ -63,12 +63,12 @@ async def validate_report(
         if conf > max_confidence:
             max_confidence = conf
             
-        if max_confidence >= 0.4:
+        if max_confidence >= 20.0:
             break
 
     # 🚨 Automated Banning Logic (User Requirement)
-    # If no defects detected (max_confidence < 0.4), BAN the user on-chain.
-    if max_confidence < 0.4:
+    # If score is less than 20, BAN the user on-chain.
+    if max_confidence < 20.0:
         # Get unique identity hash from JWT
         identity_hash = get_identity_hash(user.get("sub"))
         
@@ -91,7 +91,7 @@ async def validate_report(
             return {
                 "success": False,
                 "confidence": max_confidence,
-                "message": "AI rejected your report as No Defects Found. You have been BANNED for 30 days for fraudulent reporting.",
+                "message": f"AI rejected your report (Score: {max_confidence:.1f}/100). You have been BANNED for 30 days for fraudulent reporting.",
                 "banned": True,
                 "txHash": ban_hash.hex()
             }
@@ -152,8 +152,8 @@ def submit_report(payload: ReportSubmit, user=Depends(get_current_user)):
 
     # 4. Process Transaction
     try:
-        # Scale 0-1 confidence from ML to 0-100 for Blockchain
-        confidence_scaled = int(payload.confidence * 100)
+        # Confidence score from ML is already scaled 0-100
+        confidence_scaled = int(payload.confidence)
         # Ensure it stays within bounds [0, 100]
         confidence_final = max(0, min(100, confidence_scaled))
         
