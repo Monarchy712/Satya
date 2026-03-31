@@ -73,10 +73,21 @@ contract Tender {
         _;
     }
 
+    modifier onlyAdmin() {
+        require(
+            msg.sender == onSiteEngineer ||
+            msg.sender == complianceOfficer ||
+            msg.sender == financialAuditor ||
+            msg.sender == sanctioningAuthority,
+            "Not admin"
+        );
+        _;
+    }
+
     // ---------------- CONSTRUCTOR ----------------
     constructor(
         address _factory,
-        address[] memory _admins,
+        address[] memory _admins, // 🔥 FIXED
         uint256 _startTime,
         uint256 _endTime,
         uint256 _biddingEndTime,
@@ -86,8 +97,18 @@ contract Tender {
         uint256[] memory _deadlines
     ) {
         require(_admins.length == 4, "Need 4 admins");
+
+        factory = _factory;
+
+        // 🔥 assign roles
+        onSiteEngineer = _admins[0];
+        complianceOfficer = _admins[1];
+        financialAuditor = _admins[2];
+        sanctioningAuthority = _admins[3];
+
         require(_startTime < _endTime, "Invalid time");
         require(_biddingEndTime < _startTime, "Bidding must end first");
+
         require(
             _names.length == _percentages.length &&
             _names.length == _deadlines.length,
@@ -99,13 +120,6 @@ contract Tender {
             totalPercent += _percentages[i];
         }
         require(totalPercent == 100, "Percent must be 100");
-
-        factory = _factory;
-
-        onSiteEngineer = _admins[0];
-        complianceOfficer = _admins[1];
-        financialAuditor = _admins[2];
-        sanctioningAuthority = _admins[3];
 
         startTime = _startTime;
         endTime = _endTime;
@@ -125,6 +139,21 @@ contract Tender {
         }
 
         tenderStatus = TenderStatus.BIDDING;
+    }
+
+    // ---------------- GET ADMINS ----------------
+    function getAdmins() external view returns (
+        address,
+        address,
+        address,
+        address
+    ) {
+        return (
+            onSiteEngineer,
+            complianceOfficer,
+            financialAuditor,
+            sanctioningAuthority
+        );
     }
 
     // ---------------- FUNDING ----------------
@@ -162,28 +191,6 @@ contract Tender {
         winningBid = _winningBid;
 
         tenderStatus = TenderStatus.ACTIVE;
-    }
-
-    // ---------------- DEPOSIT ----------------
-    function deposit() external payable onlyContractor {
-        require(contractorDeposit == 0, "Already deposited");
-
-        uint256 required = (winningBid * 30) / 100;
-        require(msg.value == required, "Incorrect deposit");
-
-        contractorDeposit = msg.value;
-
-        uint256 distributable = contractorDeposit * (100 - retainedPercent) / 100;
-
-        uint256 totalPercent;
-        for (uint i = 0; i < milestones.length; i++) {
-            totalPercent += milestones[i].percentage;
-        }
-
-        for (uint i = 0; i < milestones.length; i++) {
-            milestones[i].depositShare =
-                (distributable * milestones[i].percentage) / totalPercent;
-        }
     }
 
     // ---------------- REVIEW ----------------
@@ -235,18 +242,14 @@ contract Tender {
         if (slashAmount > 0) {
             (bool s1,) = payable(msg.sender).call{value: slashAmount}("");
             require(s1, "Gov payment failed");
-            contractorDeposit -= slashAmount;
         }
 
         if (returnAmount > 0) {
             (bool s2,) = contractor.call{value: returnAmount}("");
             require(s2, "Return failed");
-            contractorDeposit -= returnAmount;
         }
 
         uint256 payout = (winningBid * m.percentage) / 100;
-        require(address(this).balance >= payout, "Insufficient funds");
-
         (bool s3,) = contractor.call{value: payout}("");
         require(s3, "Payout failed");
 
@@ -257,27 +260,6 @@ contract Tender {
         if (currentMilestone == milestones.length) {
             tenderStatus = TenderStatus.COMPLETED;
         }
-    }
-
-    function cancelTender() external onlyGovernment {
-        tenderStatus = TenderStatus.CANCELLED;
-
-        if (contractorDeposit > 0) {
-            uint256 refund = contractorDeposit;
-            contractorDeposit = 0;
-
-            (bool s,) = contractor.call{value: refund}("");
-            require(s, "Refund failed");
-        }
-    }
-
-    // ---------------- GETTERS ----------------
-    function getMilestone(uint256 id) external view returns (Milestone memory) {
-        return milestones[id];
-    }
-
-    function getAllBids() external view returns (Bid[] memory) {
-        return bids;
     }
 
     receive() external payable {}
