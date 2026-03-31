@@ -1,156 +1,233 @@
 [
-    {
-        "inputs": [
-            {
-                "internalType": "address[]",
-                "name": "_admins",
-                "type": "address[]"
-            },
-            {
-                "internalType": "uint256",
-                "name": "_startTime",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "_endTime",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "_biddingEndTime",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "_retainedPercent",
-                "type": "uint256"
-            },
-            {
-                "internalType": "string[]",
-                "name": "_names",
-                "type": "string[]"
-            },
-            {
-                "internalType": "uint256[]",
-                "name": "_percentages",
-                "type": "uint256[]"
-            },
-            {
-                "internalType": "uint256[]",
-                "name": "_deadlines",
-                "type": "uint256[]"
-            }
-        ],
-        "name": "createTender",
-        "outputs": [
-            {
-                "internalType": "address",
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "stateMutability": "nonpayable",
-        "type": "constructor"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": false,
-                "internalType": "address",
-                "name": "tenderAddress",
-                "type": "address"
-            }
-        ],
-        "name": "TenderCreated",
-        "type": "event"
-    },
-    {
-        "inputs": [],
-        "name": "getAllTenders",
-        "outputs": [
-            {
-                "components": [
-                    {
-                        "internalType": "address",
-                        "name": "tender",
-                        "type": "address"
-                    },
-                    {
-                        "internalType": "uint256",
-                        "name": "startTime",
-                        "type": "uint256"
-                    },
-                    {
-                        "internalType": "uint256",
-                        "name": "endTime",
-                        "type": "uint256"
-                    },
-                    {
-                        "internalType": "uint256",
-                        "name": "biddingEndTime",
-                        "type": "uint256"
-                    }
-                ],
-                "internalType": "struct TenderFactory.TenderMeta[]",
-                "name": "",
-                "type": "tuple[]"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "government",
-        "outputs": [
-            {
-                "internalType": "address",
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "name": "tenders",
-        "outputs": [
-            {
-                "internalType": "address",
-                "name": "tender",
-                "type": "address"
-            },
-            {
-                "internalType": "uint256",
-                "name": "startTime",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "endTime",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "biddingEndTime",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    }
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_gov",
+				"type": "address"
+			}
+		],
+		"name": "addGovernment",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address[]",
+				"name": "_admins",
+				"type": "address[]"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_startTime",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_endTime",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_biddingEndTime",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_retainedPercent",
+				"type": "uint256"
+			},
+			{
+				"internalType": "string[]",
+				"name": "_names",
+				"type": "string[]"
+			},
+			{
+				"internalType": "uint256[]",
+				"name": "_percentages",
+				"type": "uint256[]"
+			},
+			{
+				"internalType": "uint256[]",
+				"name": "_deadlines",
+				"type": "uint256[]"
+			}
+		],
+		"name": "createTender",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"stateMutability": "nonpayable",
+		"type": "constructor"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "gov",
+				"type": "address"
+			}
+		],
+		"name": "GovernmentAdded",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "gov",
+				"type": "address"
+			}
+		],
+		"name": "GovernmentRemoved",
+		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_gov",
+				"type": "address"
+			}
+		],
+		"name": "removeGovernment",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "tenderAddress",
+				"type": "address"
+			}
+		],
+		"name": "TenderCreated",
+		"type": "event"
+	},
+	{
+		"inputs": [],
+		"name": "getAllTenders",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "address",
+						"name": "tender",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "startTime",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "endTime",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "biddingEndTime",
+						"type": "uint256"
+					}
+				],
+				"internalType": "struct TenderFactory.TenderMeta[]",
+				"name": "",
+				"type": "tuple[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "governmentList",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "isGovernment",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "tenders",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "tender",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "startTime",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "endTime",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "biddingEndTime",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	}
 ]

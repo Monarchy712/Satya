@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+interface ITenderFactory {
+    function isGovernment(address) external view returns (bool);
+}
+
 contract Tender {
 
     // ---------------- ENUMS ----------------
@@ -8,7 +12,7 @@ contract Tender {
     enum MilestoneStatus { PENDING, UNDER_REVIEW, APPROVED }
 
     // ---------------- STATE ----------------
-    address public government;
+    address public factory;
     address public contractor;
 
     uint256 public startTime;
@@ -52,7 +56,10 @@ contract Tender {
 
     // ---------------- MODIFIERS ----------------
     modifier onlyGovernment() {
-        require(msg.sender == government, "Not government");
+        require(
+            ITenderFactory(factory).isGovernment(msg.sender),
+            "Not government"
+        );
         _;
     }
 
@@ -68,7 +75,7 @@ contract Tender {
 
     // ---------------- CONSTRUCTOR ----------------
     constructor(
-        address _government,
+        address _factory,
         address[] memory _admins,
         uint256 _startTime,
         uint256 _endTime,
@@ -93,7 +100,7 @@ contract Tender {
         }
         require(totalPercent == 100, "Percent must be 100");
 
-        government = _government;
+        factory = _factory;
 
         onSiteEngineer = _admins[0];
         complianceOfficer = _admins[1];
@@ -179,7 +186,7 @@ contract Tender {
         }
     }
 
-    // ---------------- START REVIEW ----------------
+    // ---------------- REVIEW ----------------
     function submitWorkForReview(uint256 id)
         external
         onlyGovernment
@@ -193,7 +200,6 @@ contract Tender {
         m.status = MilestoneStatus.UNDER_REVIEW;
     }
 
-    // ---------------- BACKEND EVALUATION ----------------
     function evaluateMilestone(uint256 id, uint256 percent)
         external
         onlyGovernment
@@ -221,31 +227,28 @@ contract Tender {
         Milestone storage m = milestones[id];
 
         uint256 penalty = 0;
-
-        if (block.timestamp > m.deadline) {
-            penalty = 50;
-        }
+        if (block.timestamp > m.deadline) penalty = 50;
 
         uint256 slashAmount = (m.depositShare * penalty) / 100;
         uint256 returnAmount = m.depositShare - slashAmount;
 
         if (slashAmount > 0) {
-            (bool successGov, ) = government.call{value: slashAmount}("");
-            require(successGov, "Payment to government failed");
+            (bool s1,) = payable(msg.sender).call{value: slashAmount}("");
+            require(s1, "Gov payment failed");
             contractorDeposit -= slashAmount;
         }
 
         if (returnAmount > 0) {
-            (bool successCont, ) = contractor.call{value: returnAmount}("");
-            require(successCont, "Payment to contractor failed");
+            (bool s2,) = contractor.call{value: returnAmount}("");
+            require(s2, "Return failed");
             contractorDeposit -= returnAmount;
         }
 
         uint256 payout = (winningBid * m.percentage) / 100;
         require(address(this).balance >= payout, "Insufficient funds");
 
-        (bool successPay, ) = contractor.call{value: payout}("");
-        require(successPay, "Milestone payout failed");
+        (bool s3,) = contractor.call{value: payout}("");
+        require(s3, "Payout failed");
 
         m.status = MilestoneStatus.APPROVED;
 
@@ -256,18 +259,15 @@ contract Tender {
         }
     }
 
-    // ---------------- CANCEL ----------------
     function cancelTender() external onlyGovernment {
-        require(tenderStatus != TenderStatus.COMPLETED, "Already completed");
-
         tenderStatus = TenderStatus.CANCELLED;
 
         if (contractorDeposit > 0) {
             uint256 refund = contractorDeposit;
             contractorDeposit = 0;
 
-            (bool success, ) = contractor.call{value: refund}("");
-            require(success, "Refund failed");
+            (bool s,) = contractor.call{value: refund}("");
+            require(s, "Refund failed");
         }
     }
 

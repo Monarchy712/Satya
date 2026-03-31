@@ -5,7 +5,9 @@ import "./Tender.sol";
 
 contract TenderFactory {
 
-    address public government;
+    // ---------------- STATE ----------------
+    mapping(address => bool) public isGovernment;
+    address[] public governmentList;
 
     struct TenderMeta {
         address tender;
@@ -16,17 +18,42 @@ contract TenderFactory {
 
     TenderMeta[] public tenders;
 
+    // ---------------- EVENTS ----------------
     event TenderCreated(address tenderAddress);
+    event GovernmentAdded(address gov);
+    event GovernmentRemoved(address gov);
 
+    // ---------------- MODIFIERS ----------------
     modifier onlyGovernment() {
-        require(msg.sender == government, "Not government");
+        require(isGovernment[msg.sender], "Not government");
         _;
     }
 
+    // ---------------- CONSTRUCTOR ----------------
     constructor() {
-        government = msg.sender;
+        isGovernment[msg.sender] = true;
+        governmentList.push(msg.sender);
     }
 
+    // ---------------- GOVERNMENT MANAGEMENT ----------------
+    function addGovernment(address _gov) external onlyGovernment {
+        require(!isGovernment[_gov], "Already gov");
+
+        isGovernment[_gov] = true;
+        governmentList.push(_gov);
+
+        emit GovernmentAdded(_gov);
+    }
+
+    function removeGovernment(address _gov) external onlyGovernment {
+        require(isGovernment[_gov], "Not gov");
+
+        isGovernment[_gov] = false;
+
+        emit GovernmentRemoved(_gov);
+    }
+
+    // ---------------- CREATE TENDER ----------------
     function createTender(
         address[] memory _admins,
         uint256 _startTime,
@@ -39,7 +66,7 @@ contract TenderFactory {
     ) external onlyGovernment returns (address) {
 
         Tender newTender = new Tender(
-            government,
+            address(this), // 🔥 pass factory instead
             _admins,
             _startTime,
             _endTime,
@@ -62,6 +89,7 @@ contract TenderFactory {
         return address(newTender);
     }
 
+    // ---------------- GETTERS ----------------
     function getAllTenders() external view returns (TenderMeta[] memory) {
         return tenders;
     }
