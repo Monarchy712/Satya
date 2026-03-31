@@ -23,11 +23,12 @@ export function AuthProvider({ children }) {
     setLoading(false);
   }, []);
 
-  const login = (tokenStr, userData) => {
+  const login = (tokenStr, userData, redirectPath = '/') => {
     setToken(tokenStr);
     setUser(userData);
     localStorage.setItem('satya_token', tokenStr);
     localStorage.setItem('satya_user', JSON.stringify(userData));
+    return redirectPath;
   };
 
   const logout = () => {

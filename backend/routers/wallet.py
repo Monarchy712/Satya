@@ -61,34 +61,45 @@ def wallet_verify(payload: WalletVerify, db: Session = Depends(get_db)):
     Step 2 of MetaMask auth: verifies the signature against the nonce
     and issues a JWT if valid.
     """
-    address = payload.wallet_address.lower()
-
-    # Try admin via Blockchain
+    # Try admin / committee via Blockchain
     if check_is_government(address):
+        # Super Admin check
         admin = db.query(Admin).filter(Admin.wallet_address == address).first()
+        # Super Admin check - we look for them in our local DB to confirm access_level
+        admin = db.query(Admin).filter(Admin.wallet_address == address).first()
+        
+        # If is_gov but not in local Admin table, we'll treat as 'committee' member
+        is_super_admin = admin and admin.access_level == 0
+        role = "super_admin" if is_super_admin else "committee"
+        redirect_path = "/admin" if is_super_admin else "/oversight"
+        
+        # We need a nonce to verify signature. If they're not in the table, 
+        # the 'connect' step should have added them. 
         if admin:
             message = build_sign_message(admin.nonce)
             if not verify_signature(address, message, payload.signature):
                 raise HTTPException(status_code=401, detail="Signature verification failed.")
-
-            # Rotate nonce after successful auth
+            
             admin.nonce = secrets.token_hex(16)
             db.commit()
 
             token = create_token({
                 "sub": admin.id,
-                "role": "admin",
+                "role": role,
                 "name": admin.name,
                 "access_level": admin.access_level,
                 "wallet": address,
             })
             return TokenResponse(
                 access_token=token,
-                role="admin",
+                role=role,
                 name=admin.name,
                 access_level=admin.access_level,
+                redirect_path=redirect_path
             )
         else:
+            # Handle committee members who logged in but aren't in 'admins' table
+            # connect() upserts them, so this shouldn't happen unless DB sync issue.
             raise HTTPException(status_code=401, detail="Admin session not initialized. Re-connect wallet.")
 
     # Try contractor
@@ -111,6 +122,7 @@ def wallet_verify(payload: WalletVerify, db: Session = Depends(get_db)):
             access_token=token,
             role="contractor",
             name=contractor.company_name,
+            redirect_path="/contractor"
         )
 
     raise HTTPException(status_code=404, detail="Wallet address not registered.")

@@ -1,0 +1,181 @@
+.oversight-view {
+  padding: 40px;
+  max-width: 1200px;
+  margin: 0 auto;
+  color: #fff;
+  font-family: 'Outfit', sans-serif;
+  background: #0f1115;
+  min-height: 100vh;
+}
+
+.oversight-view__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 50px;
+  border-bottom: 2px solid rgba(255, 107, 107, 0.2);
+  padding-bottom: 30px;
+}
+
+.oversight-view__header h1 {
+  font-size: 2.8rem;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5253 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.oversight-view__badge {
+  background: rgba(255, 107, 107, 0.1);
+  color: #ff6b6b;
+  padding: 10px 20px;
+  border-radius: 30px;
+  font-size: 1rem;
+  font-weight: 700;
+  border: 1px solid rgba(255, 107, 107, 0.3);
+}
+
+.oversight-view__container {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 40px;
+}
+
+.oversight-view__list h2 {
+  font-size: 1.6rem;
+  margin-bottom: 30px;
+  color: #ddd;
+}
+
+.oversight-card {
+  background: rgba(45, 52, 54, 0.4);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+  padding: 30px;
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.oversight-card:hover {
+  background: rgba(45, 52, 54, 0.6);
+  border-color: rgba(255, 107, 107, 0.4);
+  transform: translateX(10px);
+}
+
+.oversight-card--signed {
+  border-left: 6px solid #48dbfb;
+}
+
+.oversight-card__info h3 {
+  font-size: 1.4rem;
+  margin-bottom: 12px;
+  color: #fff;
+}
+
+.oversight-card__milestone {
+  font-size: 1rem;
+  color: #aaa;
+  margin-bottom: 8px;
+}
+
+.oversight-card__milestone strong {
+  color: #fff;
+}
+
+.oversight-card__role {
+  font-size: 0.9rem;
+  color: #666;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.oversight-card__btn {
+  background: #ff6b6b;
+  color: #fff;
+  border: none;
+  padding: 14px 28px;
+  border-radius: 12px;
+  font-weight: 800;
+  font-size: 1rem;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+  transition: all 0.2s ease;
+}
+
+.oversight-card__btn:hover {
+  background: #ee5253;
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(255, 107, 107, 0.5);
+}
+
+.oversight-card__status--signed {
+  color: #48dbfb;
+  font-weight: 800;
+  font-size: 1.1rem;
+  text-shadow: 0 0 10px rgba(72, 219, 251, 0.5);
+}
+
+.oversight-view__rules {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 24px;
+  padding: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  height: fit-content;
+}
+
+.oversight-view__rules h3 {
+  font-size: 1.2rem;
+  margin-bottom: 20px;
+  color: #ff6b6b;
+}
+
+.oversight-view__rules ul {
+  list-style: none;
+  padding: 0;
+}
+
+.oversight-view__rules li {
+  margin-bottom: 16px;
+  font-size: 0.95rem;
+  color: #999;
+  position: relative;
+  padding-left: 24px;
+}
+
+.oversight-view__rules li::before {
+  content: '→';
+  position: absolute;
+  left: 0;
+  color: #ff6b6b;
+}
+
+.oversight-view__note {
+  margin-top: 30px;
+  font-size: 0.85rem;
+  color: #555;
+  font-style: italic;
+  border-top: 1px solid #333;
+  padding-top: 20px;
+}
+
+.oversight-view__toast {
+  position: fixed;
+  bottom: 40px;
+  right: 40px;
+  background: #1a1e26;
+  border: 2px solid #ff6b6b;
+  padding: 20px 40px;
+  border-radius: 16px;
+  font-weight: 700;
+  animation: bounceIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes bounceIn {
+  from { transform: scale(0.8); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}

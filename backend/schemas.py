@@ -51,8 +51,9 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     role: str
-    name: Optional[str] = None
-    access_level: Optional[int] = None
+    name: str
+    access_level: int = 0
+    redirect_path: str = "/"
 
 
 class NonceResponse(BaseModel):
@@ -67,6 +68,14 @@ class MessageResponse(BaseModel):
 
 
 # ── Contractor Registration ──
+
+class ContractorMetadata(BaseModel):
+    registration_id: Optional[str]
+    specialty: Optional[str]
+    license_no: Optional[str]
+    location: Optional[str]
+    trust_score: float
+
 
 class ContractorCreate(BaseModel):
     wallet_address: str

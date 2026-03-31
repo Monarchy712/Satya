@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from routers.citizen import router as citizen_router
 from routers.wallet import router as wallet_router, contractor_router
 from routers.report import router as report_router
+from routers.admin_tasks import router as admin_tasks_router
+
 
 app = FastAPI(
     title="Satya Transparency Platform",
@@ -24,6 +26,8 @@ app.include_router(citizen_router)
 app.include_router(wallet_router)
 app.include_router(contractor_router)
 app.include_router(report_router)
+app.include_router(admin_tasks_router)
+
 
 
 @app.get("/")
