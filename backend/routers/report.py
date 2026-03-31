@@ -3,7 +3,11 @@ from pydantic import BaseModel
 from auth import decode_token
 from config import JWT_SECRET, ROBOFLOW_API_KEY, PRIVATE_KEY
 from blockchain import contract, w3, account, get_identity_hash
+<<<<<<< HEAD
 from ml_utils import analyze_image, calculate_image_score
+=======
+from ml_utils import analyze_image, get_average_confidence
+>>>>>>> dda2beef1bc31841292d5565c9351bfde69d0992
 from fastapi import UploadFile, File
 from typing import List
 
@@ -44,7 +48,7 @@ async def validate_report(
     if user.get("role") != "citizen":
         raise HTTPException(status_code=403, detail="Only citizens can validate reports")
 
-    max_confidence = 0.0
+    best_score = 0.0
     all_results = []
     
     # Process each image until we find one that passes the threshold (20)
@@ -56,15 +60,17 @@ async def validate_report(
         
         all_results.append({
             "filename": file.filename,
-            "confidence": conf,
+            "confidence": avg_conf,
+            "score": score,
             "predictions": res.get("predictions", [])
         })
         
-        if conf > max_confidence:
-            max_confidence = conf
+        if score > best_score:
+            best_score = score
             
         if max_confidence >= 20.0:
             break
+
 
     # 🚨 Automated Banning Logic (User Requirement)
     # If score is less than 20, BAN the user on-chain.
@@ -73,7 +79,7 @@ async def validate_report(
         identity_hash = get_identity_hash(user.get("sub"))
         
         try:
-            print(f"FRAUD DETECTED: Banning user {identity_hash.hex()}...")
+            print(f"FRAUD DETECTED: Score {best_score} < 30. Banning user {identity_hash.hex()}...")
             # We need to ensure account/contract are initialized (handled globally in this file)
             if not contract:
                 raise Exception("Contract not initialized")
@@ -101,8 +107,9 @@ async def validate_report(
 
     return {
         "success": True, 
-        "confidence": max_confidence, 
-        "message": "AI analysis complete. Construction defects detected.",
+        "score": best_score,
+        "confidence": best_score / 100, # for compatibility
+        "message": "AI analysis complete. Construction defects detected and verified.",
         "results": all_results
     }
 

@@ -1,11 +1,18 @@
 import { useState, useEffect } from 'react';
-import { getFactoryContract, getTenderContract, getProvider, TENDER_STATUS } from '../../utils/contracts';
+import { getFactoryContract, getTenderContract, getProvider, getSigner, TENDER_STATUS } from '../../utils/contracts';
+import { useAuth } from '../../context/AuthContext';
 import './TendersPage.css';
 
+
 export default function TendersPage() {
+  const { user, isAuthenticated } = useAuth();
   const [tenders, setTenders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedTender, setExpandedTender] = useState(null);
+  const [bidAmount, setBidAmount] = useState('');
+  const [bidding, setBidding] = useState(false);
+  const [txStatus, setTxStatus] = useState('');
+
 
   useEffect(() => {
     loadTenders();
@@ -65,6 +72,29 @@ export default function TendersPage() {
       console.error('Failed to load tenders:', err);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handlePlaceBid(tenderAddr) {
+    if (!bidAmount) return;
+    setBidding(true);
+    setTxStatus('Requesting MetaMask signature...');
+    try {
+      const signer = await getSigner();
+      const tender = getTenderContract(tenderAddr, signer);
+      
+      setTxStatus('Submitting bid to blockchain...');
+      const tx = await tender.placeBid(BigInt(bidAmount));
+      await tx.wait();
+      
+      setTxStatus('✅ Bid placed successfully!');
+      setBidAmount('');
+      loadTenders();
+    } catch (err) {
+      console.error('Bid failed:', err);
+      setTxStatus(`❌ Error: ${err.message}`);
+    } finally {
+      setBidding(false);
     }
   }
 
@@ -231,11 +261,39 @@ export default function TendersPage() {
                     )}
 
                     <div className="tenders-card__cta">
-                      <button className="tenders-card__bid-btn" disabled>
-                        🔒 Connect wallet to bid (coming soon)
-                      </button>
+                      {t.status === 'BIDDING' && (
+                        <div className="tenders-card__bid-action">
+                          {user?.role === 'contractor' ? (
+                            <>
+                              <input 
+                                type="number" 
+                                placeholder="Enter Bid Amount (Wei)" 
+                                value={bidAmount}
+                                onChange={(e) => setBidAmount(e.target.value)}
+                                className="tenders-card__bid-input"
+                              />
+                              <button 
+                                className="tenders-card__bid-btn"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handlePlaceBid(t.address);
+                                }}
+                                disabled={bidding}
+                              >
+                                {bidding ? 'Submitting...' : '🦊 Place Bid via MetaMask'}
+                              </button>
+                            </>
+                          ) : (
+                            <button className="tenders-card__bid-btn" disabled>
+                              🔒 Only registered contractors can bid
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
+                    {txStatus && <div className="tenders-card__tx-status">{txStatus}</div>}
                   </div>
+
                 )}
               </div>
             ))}

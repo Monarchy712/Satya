@@ -16,6 +16,11 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(false);
   const [txStatus, setTxStatus] = useState('');
   const [error, setError] = useState('');
+  const [showWinnerModal, setShowWinnerModal] = useState(false);
+  const [selectedTender, setSelectedTender] = useState(null);
+  const [winnerNote, setWinnerNote] = useState('');
+  const [bids, setBids] = useState([]);
+
 
   // ── Create Tender Form State ──
   const [admins, setAdmins] = useState(['', '', '', '']);
@@ -465,8 +470,54 @@ export default function AdminDashboard() {
                       <span className="admin-tender-card__meta-value">{t.contractor.slice(0, 6)}...{t.contractor.slice(-4)}</span>
                     </div>
                   )}
+
+                  {t.status === 'BIDDING' && t.bidCount > 0 && (
+                    <button 
+                      className="admin-tender-card__btn admin-tender-card__btn--select"
+                      onClick={async () => {
+                        const provider = getProvider();
+                        const tenderContract = getTenderContract(t.address, provider);
+                        const bidsList = await tenderContract.getAllBids();
+                        setBids(bidsList.map(b => ({ bidder: b.bidder, amount: b.amount.toString() })));
+                        setSelectedTender(t.address);
+                        setShowWinnerModal(true);
+                      }}
+                    >
+                      🏆 Select Winner
+                    </button>
+                  )}
                 </div>
               ))}
+            </div>
+          )}
+
+          {showWinnerModal && (
+            <div className="admin-modal">
+              <div className="admin-modal__content">
+                <h2>Select Winning Bidder</h2>
+                <div className="admin-modal__bids">
+                  {bids.length === 0 ? <p>No bids yet.</p> : (
+                    bids.sort((a, b) => Number(a.amount) - Number(b.amount)).map((b, i) => (
+                      <div key={b.bidder} className={`admin-modal__bid-row ${i < 3 ? 'admin-modal__bid-row--top' : ''}`}>
+                        <span>{i + 1}. {b.bidder}</span>
+                        <strong>₹{b.amount}</strong>
+                        <button className="admin-modal__select-btn" onClick={() => handleConfirmWinner(b.bidder, b.amount)}>
+                          Select
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+                <div className="admin-modal__note">
+                  <label>Selection Note (Internal)</label>
+                  <textarea 
+                    value={winnerNote} 
+                    onChange={e => setWinnerNote(e.target.value)}
+                    placeholder="Provide justification for selecting this contractor..."
+                  />
+                </div>
+                <button className="admin-modal__close" onClick={() => setShowWinnerModal(false)}>Cancel</button>
+              </div>
             </div>
           )}
         </div>
@@ -474,3 +525,36 @@ export default function AdminDashboard() {
     </div>
   );
 }
+
+// ── Winner Selection Handler ──
+async function handleConfirmWinner(address, amount) {
+  setLoading(true);
+  setTxStatus('Selecting winner on-chain...');
+  try {
+    const signer = await getSigner();
+    const factory = getFactoryContract(signer);
+    const tx = await factory.selectWinner(selectedTender, address, BigInt(amount));
+    await tx.wait();
+    
+    // Save note to backend
+    if (winnerNote) {
+      await fetch('http://localhost:8000/api/admin/tender-note', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('satya_token')}`
+        },
+        body: JSON.stringify({ tender_address: selectedTender, note: winnerNote })
+      });
+    }
+    
+    setShowWinnerModal(false);
+    loadTenders();
+    setTxStatus('✅ Winner selected successfully!');
+  } catch (err) {
+    setError(err.message);
+  } finally {
+    setLoading(false);
+  }
+}
+

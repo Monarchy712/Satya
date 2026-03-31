@@ -7,7 +7,7 @@ from eth_utils import keccak
 from eth_utils import keccak
 
 # ── Factory Info ──
-FACTORY_ADDRESS = "0x557f0988F9cD626799eb35E4D0a1b4B7fC484B11"
+FACTORY_ADDRESS = "0xb87d0f345b8497Ef86f0Fa8F65A0882A11B3613D"
 FACTORY_ABI = [
     {
         "inputs": [{"internalType": "address", "name": "", "type": "address"}],
