@@ -5,6 +5,7 @@ from database import get_db
 from models import Admin, Contractor
 from schemas import WalletConnect, WalletVerify, NonceResponse, TokenResponse, ContractorCreate, MessageResponse
 from auth import create_token, verify_signature, build_sign_message
+from blockchain import check_is_government
 
 router = APIRouter(prefix="/api/auth/wallet", tags=["Wallet Auth"])
 
@@ -17,9 +18,17 @@ def wallet_connect(payload: WalletConnect, db: Session = Depends(get_db)):
     """
     address = payload.wallet_address.lower()
 
-    # Check admins first
-    admin = db.query(Admin).filter(Admin.wallet_address == address).first()
-    if admin:
+    # Check admins first via Blockchain Source of Truth
+    is_gov = check_is_government(address)
+    if is_gov:
+        # Upsert admin local presence solely to store the nonce logic securely
+        admin = db.query(Admin).filter(Admin.wallet_address == address).first()
+        if not admin:
+            admin = Admin(wallet_address=address, name="Government Admin", access_level=0)
+            db.add(admin)
+            db.commit()
+            db.refresh(admin)
+
         # Rotate nonce for security
         admin.nonce = secrets.token_hex(16)
         db.commit()
@@ -54,30 +63,33 @@ def wallet_verify(payload: WalletVerify, db: Session = Depends(get_db)):
     """
     address = payload.wallet_address.lower()
 
-    # Try admin
-    admin = db.query(Admin).filter(Admin.wallet_address == address).first()
-    if admin:
-        message = build_sign_message(admin.nonce)
-        if not verify_signature(address, message, payload.signature):
-            raise HTTPException(status_code=401, detail="Signature verification failed.")
+    # Try admin via Blockchain
+    if check_is_government(address):
+        admin = db.query(Admin).filter(Admin.wallet_address == address).first()
+        if admin:
+            message = build_sign_message(admin.nonce)
+            if not verify_signature(address, message, payload.signature):
+                raise HTTPException(status_code=401, detail="Signature verification failed.")
 
-        # Rotate nonce after successful auth
-        admin.nonce = secrets.token_hex(16)
-        db.commit()
+            # Rotate nonce after successful auth
+            admin.nonce = secrets.token_hex(16)
+            db.commit()
 
-        token = create_token({
-            "sub": admin.id,
-            "role": "admin",
-            "name": admin.name,
-            "access_level": admin.access_level,
-            "wallet": address,
-        })
-        return TokenResponse(
-            access_token=token,
-            role="admin",
-            name=admin.name,
-            access_level=admin.access_level,
-        )
+            token = create_token({
+                "sub": admin.id,
+                "role": "admin",
+                "name": admin.name,
+                "access_level": admin.access_level,
+                "wallet": address,
+            })
+            return TokenResponse(
+                access_token=token,
+                role="admin",
+                name=admin.name,
+                access_level=admin.access_level,
+            )
+        else:
+            raise HTTPException(status_code=401, detail="Admin session not initialized. Re-connect wallet.")
 
     # Try contractor
     contractor = db.query(Contractor).filter(Contractor.wallet_address == address).first()
