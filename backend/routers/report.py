@@ -1,11 +1,10 @@
-from fastapi import APIRouter, HTTPException, Depends, Header
+from fastapi import APIRouter, HTTPException, Depends, Header, UploadFile, File
 from pydantic import BaseModel
-from auth import decode_token
-from config import JWT_SECRET, ROBOFLOW_API_KEY, PRIVATE_KEY
+from typing import List
+from auth import get_current_user
+from config import ROBOFLOW_API_KEY, PRIVATE_KEY
 from blockchain import contract, w3, account, get_identity_hash
 from ml_utils import analyze_image, calculate_image_score
-from fastapi import UploadFile, File
-from typing import List
 
 router = APIRouter(prefix="/api/reports", tags=["Reports"])
 
@@ -18,15 +17,6 @@ class MLValidateRequest(BaseModel):
     description: str
     image_urls: list[str] = []
 
-
-def get_current_user(authorization: str = Header(None)):
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Unauthorized")
-    token = authorization.split(" ")[1]
-    payload = decode_token(token)
-    if not payload:
-        raise HTTPException(status_code=401, detail="Invalid token")
-    return payload
 
 # Blockchain logic is now handled in blockchain.py
 
@@ -44,39 +34,36 @@ async def validate_report(
     if user.get("role") != "citizen":
         raise HTTPException(status_code=403, detail="Only citizens can validate reports")
 
-    best_score = 0.0
+    max_score = 0.0
     all_results = []
     
     # Process each image until we find one that passes the threshold (20)
-    # We limit to 3 images to prevent API abuse
     for file in files[:3]:
         content = await file.read()
         res = analyze_image(content)
-        conf = calculate_image_score(res)
+        score = calculate_image_score(res)
         
         all_results.append({
             "filename": file.filename,
-            "confidence": avg_conf,
+            "confidence": score / 100,
             "score": score,
             "predictions": res.get("predictions", [])
         })
         
-        if score > best_score:
-            best_score = score
+        if score > max_score:
+            max_score = score
             
-        if max_confidence >= 20.0:
+        if max_score >= 20.0:
             break
 
-
-    # 🚨 Automated Banning Logic (User Requirement)
+    # 🚨 Automated Banning Logic
     # If score is less than 20, BAN the user on-chain.
-    if max_confidence < 20.0:
+    if max_score < 20.0:
         # Get unique identity hash from JWT
         identity_hash = get_identity_hash(user.get("sub"))
         
         try:
-            print(f"FRAUD DETECTED: Score {best_score} < 30. Banning user {identity_hash.hex()}...")
-            # We need to ensure account/contract are initialized (handled globally in this file)
+            print(f"FRAUD DETECTED: Score {max_score} < 20. Banning user {identity_hash.hex()}...")
             if not contract:
                 raise Exception("Contract not initialized")
 
@@ -92,8 +79,8 @@ async def validate_report(
             
             return {
                 "success": False,
-                "confidence": max_confidence,
-                "message": f"AI rejected your report (Score: {max_confidence:.1f}/100). You have been BANNED for 30 days for fraudulent reporting.",
+                "confidence": max_score,
+                "message": f"AI rejected your report (Score: {max_score:.1f}/100). You have been BANNED for 30 days for fraudulent reporting.",
                 "banned": True,
                 "txHash": ban_hash.hex()
             }
@@ -103,8 +90,8 @@ async def validate_report(
 
     return {
         "success": True, 
-        "score": best_score,
-        "confidence": best_score / 100, # for compatibility
+        "score": max_score,
+        "confidence": max_score / 100, 
         "message": "AI analysis complete. Construction defects detected and verified.",
         "results": all_results
     }

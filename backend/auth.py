@@ -3,6 +3,16 @@ from jose import jwt, JWTError
 from eth_account.messages import encode_defunct
 from eth_account import Account
 from config import JWT_SECRET, JWT_ALGORITHM, JWT_EXPIRY_MINUTES
+from fastapi import Header, HTTPException
+
+def get_current_user(authorization: str = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    token = authorization.split(" ")[1]
+    payload = decode_token(token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    return payload
 
 
 def create_token(data: dict) -> str:

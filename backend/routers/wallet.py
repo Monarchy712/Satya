@@ -61,6 +61,7 @@ def wallet_verify(payload: WalletVerify, db: Session = Depends(get_db)):
     Step 2 of MetaMask auth: verifies the signature against the nonce
     and issues a JWT if valid.
     """
+    address = payload.wallet_address.lower()
     # Try admin / committee via Blockchain
     if check_is_government(address):
         # Super Admin check

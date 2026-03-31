@@ -344,8 +344,81 @@ except Exception as e:
     print(f"Blockchain module warned: {e}")
     contract = None
     factory_contract = None
-    contract = None
     account = None
+
+# ── Tender Contract Info ──
+TENDER_ABI = json.loads("""
+[
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "id",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "percent",
+				"type": "uint256"
+			}
+		],
+		"name": "evaluateMilestone",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "id",
+				"type": "uint256"
+			}
+		],
+		"name": "submitWorkForReview",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	}
+]
+""")
+
+class TxWrapper:
+    def __init__(self, tx_hash):
+        self.hash = tx_hash
+    def wait(self):
+        return w3.eth.wait_for_transaction_receipt(self.hash)
+
+class TenderContractWrapper:
+    def __init__(self, address, signer):
+        self.contract = w3.eth.contract(address=w3.to_checksum_address(address), abi=TENDER_ABI)
+        self.signer = signer
+    
+    def _send_tx(self, func, *args):
+        tx = func(*args).build_transaction({
+            'from': self.signer.address,
+            'nonce': w3.eth.get_transaction_count(self.signer.address),
+            'maxFeePerGas': w3.eth.gas_price * 2,
+            'maxPriorityFeePerGas': w3.eth.max_priority_fee or w3.to_wei(1, 'gwei'),
+        })
+        signed = w3.eth.account.sign_transaction(tx, private_key=PRIVATE_KEY)
+        tx_hash = w3.eth.send_raw_transaction(signed.rawTransaction)
+        return TxWrapper(tx_hash)
+
+    def evaluateMilestone(self, milestone_id, percent):
+        return self._send_tx(self.contract.functions.evaluateMilestone, milestone_id, percent)
+
+    def submitWorkForReview(self, milestone_id):
+        return self._send_tx(self.contract.functions.submitWorkForReview, milestone_id)
+
+def get_government_signer():
+    """Returns the account object for signing government actions."""
+    return account
+
+def get_tender_contract(tender_address: str, signer):
+    """Returns a wrapped contract instance that supports Brownie-style .wait() syntax."""
+    return TenderContractWrapper(tender_address, signer)
+
 
 def get_identity_hash(identifier: str):
     """Generates a keccak256 hash for a given identifier (email, wallet, etc.)"""
