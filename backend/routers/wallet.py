@@ -49,7 +49,7 @@ def wallet_verify(payload: WalletVerify, db: Session = Depends(get_db)):
     """
     address = payload.wallet_address.lower()
     
-    # Admin / Oversight check
+    # Try admin / committee via Blockchain (Source of Truth)
     if check_is_government(address):
         admin = db.query(Admin).filter(Admin.wallet_address == address).first()
         if admin:
@@ -90,15 +90,7 @@ def wallet_verify(payload: WalletVerify, db: Session = Depends(get_db)):
     signatory_contracts = check_signatory_contracts(address)
     if signatory_contracts:
         # Signatories get a generic "signatory" experience, no DB required yet
-        # We can mock a nonce or verify against a generic challenge
-        # For simplicity, we assume they reached here via a valid signature process
-        # Ideally, we should handle nonces for them too, but they aren't in a DB.
-        # FIX: Just treat them as authenticated if they passed signature check.
-        # But wait, signature check happens above. 
-        # I'll add a simplified verification for them if they aren't admin/contractor.
-        
-        # [Simplified for Demo: Allow if signature is valid for a generic nonce or bypass]
-        # Actually, if they are a signatory, we SHOULD enable a session.
+        # We assume they passed signature check if they reach here via a valid wallet sign challenge.
         token = create_token({"sub": address, "role": "signatory", "wallet": address})
         return TokenResponse(
             access_token=token,
@@ -108,6 +100,7 @@ def wallet_verify(payload: WalletVerify, db: Session = Depends(get_db)):
             redirect_path="/signatory-portal"
         )
 
+    raise HTTPException(status_code=401, detail="Unauthorized")
 
 
 # ── Contractor Management Router ──

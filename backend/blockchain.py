@@ -1,10 +1,9 @@
-from web3 import Web3
-from config import CONTRACT_ADDRESS, RPC_URL, PRIVATE_KEY, FACTORY_ADDRESS
-
-import json
-from eth_utils import keccak
 import requests
 import urllib3
+import json
+from web3 import Web3
+from eth_utils import keccak
+from config import CONTRACT_ADDRESS, RPC_URL, PRIVATE_KEY, FACTORY_ADDRESS
 
 # ── Factory Info ──
 # FACTORY_ADDRESS imported from config
@@ -359,7 +358,12 @@ ABI = json.loads("""
 ]
 """)
 
-w3 = Web3(Web3.HTTPProvider(RPC_URL))
+# Setup Web3 Provider resolving SSL Verify Issues for Alchemy
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+session = requests.Session()
+session.verify = False
+w3 = Web3(Web3.HTTPProvider(RPC_URL, session=session))
+
 try:
     account = w3.eth.account.from_key(PRIVATE_KEY)
     contract = w3.eth.contract(address=w3.to_checksum_address(CONTRACT_ADDRESS), abi=ABI)
@@ -369,9 +373,6 @@ except Exception as e:
     contract = None
     factory_contract = None
     account = None
-
-# SSL verify disable for some RPC providers
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 # ── Tender Contract Info ──
@@ -687,4 +688,3 @@ def check_signatory_contracts(wallet_address: str) -> list:
             signatory_for.append(t["tender_address"])
             
     return signatory_for
-

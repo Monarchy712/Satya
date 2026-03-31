@@ -55,7 +55,6 @@ def verify_otp(payload: AadhaarVerifyOTP):
         )
 
     if payload.otp != VALID_OTP:
-        from fastapi import HTTPException
         raise HTTPException(status_code=400, detail="Invalid OTP. Please try again.")
 
     # Remove from sessions after successful verification

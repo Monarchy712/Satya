@@ -85,7 +85,7 @@ export default function ReportModal({ contract, onClose }) {
         return;
       }
 
-      setStatus(`AI Analysis: Score ${Math.round(mlResult.score)}/100. Verification passed. Uploading...`);
+      setStatus(`AI Analysis: ${Math.round(mlResult.score)}/100 Score. Uploading...`);
       const timestamp = Date.now();
       let imagesData = [];
 
@@ -117,7 +117,7 @@ export default function ReportModal({ contract, onClose }) {
 
       // 3. Submit to our backend (which handles the blockchain tx)
       // Passing the confidence score from ML step for blockchain scaling
-      await submitReport(contract.id, finalCID, mlResult.confidence);
+      await submitReport(contract.id, finalCID, mlResult.score);
 
       setStatus("✅ Report securely recorded!");
       setTimeout(() => onClose(), 2000);

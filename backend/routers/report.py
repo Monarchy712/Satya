@@ -1,11 +1,10 @@
-from fastapi import APIRouter, HTTPException, Depends, Header
+from fastapi import APIRouter, HTTPException, Depends, Header, UploadFile, File
 from pydantic import BaseModel
-from auth import decode_token, get_current_user
-from config import JWT_SECRET, ROBOFLOW_API_KEY, PRIVATE_KEY
-from blockchain import contract, w3, account, get_identity_hash
-from ml_utils import analyze_image, get_average_confidence
-from fastapi import UploadFile, File
 from typing import List
+from auth import get_current_user
+from config import ROBOFLOW_API_KEY, PRIVATE_KEY
+from blockchain import contract, w3, account, get_identity_hash
+from ml_utils import analyze_image, calculate_image_score
 
 router = APIRouter(prefix="/api/reports", tags=["Reports"])
 
@@ -17,7 +16,6 @@ class ReportSubmit(BaseModel):
 class MLValidateRequest(BaseModel):
     description: str
     image_urls: list[str] = []
-
 
 
 # Blockchain logic is now handled in blockchain.py
@@ -36,39 +34,36 @@ async def validate_report(
     if user.get("role") != "citizen":
         raise HTTPException(status_code=403, detail="Only citizens can validate reports")
 
-    best_score = 0.0
+    max_score = 0.0
     all_results = []
     
-    # Process each image, calculating average confidence for each
+    # Process each image until we find one that passes the threshold (20)
     for file in files[:3]:
         content = await file.read()
         res = analyze_image(content)
-        avg_conf = get_average_confidence(res)
-        score = avg_conf * 100
+        score = calculate_image_score(res)
         
         all_results.append({
             "filename": file.filename,
-            "confidence": avg_conf,
+            "confidence": score / 100,
             "score": score,
             "predictions": res.get("predictions", [])
         })
         
-        if score > best_score:
-            best_score = score
+        if score > max_score:
+            max_score = score
             
-        if best_score >= 30:
+        if max_score >= 20.0:
             break
 
-
-    # 🚨 Automated Banning Logic (User Requirement)
-    # If no defects detected (best_score < 30), BAN the user on-chain.
-    if best_score < 30:
+    # 🚨 Automated Banning Logic
+    # If score is less than 20, BAN the user on-chain.
+    if max_score < 20.0:
         # Get unique identity hash from JWT
         identity_hash = get_identity_hash(user.get("sub"))
         
         try:
-            print(f"FRAUD DETECTED: Score {best_score} < 30. Banning user {identity_hash.hex()}...")
-            # We need to ensure account/contract are initialized (handled globally in this file)
+            print(f"FRAUD DETECTED: Score {max_score} < 20. Banning user {identity_hash.hex()}...")
             if not contract:
                 raise Exception("Contract not initialized")
 
@@ -84,8 +79,8 @@ async def validate_report(
             
             return {
                 "success": False,
-                "score": best_score,
-                "message": f"AI rejected your report with a score of {round(best_score, 1)}. Threshold is 30. You have been BANNED for 30 days for fraudulent reporting.",
+                "confidence": max_score,
+                "message": f"AI rejected your report (Score: {max_score:.1f}/100). You have been BANNED for 30 days for fraudulent reporting.",
                 "banned": True,
                 "txHash": ban_hash.hex()
             }
@@ -95,8 +90,8 @@ async def validate_report(
 
     return {
         "success": True, 
-        "score": best_score,
-        "confidence": best_score / 100, # for compatibility
+        "score": max_score,
+        "confidence": max_score / 100, 
         "message": "AI analysis complete. Construction defects detected and verified.",
         "results": all_results
     }
@@ -110,7 +105,6 @@ def submit_report(payload: ReportSubmit, user=Depends(get_current_user)):
     if not aadhaar_last4:
         raise HTTPException(status_code=400, detail="Missing aadhaar context")
 
-    # identity_hash = hmac.new(JWT_SECRET.encode(), aadhaar_last4.encode(), hashlib.sha256).digest()
     identity_hash = get_identity_hash(user.get("sub")) # bytes32 format for solidity
 
 
@@ -147,8 +141,8 @@ def submit_report(payload: ReportSubmit, user=Depends(get_current_user)):
 
     # 4. Process Transaction
     try:
-        # Scale 0-1 confidence from ML to 0-100 for Blockchain
-        confidence_scaled = int(payload.confidence * 100)
+        # Confidence score from ML is already scaled 0-100
+        confidence_scaled = int(payload.confidence)
         # Ensure it stays within bounds [0, 100]
         confidence_final = max(0, min(100, confidence_scaled))
         

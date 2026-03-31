@@ -5,7 +5,6 @@ from eth_account.messages import encode_defunct
 from eth_account import Account
 from config import JWT_SECRET, JWT_ALGORITHM, JWT_EXPIRY_MINUTES
 
-
 def create_token(data: dict) -> str:
     """Create a JWT token with expiry."""
     payload = data.copy()
