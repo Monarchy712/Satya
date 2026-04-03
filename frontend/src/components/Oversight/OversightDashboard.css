@@ -72,6 +72,17 @@
   border-left: 6px solid #48dbfb;
 }
 
+.oversight-card--completed {
+  background: rgba(39, 174, 96, 0.2);
+  border-left: 6px solid #2ecc71;
+  border-color: rgba(46, 204, 113, 0.4);
+}
+
+.oversight-card--completed:hover {
+  background: rgba(39, 174, 96, 0.3);
+  border-color: #2ecc71;
+}
+
 .oversight-card__info h3 {
   font-size: 1.4rem;
   margin-bottom: 12px;

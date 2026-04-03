@@ -112,6 +112,15 @@
   border-color: var(--c-accent);
 }
 
+.contractor-card--completed {
+  background: #f0fdf4;
+  border-color: #86efac;
+}
+
+.contractor-card--completed:hover {
+  border-color: #15803d;
+}
+
 .contractor-card__header {
   display: flex;
   justify-content: space-between;

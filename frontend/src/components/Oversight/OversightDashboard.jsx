@@ -59,7 +59,8 @@ export default function OversightDashboard() {
           const tenderStatusStr = TENDER_STATUS[Number(statusNum)];
 
           // Only show ACTIVE tenders (those with milestones to review)
-          if (tenderStatusStr !== 'ACTIVE') continue;
+          // Show ACTIVE and COMPLETED tenders
+          if (tenderStatusStr !== 'ACTIVE' && tenderStatusStr !== 'COMPLETED') continue;
 
           const mIdx = Number(currentMilestoneId);
           const milestone = await tender.milestones(mIdx);
@@ -94,6 +95,7 @@ export default function OversightDashboard() {
             milestonePercentage: Number(milestone.percentage),
             alreadySigned,
             sigCount,
+            tenderStatus: tenderStatusStr,
           });
         } catch (err) {
           console.error(`Error loading tender ${tAddr}:`, err);
@@ -227,7 +229,10 @@ export default function OversightDashboard() {
               tenders.map((t) => (
                 <div
                   key={t.address + t.currentMilestone}
-                  className={`oversight-card ${t.alreadySigned ? 'oversight-card--signed' : ''}`}
+                  className={`oversight-card ${
+                    t.tenderStatus === 'COMPLETED' ? 'oversight-card--completed' : 
+                    t.alreadySigned ? 'oversight-card--signed' : ''
+                  }`}
                 >
                   <div className="oversight-card__info">
                     <h3 className="oversight-card__address">
@@ -251,7 +256,11 @@ export default function OversightDashboard() {
                   </div>
 
                   <div className="oversight-card__action">
-                    {t.milestoneStatusNum === 1 ? (
+                    {t.tenderStatus === 'COMPLETED' ? (
+                      <div className="oversight-card__status oversight-card__status--signed" style={{ color: '#2ecc71', textShadow: '0 0 10px rgba(46, 204, 113, 0.5)' }}>
+                        PROJECT COMPLETED ✓
+                      </div>
+                    ) : t.milestoneStatusNum === 1 ? (
                       t.sigCount >= 4 ? (
                         <button
                           className="oversight-card__btn oversight-card__btn--execute"

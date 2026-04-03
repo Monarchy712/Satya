@@ -100,7 +100,10 @@ export default function ContractorDashboard() {
               {myContracts.length > 0 ? (
                 <div className="contractor-contracts-list">
                   {myContracts.map(t => (
-                    <div key={t.tender_address} className="contractor-card">
+                    <div 
+                      key={t.tender_address} 
+                      className={`contractor-card ${t.status === 'COMPLETED' ? 'contractor-card--completed' : ''}`}
+                    >
                        <div className="contractor-card__header">
                           <div className={`contractor-card__tag contractor-card__tag--${t.status.toLowerCase()}`}>
                             {t.status}
