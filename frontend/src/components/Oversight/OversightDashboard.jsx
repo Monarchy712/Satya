@@ -155,6 +155,35 @@ export default function OversightDashboard() {
     }
   }
 
+  async function handleExecute(tenderAddr, milestoneId) {
+    setSigning(true);
+    setToast('');
+    setError('');
+    try {
+      const res = await fetch('http://localhost:8000/api/committee/execute', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          tender_address: tenderAddr,
+          milestone_id: milestoneId,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Execution failed');
+
+      setToast(`✅ Milestone executed successfully!`);
+      loadData();
+    } catch (err) {
+      setError(`Execution failed: ${err.message}`);
+    } finally {
+      setSigning(false);
+    }
+  }
+
   // Pretty role name mapping
   const formatRole = (role) => {
     const map = {
@@ -226,7 +255,7 @@ export default function OversightDashboard() {
                       t.sigCount >= 4 ? (
                         <button
                           className="oversight-card__btn oversight-card__btn--execute"
-                          onClick={() => handleSign(t.address, t.currentMilestone)}
+                          onClick={() => handleExecute(t.address, t.currentMilestone)}
                           disabled={signing}
                         >
                           ⚙️ Execute On-Chain

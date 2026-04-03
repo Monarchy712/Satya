@@ -160,6 +160,55 @@ def sign_milestone(
     }
 
 
+class ExecuteMilestonePayload(BaseModel):
+    tender_address: str
+    milestone_id: int
+
+
+@router.post("/api/committee/execute")
+def trigger_milestone_execution(
+    payload: ExecuteMilestonePayload,
+    db: Session = Depends(get_db),
+    user: dict = Depends(get_current_user),
+):
+    """
+    Manually trigger on-chain execution if 4/4 signatures are already collected.
+    Uses the government signer to pay gas.
+    """
+    if user["role"] not in ["committee", "super_admin"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    tender_addr = payload.tender_address.lower()
+    milestone_id = payload.milestone_id
+
+    # 1. Check if already executed on-chain
+    if is_milestone_executed(tender_addr, milestone_id):
+        return {"message": "Already executed on-chain", "success": True}
+
+    # 2. Get sigs
+    all_sigs = db.query(MilestoneApproval).filter(
+        MilestoneApproval.tender_address == tender_addr,
+        MilestoneApproval.milestone_id == milestone_id,
+    ).all()
+    
+    if len(all_sigs) < 4:
+        raise HTTPException(status_code=400, detail=f"Insufficient signatures ({len(all_sigs)}/4)")
+
+    # 3. Execute
+    try:
+        sig_list = [s.signature for s in all_sigs[:4]]
+        print(f">>> Manual execution triggered for tender {tender_addr} milestone {milestone_id}")
+        tx = execute_milestone_with_signatures(tender_addr, milestone_id, sig_list)
+        receipt = tx.wait()
+        return {
+            "message": f"Milestone executed successfully! Tx: {receipt.transactionHash.hex()}",
+            "success": True,
+            "executed": True,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Execution failed: {str(e)}")
+
+
 def _get_sig_count(db: Session, tender_addr: str, milestone_id: int) -> int:
     return db.query(MilestoneApproval).filter(
         MilestoneApproval.tender_address == tender_addr,
