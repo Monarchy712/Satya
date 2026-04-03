@@ -145,7 +145,7 @@ function App() {
       <Route 
         path="/oversight" 
         element={
-          <ProtectedRoute allowedRoles={['committee', 'super_admin']}>
+          <ProtectedRoute allowedRoles={['committee']}>
             <GlobalRoute><OversightDashboard /></GlobalRoute>
           </ProtectedRoute>
         } 

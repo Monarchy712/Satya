@@ -8,7 +8,7 @@ from models import Admin, Contractor
 from schemas import WalletConnect, WalletVerify, NonceResponse, TokenResponse, ContractorCreate, MessageResponse, ContractorMetadata
 
 from auth import create_token, verify_signature, build_sign_message
-from blockchain import check_is_government, check_signatory_contracts
+from blockchain import check_is_government, check_signatory_contracts, get_user_role_on_tender
 
 router = APIRouter(prefix="/api/auth/wallet", tags=["Wallet Auth"])
 
@@ -16,10 +16,14 @@ router = APIRouter(prefix="/api/auth/wallet", tags=["Wallet Auth"])
 def wallet_connect(payload: WalletConnect, db: Session = Depends(get_db)):
     """
     Step 1: MetaMask connection. Returns a nonce for the wallet address.
+    Determines role by checking:
+      1. isGovernment on TenderFactory (gov/super_admin)
+      2. Contractor DB registration
+      3. getUserTenders + getRoleName (committee member)
     """
     address = payload.wallet_address.lower()
     
-    # Check if admin via Blockchain Source of Truth
+    # 1. Check if gov via Blockchain Source of Truth
     if check_is_government(address):
         admin = db.query(Admin).filter(Admin.wallet_address == address).first()
         if not admin:
@@ -32,14 +36,31 @@ def wallet_connect(payload: WalletConnect, db: Session = Depends(get_db)):
         db.commit()
         return NonceResponse(nonce=admin.nonce, message=build_sign_message(admin.nonce), role="admin")
 
-    # Check registered contractors
+    # 2. Check registered contractors
     contractor = db.query(Contractor).filter(Contractor.wallet_address == address).first()
     if contractor:
         contractor.nonce = secrets.token_hex(16)
         db.commit()
         return NonceResponse(nonce=contractor.nonce, message=build_sign_message(contractor.nonce), role="contractor")
 
-    raise HTTPException(status_code=404, detail="Wallet address not registered.")
+    # 3. Check if committee member via on-chain getUserTenders + getRoleName
+    committee_tenders = check_signatory_contracts(address)
+    if committee_tenders:
+        # Auto-provision an admin row for the committee member so we can store nonce
+        admin = db.query(Admin).filter(Admin.wallet_address == address).first()
+        if not admin:
+            # Fetch the actual on-chain role name for the first tender they're on
+            role_name = get_user_role_on_tender(address, committee_tenders[0])
+            admin = Admin(wallet_address=address, name=role_name, access_level=1)
+            db.add(admin)
+            db.commit()
+            db.refresh(admin)
+        
+        admin.nonce = secrets.token_hex(16)
+        db.commit()
+        return NonceResponse(nonce=admin.nonce, message=build_sign_message(admin.nonce), role="committee")
+
+    raise HTTPException(status_code=404, detail="Wallet address not registered. If you are a committee member, ensure the tender was created with your address.")
 
 
 @router.post("/verify", response_model=TokenResponse)
@@ -49,31 +70,31 @@ def wallet_verify(payload: WalletVerify, db: Session = Depends(get_db)):
     """
     address = payload.wallet_address.lower()
     
-    # Try admin / committee via Blockchain (Source of Truth)
+    # 1. Try gov (Source of Truth: isGovernment on-chain)
     if check_is_government(address):
         admin = db.query(Admin).filter(Admin.wallet_address == address).first()
         if admin:
             if not verify_signature(address, build_sign_message(admin.nonce), payload.signature):
-                raise HTTPException(status_code=401, detail="Signature failed.")
+                raise HTTPException(status_code=401, detail="Signature verification failed.")
             
             admin.nonce = secrets.token_hex(16)
             db.commit()
             
-            role = "super_admin" if admin.access_level == 0 else "committee"
-            token = create_token({"sub": admin.id, "role": role, "wallet": address})
+            # Gov officials (access_level 0) get super_admin role
+            token = create_token({"sub": admin.id, "role": "super_admin", "wallet": address})
             return TokenResponse(
                 access_token=token, 
-                role=role, 
+                role="super_admin", 
                 name=admin.name, 
-                access_level=admin.access_level,
-                redirect_path="/admin" if admin.access_level == 0 else "/oversight"
+                access_level=0,
+                redirect_path="/admin"
             )
 
-    # Contractor check
+    # 2. Contractor check
     contractor = db.query(Contractor).filter(Contractor.wallet_address == address).first()
     if contractor:
         if not verify_signature(address, build_sign_message(contractor.nonce), payload.signature):
-            raise HTTPException(status_code=401, detail="Signature failed.")
+            raise HTTPException(status_code=401, detail="Signature verification failed.")
         
         contractor.nonce = secrets.token_hex(16)
         db.commit()
@@ -86,21 +107,30 @@ def wallet_verify(payload: WalletVerify, db: Session = Depends(get_db)):
             redirect_path="/contractor"
         )
 
-    # Signatory (Project-Specific Admin) check
-    signatory_contracts = check_signatory_contracts(address)
-    if signatory_contracts:
-        # Signatories get a generic "signatory" experience, no DB required yet
-        # We assume they passed signature check if they reach here via a valid wallet sign challenge.
-        token = create_token({"sub": address, "role": "signatory", "wallet": address})
+    # 3. Committee member (on-chain admin for a tender)
+    committee_tenders = check_signatory_contracts(address)
+    if committee_tenders:
+        admin = db.query(Admin).filter(Admin.wallet_address == address).first()
+        if admin:
+            if not verify_signature(address, build_sign_message(admin.nonce), payload.signature):
+                raise HTTPException(status_code=401, detail="Signature verification failed.")
+            
+            admin.nonce = secrets.token_hex(16)
+            db.commit()
+
+        # Get their on-chain role name for display
+        role_name = get_user_role_on_tender(address, committee_tenders[0])
+        
+        token = create_token({"sub": address, "role": "committee", "wallet": address})
         return TokenResponse(
             access_token=token,
-            role="signatory",
-            name="Project Signatory",
-            access_level=1, # Limited access
-            redirect_path="/signatory-portal"
+            role="committee",
+            name=role_name,
+            access_level=1,
+            redirect_path="/oversight"
         )
 
-    raise HTTPException(status_code=401, detail="Unauthorized")
+    raise HTTPException(status_code=401, detail="Unauthorized. Wallet not linked to any on-chain role.")
 
 
 # ── Contractor Management Router ──
@@ -109,7 +139,6 @@ contractor_router = APIRouter(prefix="/api/contractors", tags=["Contractor Manag
 @contractor_router.get("/list", response_model=List[ContractorMetadata])
 def list_contractors(db: Session = Depends(get_db)):
     """Fetch all registered contractors."""
-    # Note: schemas.ContractorMetadata must handle the ORM model conversion
     return db.query(Contractor).all()
 
 @contractor_router.post("/register", response_model=MessageResponse)

@@ -1,3 +1,4 @@
+import os
 import requests
 import urllib3
 import json
@@ -39,6 +40,13 @@ FACTORY_ABI = [
         "inputs": [{"internalType": "address", "name": "", "type": "address"}],
         "name": "isGovernment",
         "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [{"internalType": "address", "name": "user", "type": "address"}],
+        "name": "getUserTenders",
+        "outputs": [{"internalType": "address[]", "name": "", "type": "address[]"}],
         "stateMutability": "view",
         "type": "function"
     }
@@ -375,157 +383,9 @@ except Exception as e:
     account = None
 
 
-# ── Tender Contract Info ──
-TENDER_ABI = json.loads("""
-[
-    {
-        "inputs": [],
-        "name": "tenderStatus",
-        "outputs": [{"internalType": "uint8", "name": "", "type": "uint8"}],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "contractor",
-        "outputs": [{"internalType": "address", "name": "", "type": "address"}],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "startTime",
-        "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "endTime",
-        "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "biddingEndTime",
-        "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "winningBid",
-        "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "contractorDeposit",
-        "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "retainedPercent",
-        "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "currentMilestone",
-        "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "onSiteEngineer",
-        "outputs": [{"internalType": "address", "name": "", "type": "address"}],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "complianceOfficer",
-        "outputs": [{"internalType": "address", "name": "", "type": "address"}],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "financialAuditor",
-        "outputs": [{"internalType": "address", "name": "", "type": "address"}],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "sanctioningAuthority",
-        "outputs": [{"internalType": "address", "name": "", "type": "address"}],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
-        "name": "bids",
-        "outputs": [
-            {"internalType": "address", "name": "bidder", "type": "address"},
-            {"internalType": "uint256", "name": "amount", "type": "uint256"}
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
-        "name": "milestones",
-        "outputs": [
-            {"internalType": "string", "name": "name", "type": "string"},
-            {"internalType": "uint256", "name": "percentage", "type": "uint256"},
-            {"internalType": "uint256", "name": "deadline", "type": "uint256"},
-            {"internalType": "uint256", "name": "completionPercent", "type": "uint256"},
-            {"internalType": "uint256", "name": "depositShare", "type": "uint256"},
-            {"internalType": "uint8", "name": "status", "type": "uint8"}
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "id",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "percent",
-				"type": "uint256"
-			}
-		],
-		"name": "evaluateMilestone",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "id",
-				"type": "uint256"
-			}
-		],
-		"name": "submitWorkForReview",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	}
-]
-""")
+# ── Tender Contract ABI (Updated for EIP-712 Multisig) ──
+with open(os.path.join(os.path.dirname(__file__), '..', 'contracts', 'TenderABI.json'), 'r') as f:
+    TENDER_ABI = json.load(f)
 
 class TxWrapper:
     def __init__(self, tx_hash):
@@ -533,35 +393,59 @@ class TxWrapper:
     def wait(self):
         return w3.eth.wait_for_transaction_receipt(self.hash)
 
-class TenderContractWrapper:
-    def __init__(self, address, signer):
-        self.contract = w3.eth.contract(address=w3.to_checksum_address(address), abi=TENDER_ABI)
-        self.signer = signer
-    
-    def _send_tx(self, func, *args):
-        tx = func(*args).build_transaction({
-            'from': self.signer.address,
-            'nonce': w3.eth.get_transaction_count(self.signer.address),
-            'maxFeePerGas': w3.eth.gas_price * 2,
-            'maxPriorityFeePerGas': w3.eth.max_priority_fee or w3.to_wei(1, 'gwei'),
-        })
-        signed = w3.eth.account.sign_transaction(tx, private_key=PRIVATE_KEY)
-        tx_hash = w3.eth.send_raw_transaction(signed.rawTransaction)
-        return TxWrapper(tx_hash)
-
-    def evaluateMilestone(self, milestone_id, percent):
-        return self._send_tx(self.contract.functions.evaluateMilestone, milestone_id, percent)
-
-    def submitWorkForReview(self, milestone_id):
-        return self._send_tx(self.contract.functions.submitWorkForReview, milestone_id)
 
 def get_government_signer():
     """Returns the account object for signing government actions."""
     return account
 
-def get_tender_contract(tender_address: str, signer):
-    """Returns a wrapped contract instance that supports Brownie-style .wait() syntax."""
-    return TenderContractWrapper(tender_address, signer)
+
+def get_tender_read_contract(tender_address: str):
+    """Returns a read-only contract instance for querying on-chain state."""
+    return w3.eth.contract(address=w3.to_checksum_address(tender_address), abi=TENDER_ABI)
+
+
+def get_user_tenders(wallet_address: str) -> list:
+    """Queries TenderFactory.getUserTenders to get all tenders a user is mapped to."""
+    if not factory_contract:
+        return []
+    try:
+        checksummed = w3.to_checksum_address(wallet_address)
+        return factory_contract.functions.getUserTenders(checksummed).call()
+    except Exception as e:
+        print(f"Failed getUserTenders for {wallet_address}: {e}")
+        return []
+
+
+def get_user_role_on_tender(wallet_address: str, tender_address: str) -> str:
+    """Calls Tender.getRoleName(user) to get the on-chain role string."""
+    try:
+        tender = get_tender_read_contract(tender_address)
+        checksummed = w3.to_checksum_address(wallet_address)
+        return tender.functions.getRoleName(checksummed).call()
+    except Exception as e:
+        print(f"Failed getRoleName for {wallet_address} on {tender_address}: {e}")
+        return "None"
+
+
+def execute_milestone_with_signatures(tender_address: str, milestone_id: int, signatures: list):
+    """Calls Tender.executeMilestone(id, signatures) using the gov signer.
+    This is the final on-chain call after 4/4 EIP-712 signatures are collected."""
+    if not account:
+        raise Exception("Government signer not configured")
+
+    tender = w3.eth.contract(address=w3.to_checksum_address(tender_address), abi=TENDER_ABI)
+    # Convert hex strings to bytes
+    sig_bytes = [bytes.fromhex(s.replace('0x', '')) for s in signatures]
+
+    tx = tender.functions.executeMilestone(milestone_id, sig_bytes).build_transaction({
+        'from': account.address,
+        'nonce': w3.eth.get_transaction_count(account.address),
+        'maxFeePerGas': w3.eth.gas_price * 2,
+        'maxPriorityFeePerGas': w3.eth.max_priority_fee or w3.to_wei(1, 'gwei'),
+    })
+    signed = w3.eth.account.sign_transaction(tx, private_key=PRIVATE_KEY)
+    tx_hash = w3.eth.send_raw_transaction(signed.raw_transaction)
+    return TxWrapper(tx_hash)
 
 def get_identity_hash(identifier: str):
     """Generates a keccak256 hash for a given identifier (email, wallet, etc.)"""
@@ -671,20 +555,16 @@ def get_all_tenders_aggregated() -> list:
         return []
 
 def check_signatory_contracts(wallet_address: str) -> list:
-    """Returns a list of tender addresses where this wallet is a signatory."""
-    addr = wallet_address.lower()
-    tenders = get_all_tenders_aggregated()
-    signatory_for = []
-    
-    for t in tenders:
-        # Check against on-chain signatories
-        roles = [
-            t.get("on_site_engineer", "").lower(),
-            t.get("compliance_officer", "").lower(),
-            t.get("financial_auditor", "").lower(),
-            t.get("sanctioning_authority", "").lower()
-        ]
-        if addr in roles:
-            signatory_for.append(t["tender_address"])
-            
-    return signatory_for
+    """Returns a list of tender addresses where this wallet is a committee member.
+    Uses the on-chain getUserTenders() + getRoleName() to check."""
+    user_tenders = get_user_tenders(wallet_address)
+    if not user_tenders:
+        return []
+
+    committee_tenders = []
+    for t_addr in user_tenders:
+        role = get_user_role_on_tender(wallet_address, t_addr)
+        # If they have any admin role on this tender, they're a committee member
+        if role in ("OnSiteEngineer", "ComplianceOfficer", "FinancialAuditor", "SanctioningAuthority"):
+            committee_tenders.append(t_addr)
+    return committee_tenders

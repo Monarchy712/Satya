@@ -1,106 +1,169 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from pydantic import BaseModel
 from database import get_db
-from models import Contractor, MilestoneApproval, TenderMetadata
+from models import MilestoneApproval, TenderMetadata
 from auth import get_current_user
-from blockchain import get_tender_contract, get_government_signer, FACTORY_ADDRESS
-import json
+from blockchain import (
+    get_user_role_on_tender,
+    execute_milestone_with_signatures,
+)
 
 router = APIRouter(tags=["Admin & Oversight Tasks"])
 
-# ── Oversight Committee ──
+
+# ── Schemas ──
+
+class SignMilestonePayload(BaseModel):
+    tender_address: str
+    milestone_id: int
+    signature: str  # Raw EIP-712 hex signature from MetaMask
+
+
+# ── Oversight Committee Endpoints ──
 
 @router.get("/api/committee/has-signed")
-def has_signed(tender_address: str, milestone_id: int, db: Session = Depends(get_db), user: dict = Depends(get_current_user)):
+def has_signed(
+    tender_address: str,
+    milestone_id: int,
+    db: Session = Depends(get_db),
+    user: dict = Depends(get_current_user),
+):
     """Check if the current committee member has already signed this milestone."""
-    if user["role"] not in ["committee", "super_admin"]:
-        raise HTTPException(status_code=403, detail="Not authorized")
+    if user["role"] not in ["committee"]:
+        raise HTTPException(status_code=403, detail="Only committee members can access this")
     
     existing = db.query(MilestoneApproval).filter(
-        MilestoneApproval.tender_address == tender_address,
+        MilestoneApproval.tender_address == tender_address.lower(),
         MilestoneApproval.milestone_id == milestone_id,
-        MilestoneApproval.admin_address == user["wallet"].lower()
+        MilestoneApproval.admin_address == user["wallet"].lower(),
     ).first()
     
     return existing is not None
 
-@router.post("/api/committee/sign")
-def sign_milestone(payload: dict, db: Session = Depends(get_db), user: dict = Depends(get_current_user)):
-    """Record a signature from a committee member. Trigger on-chain evaluation if 4/4 reached."""
+
+@router.get("/api/committee/signatures")
+def get_signatures(
+    tender_address: str,
+    milestone_id: int,
+    db: Session = Depends(get_db),
+    user: dict = Depends(get_current_user),
+):
+    """Get the current signature count for a milestone."""
     if user["role"] not in ["committee", "super_admin"]:
         raise HTTPException(status_code=403, detail="Not authorized")
+
+    sigs = db.query(MilestoneApproval).filter(
+        MilestoneApproval.tender_address == tender_address.lower(),
+        MilestoneApproval.milestone_id == milestone_id,
+    ).all()
+
+    return {
+        "count": len(sigs),
+        "required": 4,
+        "signers": [{"address": s.admin_address, "role": s.role} for s in sigs],
+    }
+
+
+@router.post("/api/committee/sign")
+def sign_milestone(
+    payload: SignMilestonePayload,
+    db: Session = Depends(get_db),
+    user: dict = Depends(get_current_user),
+):
+    """
+    Store an EIP-712 signature from a committee member.
+    When 4/4 signatures are collected, automatically calls executeMilestone on-chain.
+    """
+    if user["role"] not in ["committee"]:
+        raise HTTPException(status_code=403, detail="Only committee members can sign")
     
-    tender_addr = payload["tender_address"].lower()
-    milestone_id = payload["milestone_id"]
-    
-    # 1. Record the signature
+    tender_addr = payload.tender_address.lower()
+    milestone_id = payload.milestone_id
+    wallet = user["wallet"].lower()
+    signature = payload.signature
+
+    # Validate the signature is a hex string
+    if not signature or not signature.startswith("0x"):
+        raise HTTPException(status_code=400, detail="Invalid signature format. Must be a hex string starting with 0x")
+
+    # 1. Check if already signed
     existing = db.query(MilestoneApproval).filter(
         MilestoneApproval.tender_address == tender_addr,
         MilestoneApproval.milestone_id == milestone_id,
-        MilestoneApproval.admin_address == user["wallet"].lower()
+        MilestoneApproval.admin_address == wallet,
     ).first()
     
     if existing:
-        return {"message": "Already signed", "success": True}
-    
-    # In a real app, we'd verify which role the user has on-chain
-    # For now, we'll assign a generic role based on order or just 'Member'
-    new_sig = MilestoneApproval(
+        return {"message": "Already signed", "success": True, "count": _get_sig_count(db, tender_addr, milestone_id)}
+
+    # 2. Get the user's on-chain role for this tender
+    role_name = get_user_role_on_tender(wallet, tender_addr)
+    if role_name in ("None", "Contractor", "Government"):
+        raise HTTPException(status_code=403, detail=f"Wallet does not have a committee role on this tender (got: {role_name})")
+
+    # 3. Store the signature
+    approval = MilestoneApproval(
         tender_address=tender_addr,
         milestone_id=milestone_id,
-        admin_address=user["wallet"].lower(),
-        role="Member"
+        admin_address=wallet,
+        role=role_name,
+        signature=signature,
     )
-    db.add(new_sig)
+    db.add(approval)
     db.commit()
-    
-    # 2. Check if 4/4 reached
-    signatures = db.query(MilestoneApproval).filter(
+
+    # 4. Check if 4/4 reached
+    all_sigs = db.query(MilestoneApproval).filter(
         MilestoneApproval.tender_address == tender_addr,
-        MilestoneApproval.milestone_id == milestone_id
+        MilestoneApproval.milestone_id == milestone_id,
     ).all()
     
-    if len(signatures) >= 4:
-        # TRIGGER BLOCKCHAIN EVALUATION
+    count = len(all_sigs)
+
+    if count >= 4:
+        # All 4 signatures collected — execute on-chain!
         try:
-            print(f">>> 4/4 Signatures reached for Tender {tender_addr} Milestone {milestone_id}! Triggering on-chain evaluation...")
-            tender = get_tender_contract(tender_addr, get_government_signer())
-            
-            # For simplicity, we auto-approve at 100% since 4 committee members signed
-            tx = tender.evaluateMilestone(milestone_id, 100)
+            sig_list = [s.signature for s in all_sigs[:4]]  # Take exactly 4
+            print(f">>> 4/4 signatures collected for tender {tender_addr} milestone {milestone_id}. Executing on-chain...")
+            tx = execute_milestone_with_signatures(tender_addr, milestone_id, sig_list)
             receipt = tx.wait()
-            return {"message": f"Milestone finalized on-chain! Tx: {receipt.hash}", "success": True}
+            return {
+                "message": f"Milestone executed on-chain! Tx: {receipt.transactionHash.hex()}",
+                "success": True,
+                "count": count,
+                "executed": True,
+            }
         except Exception as e:
-            print(f"CRITICAL: Failed to relay on-chain evaluation: {e}")
-            raise HTTPException(status_code=500, detail=str(e))
-            
-    return {"message": f"Signature recorded ({len(signatures)}/4)", "success": True}
-
-# ── Contractor ──
-
-@router.post("/api/contractor/apply-milestone")
-def apply_milestone(payload: dict, db: Session = Depends(get_db), user: dict = Depends(get_current_user)):
-    """Allow a contractor to signal that a milestone is ready for review."""
-    if user["role"] != "contractor":
-        raise HTTPException(status_code=403, detail="Only contractors can apply for review")
+            print(f"CRITICAL: On-chain execution failed: {e}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"All 4 signatures collected but on-chain execution failed: {str(e)}"
+            )
     
-    tender_addr = payload["tender_address"].lower()
-    milestone_id = payload["milestone_id"]
-    
-    try:
-        tender = get_tender_contract(tender_addr, get_government_signer())
-        # We call submitWorkForReview on behalf of the contractor 
-        # (since current contract logic is onlyGovernment)
-        tx = tender.submitWorkForReview(milestone_id)
-        tx.wait()
-        return {"message": "Project submitted for oversight committee review", "success": True}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    return {
+        "message": f"Signature recorded ({count}/4)",
+        "success": True,
+        "count": count,
+        "executed": False,
+    }
+
+
+def _get_sig_count(db: Session, tender_addr: str, milestone_id: int) -> int:
+    return db.query(MilestoneApproval).filter(
+        MilestoneApproval.tender_address == tender_addr,
+        MilestoneApproval.milestone_id == milestone_id,
+    ).count()
+
 
 # ── Admin Selection Notes ──
 
 @router.post("/api/admin/tender-note")
-def save_tender_note(payload: dict, db: Session = Depends(get_db), user: dict = Depends(get_current_user)):
+def save_tender_note(
+    payload: dict,
+    db: Session = Depends(get_db),
+    user: dict = Depends(get_current_user),
+):
     if user["role"] != "super_admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     
@@ -117,7 +180,10 @@ def save_tender_note(payload: dict, db: Session = Depends(get_db), user: dict = 
     db.commit()
     return {"message": "Note saved", "success": True}
 
+
 @router.get("/api/tenders/{tender_address}/metadata")
 def get_tender_metadata(tender_address: str, db: Session = Depends(get_db)):
-    meta = db.query(TenderMetadata).filter(TenderMetadata.tender_address == tender_address.lower()).first()
+    meta = db.query(TenderMetadata).filter(
+        TenderMetadata.tender_address == tender_address.lower()
+    ).first()
     return meta

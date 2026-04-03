@@ -110,7 +110,7 @@ export default function Navbar({ user, onLogout }) {
               </button>
             )}
 
-            {(user?.role === 'committee' || user?.role === 'super_admin') && (
+            {user?.role === 'committee' && (
               <button
                 className={`navbar__nav-link ${isActive('/oversight') ? 'navbar__nav-link--active' : ''}`}
                 onClick={() => navigate('/oversight')}
