@@ -49,19 +49,11 @@
   min-width: 340px;
   max-width: 420px;
   box-shadow:
-    0 24px 64px -16px rgba(84, 107, 43, 0.18),
-    0 8px 20px rgba(84, 107, 43, 0.06),
+    0 24px 64px -16px rgba(113, 139, 77, 0.18),
+    0 8px 20px rgba(113, 139, 77, 0.06),
     0 0 0 1px var(--pink-100) inset;
   animation: loSlideUp 0.5s var(--ease-out) forwards;
   overflow: hidden;
-}
-
-.lo-overlay--dark .lo-card {
-  background: #1a1e26;
-  border-color: rgba(255, 107, 107, 0.2);
-  box-shadow:
-    0 24px 64px -16px rgba(0, 0, 0, 0.5),
-    0 0 0 1px rgba(255, 107, 107, 0.1) inset;
 }
 
 /* Top accent bar */
@@ -76,39 +68,16 @@
   animation: loAccentShift 3s ease infinite;
 }
 
-.lo-overlay--dark .lo-card__accent {
-  background: linear-gradient(90deg, #ff6b6b, #ee5253, #48dbfb, #ff6b6b);
-  background-size: 300% 100%;
-}
-
-/* Logo mark */
-.lo-card__logo {
-  width: 36px;
-  height: 36px;
+/* ── Animation Area ── */
+.lo-animation-area {
+  height: 80px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--pink-50);
-  border: 1px solid var(--pink-200);
-  border-radius: 10px;
-  animation: loFloat 2.5s ease-in-out infinite;
+  margin-bottom: 5px;
 }
 
-.lo-card__logo-icon {
-  font-size: 1.1rem;
-  color: var(--pink-700);
-}
-
-.lo-overlay--dark .lo-card__logo {
-  background: rgba(255, 107, 107, 0.1);
-  border-color: rgba(255, 107, 107, 0.3);
-}
-
-.lo-overlay--dark .lo-card__logo-icon {
-  color: #ff6b6b;
-}
-
-/* ── Spinner (shared) ── */
+/* ── Spinner ── */
 .lo-spinner {
   position: relative;
   width: 44px;
@@ -126,74 +95,134 @@
   animation: loSpin 1.4s linear infinite;
 }
 
-.lo-spinner__track {
-  stroke: var(--pink-100);
-}
-
+.lo-spinner__track { stroke: var(--pink-100); }
 .lo-spinner__fill {
   stroke: var(--pink-600);
   stroke-dasharray: 80, 200;
-  stroke-dashoffset: 0;
   animation: loSpinnerDash 1.8s ease-in-out infinite;
 }
 
-.lo-overlay--dark .lo-spinner__track {
-  stroke: rgba(255, 255, 255, 0.08);
+/* ── FOLDER TRANSFER ANIMATION ── */
+.lo-folder-container {
+  position: relative;
+  width: 70px;
+  height: 60px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  padding-bottom: 10px;
 }
 
-.lo-overlay--dark .lo-spinner__fill {
-  stroke: #ff6b6b;
+.lo-folder {
+  position: relative;
+  width: 50px;
+  height: 36px;
+  background: var(--pink-500);
+  border-radius: 4px;
+  box-shadow: 0 4px 10px rgba(113, 139, 77, 0.2);
+  z-index: 2;
+  animation: folderBreathe 2s ease-in-out infinite;
 }
 
-.lo-inline--dark .lo-spinner__track {
-  stroke: rgba(255, 255, 255, 0.08);
-}
-
-.lo-inline--dark .lo-spinner__fill {
-  stroke: #ff6b6b;
-}
-
-.lo-spinner__pulse {
+.lo-folder__tab {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 8px;
+  top: -6px;
+  left: 4px;
+  width: 18px;
   height: 8px;
-  margin: -4px 0 0 -4px;
   background: var(--pink-600);
-  border-radius: 50%;
-  animation: loPulse 1.8s ease-in-out infinite;
+  border-radius: 3px 3px 0 0;
 }
 
-.lo-overlay--dark .lo-spinner__pulse,
-.lo-inline--dark .lo-spinner__pulse {
-  background: #ff6b6b;
+.lo-folder__body {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom right, var(--pink-500), var(--pink-600));
+  border-radius: 4px;
+  overflow: hidden;
 }
 
-/* Message */
+.lo-folder__inner-glow {
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%);
+  animation: innerGlow 3s linear infinite;
+}
+
+.lo-file-particle {
+  position: absolute;
+  width: 14px;
+  height: 18px;
+  background: var(--white);
+  border: 1px solid var(--pink-200);
+  border-radius: 2px;
+  z-index: 1;
+  opacity: 0;
+}
+
+.lo-file-particle::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 8px;
+  height: 1px;
+  background: var(--pink-100);
+  box-shadow: 0 3px 0 var(--pink-100), 0 6px 0 var(--pink-100);
+}
+
+.lo-file-particle--1 { animation: fileDrop 1.5s ease-in infinite; left: 20px; }
+.lo-file-particle--2 { animation: fileDrop 1.5s ease-in infinite 0.5s; left: 35px; }
+.lo-file-particle--3 { animation: fileDrop 1.5s ease-in infinite 1s; left: 28px; }
+
+@keyframes fileDrop {
+  0% {
+    transform: translateY(-40px) scale(0.8);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+    transform: translateY(0px) scale(1);
+  }
+  100% {
+    transform: translateY(10px) scale(0.5);
+    opacity: 0;
+  }
+}
+
+@keyframes folderBreathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+@keyframes innerGlow {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Message ── */
 .lo-card__message {
   font-family: var(--font-mono);
   font-size: 0.88rem;
   font-weight: 600;
   color: var(--gray-700);
-  letter-spacing: 0.02em;
   text-align: center;
   animation: loMessageFade 0.5s ease forwards;
   min-height: 1.4em;
 }
 
-.lo-overlay--dark .lo-card__message {
-  color: rgba(255, 255, 255, 0.85);
-}
-
-/* Progress bar */
+/* ── Progress bar ── */
 .lo-card__progress-track {
   position: relative;
   width: 100%;
   height: 4px;
   background: var(--pink-100);
   border-radius: var(--radius-pill);
-  overflow: visible;
 }
 
 .lo-card__progress-fill {
@@ -201,35 +230,9 @@
   background: linear-gradient(90deg, var(--pink-500), var(--pink-700));
   border-radius: var(--radius-pill);
   transition: width 0.6s var(--ease-out);
-  position: relative;
 }
 
-.lo-overlay--dark .lo-card__progress-track {
-  background: rgba(255, 255, 255, 0.06);
-}
-
-.lo-overlay--dark .lo-card__progress-fill {
-  background: linear-gradient(90deg, #ff6b6b, #ee5253);
-}
-
-.lo-card__progress-glow {
-  position: absolute;
-  top: -4px;
-  width: 12px;
-  height: 12px;
-  background: var(--pink-500);
-  border-radius: 50%;
-  filter: blur(4px);
-  opacity: 0.6;
-  transition: left 0.6s var(--ease-out);
-  transform: translateX(-50%);
-}
-
-.lo-overlay--dark .lo-card__progress-glow {
-  background: #ff6b6b;
-}
-
-/* Hint */
+/* ── Hint ── */
 .lo-card__hint {
   font-family: var(--font-mono);
   font-size: 0.62rem;
@@ -239,31 +242,20 @@
   margin-top: 4px;
 }
 
-.lo-overlay--dark .lo-card__hint {
-  color: rgba(255, 255, 255, 0.2);
+/* ── Keyframes ── */
+@keyframes loFadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes loSlideUp { from { transform: translateY(16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes loSpin { to { transform: rotate(360deg); } }
+@keyframes loSpinnerDash {
+  0% { stroke-dasharray: 1, 200; stroke-dashoffset: 0; }
+  50% { stroke-dasharray: 80, 200; stroke-dashoffset: -35; }
+  100% { stroke-dasharray: 80, 200; stroke-dashoffset: -125; }
 }
+@keyframes loAccentShift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+@keyframes loMessageFade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 
 /* ── Inline loader ── */
-.lo-inline {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 50vh;
-  padding: 60px 24px;
-  opacity: 0;
-  transition: opacity 0.35s var(--ease-out);
-}
-
-.lo-inline--active {
-  opacity: 1;
-  animation: loFadeIn 0.4s var(--ease-out) forwards;
-}
-
-.lo-inline--exit {
-  opacity: 0;
-  transition: opacity 0.35s ease;
-}
-
+.lo-inline { padding: 60px 24px; opacity: 1; }
 .lo-inline__content {
   display: flex;
   flex-direction: column;
@@ -273,132 +265,9 @@
   background: var(--white);
   border: 1px solid var(--pink-100);
   border-radius: var(--radius-xl);
-  box-shadow:
-    0 16px 48px -12px rgba(84, 107, 43, 0.12),
-    0 4px 12px rgba(84, 107, 43, 0.04);
-  animation: loSlideUp 0.5s var(--ease-out) forwards;
-  min-width: 320px;
 }
-
-.lo-inline--dark .lo-inline__content {
-  background: rgba(30, 34, 42, 0.8);
-  border-color: rgba(255, 107, 107, 0.15);
-  box-shadow: 0 16px 48px -12px rgba(0, 0, 0, 0.4);
-}
-
-.lo-inline__text-group {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-  width: 100%;
-}
-
-.lo-inline__message {
-  font-family: var(--font-mono);
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--gray-600);
-  letter-spacing: 0.02em;
-  text-align: center;
-  animation: loMessageFade 0.5s ease forwards;
-  min-height: 1.2em;
-}
-
-.lo-inline--dark .lo-inline__message {
-  color: rgba(255, 255, 255, 0.7);
-}
-
-.lo-inline__progress-track {
-  width: 100%;
-  height: 3px;
-  background: var(--pink-100);
-  border-radius: var(--radius-pill);
-  overflow: hidden;
-}
-
-.lo-inline__progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, var(--pink-400), var(--pink-700));
-  border-radius: var(--radius-pill);
-  transition: width 0.6s var(--ease-out);
-}
-
-.lo-inline--dark .lo-inline__progress-track {
-  background: rgba(255, 255, 255, 0.06);
-}
-
-.lo-inline--dark .lo-inline__progress-fill {
-  background: linear-gradient(90deg, #ff6b6b, #ee5253);
-}
-
-/* ── Keyframes ── */
-@keyframes loFadeIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-
-@keyframes loSlideUp {
-  from {
-    transform: translateY(16px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-@keyframes loSpin {
-  to { transform: rotate(360deg); }
-}
-
-@keyframes loSpinnerDash {
-  0% {
-    stroke-dasharray: 1, 200;
-    stroke-dashoffset: 0;
-  }
-  50% {
-    stroke-dasharray: 80, 200;
-    stroke-dashoffset: -35;
-  }
-  100% {
-    stroke-dasharray: 80, 200;
-    stroke-dashoffset: -125;
-  }
-}
-
-@keyframes loPulse {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50%      { transform: scale(1.8); opacity: 0.3; }
-}
-
-@keyframes loFloat {
-  0%, 100% { transform: translateY(0); }
-  50%      { transform: translateY(-4px); }
-}
-
-@keyframes loAccentShift {
-  0%   { background-position: 0% 50%; }
-  50%  { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-@keyframes loMessageFade {
-  from { opacity: 0; transform: translateY(4px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-/* ── Responsive ── */
-@media (max-width: 480px) {
-  .lo-card {
-    min-width: auto;
-    max-width: 90vw;
-    padding: 36px 28px 28px;
-  }
-
-  .lo-inline__content {
-    min-width: auto;
-    padding: 36px 24px;
-  }
-}
+.lo-spinner-box { height: 70px; display: flex; align-items: center; justify-content: center; }
+.lo-inline__text-group { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 16px; }
+.lo-inline__message { font-family: var(--font-mono); font-size: 0.85rem; color: var(--gray-600); }
+.lo-inline__progress-track { width: 100%; height: 3px; background: var(--pink-100); }
+.lo-inline__progress-fill { height: 100%; background: linear-gradient(90deg, var(--pink-400), var(--pink-700)); }

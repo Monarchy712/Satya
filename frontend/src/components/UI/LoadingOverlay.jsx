@@ -4,14 +4,6 @@ import './LoadingOverlay.css';
 /**
  * LoadingOverlay — A premium, theme-aware loading overlay with animated progress
  * and contextual messages. Replaces all ugly plain-text loading states.
- *
- * @param {boolean} active      — Whether the overlay is visible
- * @param {string}  context     — Context key for descriptive messages:
- *   'blockchain', 'ledger', 'contractor', 'admin', 'oversight',
- *   'tenders', 'auth', 'signing', 'deploying', 'submitting', 'generic'
- * @param {string}  [message]   — Optional override message
- * @param {boolean} [inline]    — If true, renders inline instead of fixed overlay
- * @param {string}  [variant]   — 'light' (default) or 'dark'
  */
 
 const CONTEXT_MESSAGES = {
@@ -38,6 +30,12 @@ const CONTEXT_MESSAGES = {
     'Loading tender vault data…',
     'Syncing administrative state…',
     'Fetching project governance data…',
+  ],
+  backend: [
+    'Establishing secure backend tunnel…',
+    'Receiving encrypted project fragments…',
+    'Syncing local cache with master ledger…',
+    'Reconciling database state…',
   ],
   oversight: [
     'Loading committee workspace…',
@@ -79,6 +77,25 @@ const CONTEXT_MESSAGES = {
   ],
 };
 
+function FolderTransferAnimation() {
+  return (
+    <div className="lo-folder-container">
+      {/* Incoming files cascading into the folder */}
+      <div className="lo-file-particle lo-file-particle--1"></div>
+      <div className="lo-file-particle lo-file-particle--2"></div>
+      <div className="lo-file-particle lo-file-particle--3"></div>
+      
+      {/* The folder shape */}
+      <div className="lo-folder">
+        <div className="lo-folder__tab"></div>
+        <div className="lo-folder__body">
+          <div className="lo-folder__inner-glow"></div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function LoadingOverlay({
   active,
   context = 'generic',
@@ -119,7 +136,7 @@ export default function LoadingOverlay({
     if (!active) return;
     const interval = setInterval(() => {
       setProgress((prev) => {
-        if (prev >= 92) return prev; // Never reach 100 (we don't know when it'll finish)
+        if (prev >= 92) return prev; // Never reach 100
         const increment = Math.random() * 8 + 2;
         return Math.min(prev + increment, 92);
       });
@@ -131,17 +148,26 @@ export default function LoadingOverlay({
 
   const currentMessage = message || messages[messageIndex];
   const isDark = variant === 'dark';
+  
+  // TRIGGER: Show folder animation for admin/backend contexts
+  const showFolderAnim = context === 'admin' || context === 'backend';
 
   if (inline) {
     return (
       <div className={`lo-inline ${isDark ? 'lo-inline--dark' : ''} ${active ? 'lo-inline--active' : 'lo-inline--exit'}`}>
         <div className="lo-inline__content">
-          <div className="lo-spinner">
-            <svg className="lo-spinner__svg" viewBox="0 0 50 50">
-              <circle className="lo-spinner__track" cx="25" cy="25" r="20" fill="none" strokeWidth="3" />
-              <circle className="lo-spinner__fill" cx="25" cy="25" r="20" fill="none" strokeWidth="3" strokeLinecap="round" />
-            </svg>
-            <div className="lo-spinner__pulse" />
+          <div className="lo-spinner-box">
+            {showFolderAnim ? (
+              <FolderTransferAnimation />
+            ) : (
+              <div className="lo-spinner">
+                <svg className="lo-spinner__svg" viewBox="0 0 50 50">
+                  <circle className="lo-spinner__track" cx="25" cy="25" r="20" fill="none" strokeWidth="3" />
+                  <circle className="lo-spinner__fill" cx="25" cy="25" r="20" fill="none" strokeWidth="3" strokeLinecap="round" />
+                </svg>
+                <div className="lo-spinner__pulse" />
+              </div>
+            )}
           </div>
           <div className="lo-inline__text-group">
             <p className="lo-inline__message" key={messageIndex}>{currentMessage}</p>
@@ -160,18 +186,19 @@ export default function LoadingOverlay({
         {/* Decorative top accent */}
         <div className="lo-card__accent" />
 
-        {/* Logo mark */}
-        <div className="lo-card__logo">
-          <span className="lo-card__logo-icon">◈</span>
-        </div>
-
-        {/* Spinner */}
-        <div className="lo-spinner lo-spinner--lg">
-          <svg className="lo-spinner__svg" viewBox="0 0 50 50">
-            <circle className="lo-spinner__track" cx="25" cy="25" r="20" fill="none" strokeWidth="2.5" />
-            <circle className="lo-spinner__fill" cx="25" cy="25" r="20" fill="none" strokeWidth="2.5" strokeLinecap="round" />
-          </svg>
-          <div className="lo-spinner__pulse" />
+        {/* Animation Area */}
+        <div className="lo-animation-area">
+          {showFolderAnim ? (
+            <FolderTransferAnimation />
+          ) : (
+            <div className="lo-spinner lo-spinner--lg">
+              <svg className="lo-spinner__svg" viewBox="0 0 50 50">
+                <circle className="lo-spinner__track" cx="25" cy="25" r="20" fill="none" strokeWidth="2.5" />
+                <circle className="lo-spinner__fill" cx="25" cy="25" r="20" fill="none" strokeWidth="2.5" strokeLinecap="round" />
+              </svg>
+              <div className="lo-spinner__pulse" />
+            </div>
+          )}
         </div>
 
         {/* Message */}
@@ -184,7 +211,7 @@ export default function LoadingOverlay({
         </div>
 
         {/* Status hint */}
-        <p className="lo-card__hint">Satya Transparency Protocol</p>
+        <p className="lo-card__hint">Satya File Extraction Protocol</p>
       </div>
     </div>
   );

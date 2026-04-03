@@ -116,7 +116,13 @@ export default function SignatoryDashboard() {
                              <span className="admin-tender-card__index">Task #{i+1}</span>
                           </div>
                           <div style={{fontWeight:'700', fontSize:'1.1rem', color:'var(--gray-800)', marginBottom:'5px'}}>{task.milestoneName}</div>
-                          <div className="admin-tender-card__address">{task.tenderAddress.slice(0,24)}...</div>
+                          {/* MODIFIED: Replaced truncated hash with hoverable info button */}
+                          <div className="admin-tender-card__asset-info" style={{justifyContent: 'flex-start', margin: '10px 0'}}>
+                            <div className="admin-tender-card__info-btn">
+                              i
+                              <span className="admin-tender-card__tooltip">{task.tenderAddress}</span>
+                            </div>
+                          </div>
                           <div style={{display:'flex', gap:'20px', marginTop:'10px'}}>
                              <span style={{fontSize:'0.8rem', color:'var(--gray-500)'}}>Weight: <strong>{task.percentage}%</strong></span>
                              <span style={{fontSize:'0.8rem', color:'var(--gray-500)'}}>Deadline: <strong>{new Date(task.deadline * 1000).toLocaleDateString()}</strong></span>

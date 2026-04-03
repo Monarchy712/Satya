@@ -506,14 +506,66 @@
   color: var(--gray-400);
 }
 
-.admin-tender-card__address {
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  color: var(--gray-600);
+/* MODIFIED: Replaced full address styling with info button + tooltip */
+.admin-tender-card__asset-info {
+  margin-top: var(--space-sm);
   margin-bottom: var(--space-md);
-  padding: 8px 10px;
-  background: var(--gray-50);
-  border-radius: var(--radius-sm);
+  display: flex;
+  justify-content: center;
+}
+
+.admin-tender-card__info-btn {
+  width: 24px;
+  height: 24px;
+  background: var(--pink-100);
+  border: 1px solid var(--pink-400);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-style: italic;
+  color: var(--pink-700);
+  cursor: help;
+  position: relative;
+  transition: all 0.2s;
+}
+
+.admin-tender-card__info-btn:hover {
+  background: var(--pink-200);
+  border-color: var(--pink-500);
+  transform: scale(1.1);
+}
+
+.admin-tender-card__info-btn--inline {
+  display: inline-flex;
+  vertical-align: middle;
+  margin-left: 8px;
+}
+
+.admin-tender-card__tooltip {
+  position: absolute;
+  bottom: 130%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--gray-800);
+  color: var(--white);
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s, transform 0.2s;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  z-index: 100;
+}
+
+.admin-tender-card__info-btn:hover .admin-tender-card__tooltip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(-5px);
 }
 
 .admin-tender-card__meta {

@@ -159,7 +159,13 @@ export default function AdminDashboard() {
                        <div className={`admin-tender-card__status admin-tender-card__status--${t.status.toLowerCase()}`}>{t.status}</div>
                        <span className="admin-tender-card__index">Asset #{i+1}</span>
                     </div>
-                    <div className="admin-tender-card__address">{t.tender_address}</div>
+                    {/* MODIFIED: Replaced full hash with hoverable info button */}
+                    <div className="admin-tender-card__asset-info">
+                      <div className="admin-tender-card__info-btn">
+                        i
+                        <span className="admin-tender-card__tooltip">{t.tender_address}</span>
+                      </div>
+                    </div>
                     <div className="admin-tender-card__meta">
                       <div className="admin-tender-card__meta-row">
                         <span className="admin-tender-card__meta-label">Active Bids</span>
@@ -294,7 +300,13 @@ export default function AdminDashboard() {
                         <div className="admin-tender-card__status admin-tender-card__status--bidding">SEALED</div>
                         <span className="admin-tender-card__index">Ready for Finalization</span>
                       </div>
-                      <div className="admin-tender-card__address">{t.tender_address}</div>
+                      {/* MODIFIED: Replaced full hash with hoverable info button */}
+                      <div className="admin-tender-card__asset-info">
+                        <div className="admin-tender-card__info-btn">
+                          i
+                          <span className="admin-tender-card__tooltip">{t.tender_address}</span>
+                        </div>
+                      </div>
                       <div className="admin-tender-card__meta">
                         <div className="admin-tender-card__meta-row">
                           <span className="admin-tender-card__meta-label">Bids Received</span>
@@ -319,7 +331,14 @@ export default function AdminDashboard() {
           <div className="admin-modal">
             <div className="admin-modal__content">
               <h3>Arbitration & Winning Bid Selection</h3>
-              <p style={{fontSize:'0.8rem', color:'var(--gray-500)', marginBottom:'20px'}}>Evaluating bids for asset: {selection.tender.tender_address}</p>
+              {/* MODIFIED: Replaced inline hash with info button */}
+              <p style={{fontSize:'0.8rem', color:'var(--gray-500)', marginBottom:'20px', display: 'flex', alignItems: 'center'}}>
+                Evaluating bids for asset: 
+                <span className="admin-tender-card__info-btn admin-tender-card__info-btn--inline" style={{marginLeft: '10px'}}>
+                  i
+                  <span className="admin-tender-card__tooltip">{selection.tender.tender_address}</span>
+                </span>
+              </p>
               
               <div className="admin-form__field">
                 <label className="admin-form__label">Protocol Verified Top 3 (Lowest Bids)</label>
