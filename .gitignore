@@ -36,3 +36,6 @@ dist-ssr/
 # OS
 .DS_Store
 Thumbs.db
+
+# Local Copilot config
+.github/copilot-instructions.md
