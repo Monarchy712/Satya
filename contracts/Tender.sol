@@ -40,6 +40,15 @@ contract Tender {
     address[4] public admins;
     mapping(address => Role) public roles;
 
+    // ---------------- BIDDING ----------------
+    struct Bid {
+        address bidder;
+        uint256 amount;
+    }
+
+    Bid[] public bids;
+    mapping(address => bool) public hasBid;
+
     // ---------------- EIP712 ----------------
     bytes32 public DOMAIN_SEPARATOR;
 
@@ -63,6 +72,8 @@ contract Tender {
     // ---------------- EVENTS ----------------
     event MilestoneSubmitted(uint256 id);
     event MilestoneExecuted(uint256 id);
+    event BidPlaced(address bidder, uint256 amount);
+    event ContractorSelected(address contractor, uint256 bid);
 
     // ---------------- MODIFIERS ----------------
     modifier onlyGovernment() {
@@ -96,6 +107,9 @@ contract Tender {
         uint256[] memory _deadlines
     ) {
         require(_admins.length == 4, "Need 4 admins");
+        require(_names.length == _percentages.length &&
+                _names.length == _deadlines.length,
+                "Array mismatch");
 
         factory = _factory;
 
@@ -127,10 +141,13 @@ contract Tender {
                 keccak256(bytes("1")),
                 chainId,
                 address(this)
-            ) 
+            )
         );
 
+        uint256 totalPercent;
         for (uint i = 0; i < _names.length; i++) {
+            totalPercent += _percentages[i];
+
             milestones.push(Milestone({
                 name: _names[i],
                 percentage: _percentages[i],
@@ -139,6 +156,8 @@ contract Tender {
                 status: MilestoneStatus.PENDING
             }));
         }
+
+        require(totalPercent == 100, "Percent must be 100");
 
         tenderStatus = TenderStatus.BIDDING;
     }
@@ -199,15 +218,44 @@ contract Tender {
 
     // ---------------- BIDDING ----------------
 
+    function placeBid(uint256 amount) external {
+        require(tenderStatus == TenderStatus.BIDDING, "Not bidding");
+        require(block.timestamp < biddingEndTime, "Bidding ended");
+        require(!hasBid[msg.sender], "Already bid");
+
+        bids.push(Bid(msg.sender, amount));
+        hasBid[msg.sender] = true;
+
+        emit BidPlaced(msg.sender, amount);
+    }
+
     function selectContractor(address _contractor, uint256 _winningBid)
         external
         onlyGovernment
     {
+        require(block.timestamp >= biddingEndTime, "Bidding not over");
+        require(hasBid[_contractor], "Not bidder");
+
+        bool valid;
+        for (uint i = 0; i < bids.length; i++) {
+            if (
+                bids[i].bidder == _contractor &&
+                bids[i].amount == _winningBid
+            ) {
+                valid = true;
+                break;
+            }
+        }
+
+        require(valid, "Invalid bid");
+
         contractor = _contractor;
         roles[_contractor] = Role.CONTRACTOR;
 
         winningBid = _winningBid;
         tenderStatus = TenderStatus.ACTIVE;
+
+        emit ContractorSelected(_contractor, _winningBid);
     }
 
     // ---------------- MILESTONE FLOW ----------------
