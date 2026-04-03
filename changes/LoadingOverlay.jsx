@@ -3,7 +3,8 @@ import './LoadingOverlay.css';
 
 /**
  * LoadingOverlay — A premium, theme-aware loading overlay with animated progress
- * and contextual messages. Replaces all ugly plain-text loading states.
+ * and contextual messages. This version is unified to use the "Folder & Files" 
+ * brand animation for all states.
  */
 
 const CONTEXT_MESSAGES = {
@@ -71,9 +72,9 @@ const CONTEXT_MESSAGES = {
     'Recording submission metadata…',
   ],
   generic: [
-    'Loading…',
-    'Please wait…',
-    'Processing request…',
+    'Initiating Transparency Protocol…',
+    'Syncing decentralized systems…',
+    'Processing infrastructure data…',
   ],
 };
 
@@ -149,25 +150,17 @@ export default function LoadingOverlay({
   const currentMessage = message || messages[messageIndex];
   const isDark = variant === 'dark';
   
-  // TRIGGER: Show folder animation for admin/backend contexts
-  const showFolderAnim = context === 'admin' || context === 'backend';
+  // UNIFIED: Always show folder animation for all loading states
+  const showFolderAnim = true;
 
   if (inline) {
     return (
       <div className={`lo-inline ${isDark ? 'lo-inline--dark' : ''} ${active ? 'lo-inline--active' : 'lo-inline--exit'}`}>
         <div className="lo-inline__content">
           <div className="lo-spinner-box">
-            {showFolderAnim ? (
-              <FolderTransferAnimation />
-            ) : (
-              <div className="lo-spinner">
-                <svg className="lo-spinner__svg" viewBox="0 0 50 50">
-                  <circle className="lo-spinner__track" cx="25" cy="25" r="20" fill="none" strokeWidth="3" />
-                  <circle className="lo-spinner__fill" cx="25" cy="25" r="20" fill="none" strokeWidth="3" strokeLinecap="round" />
-                </svg>
-                <div className="lo-spinner__pulse" />
-              </div>
-            )}
+             <div className="lo-folder-scaler">
+                 <FolderTransferAnimation />
+             </div>
           </div>
           <div className="lo-inline__text-group">
             <p className="lo-inline__message" key={messageIndex}>{currentMessage}</p>
@@ -188,17 +181,7 @@ export default function LoadingOverlay({
 
         {/* Animation Area */}
         <div className="lo-animation-area">
-          {showFolderAnim ? (
-            <FolderTransferAnimation />
-          ) : (
-            <div className="lo-spinner lo-spinner--lg">
-              <svg className="lo-spinner__svg" viewBox="0 0 50 50">
-                <circle className="lo-spinner__track" cx="25" cy="25" r="20" fill="none" strokeWidth="2.5" />
-                <circle className="lo-spinner__fill" cx="25" cy="25" r="20" fill="none" strokeWidth="2.5" strokeLinecap="round" />
-              </svg>
-              <div className="lo-spinner__pulse" />
-            </div>
-          )}
+           <FolderTransferAnimation />
         </div>
 
         {/* Message */}

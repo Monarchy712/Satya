@@ -152,33 +152,41 @@ export default function AdminDashboard() {
         ) : (
           <main className="admin-dashboard__content">
             {activeTab === 'ongoing' && (
-              <div className="admin-ongoing__grid">
-                {tenders.map((t, i) => (
-                  <div key={t.tender_address} className="admin-tender-card">
-                    <div className="admin-tender-card__header">
-                       <div className={`admin-tender-card__status admin-tender-card__status--${t.status.toLowerCase()}`}>{t.status}</div>
-                       <span className="admin-tender-card__index">Asset #{i+1}</span>
-                    </div>
-                    {/* MODIFIED: Replaced full hash with hoverable info button */}
-                    <div className="admin-tender-card__asset-info">
-                      <div className="admin-tender-card__info-btn">
-                        i
-                        <span className="admin-tender-card__tooltip">{t.tender_address}</span>
-                      </div>
-                    </div>
-                    <div className="admin-tender-card__meta">
-                      <div className="admin-tender-card__meta-row">
-                        <span className="admin-tender-card__meta-label">Active Bids</span>
-                        <span className="admin-tender-card__meta-value">{t.bids.length}</span>
-                      </div>
-                      <div className="admin-tender-card__meta-row">
-                        <span className="admin-tender-card__meta-label">Termination Date</span>
-                        <span className="admin-tender-card__meta-value">{new Date(t.end_time * 1000).toLocaleDateString()}</span>
-                      </div>
-                    </div>
+              <div className="admin-ongoing__wrapper">
+                {tenders.length === 0 ? (
+                  <div className="admin-ongoing__empty-centered">
+                    <span className="admin-ongoing__empty-icon">📂</span>
+                    <h3>Governance Vault Access</h3>
+                    <p>The governance vault is currently empty. No active blockchain assets have been initialized for oversight.</p>
                   </div>
-                ))}
-                {tenders.length === 0 && <div className="admin-ongoing__empty">No active assets identified on chain.</div>}
+                ) : (
+                  <div className="admin-ongoing__grid">
+                    {tenders.map((t, i) => (
+                      <div key={t.tender_address} className="admin-tender-card">
+                        <div className="admin-tender-card__header">
+                           <div className={`admin-tender-card__status admin-tender-card__status--${t.status.toLowerCase()}`}>{t.status}</div>
+                           <span className="admin-tender-card__index">Asset #{i+1}</span>
+                        </div>
+                        <div className="admin-tender-card__asset-info">
+                          <div className="admin-tender-card__info-btn">
+                            i
+                            <span className="admin-tender-card__tooltip">{t.tender_address}</span>
+                          </div>
+                        </div>
+                        <div className="admin-tender-card__meta">
+                          <div className="admin-tender-card__meta-row">
+                            <span className="admin-tender-card__meta-label">Active Bids</span>
+                            <span className="admin-tender-card__meta-value">{t.bids.length}</span>
+                          </div>
+                          <div className="admin-tender-card__meta-row">
+                            <span className="admin-tender-card__meta-label">Termination Date</span>
+                            <span className="admin-tender-card__meta-value">{new Date(t.end_time * 1000).toLocaleDateString()}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
@@ -205,15 +213,15 @@ export default function AdminDashboard() {
                   <div className="admin-form__grid">
                     <div className="admin-form__field">
                       <label className="admin-form__label">Bidding Deadline (Cut-off)</label>
-                      <input type="datetime-local" className="admin-form__input" value={formData.biddingEndTime} onChange={(e) => setFormData({...formData, biddingEndTime: e.target.value})} required />
+                      <input type="datetime-local" className="admin-form__input admin-form__input--premium-date" value={formData.biddingEndTime} onChange={(e) => setFormData({...formData, biddingEndTime: e.target.value})} required />
                     </div>
                     <div className="admin-form__field">
                       <label className="admin-form__label">Execution Commencement</label>
-                      <input type="datetime-local" className="admin-form__input" value={formData.startTime} onChange={(e) => setFormData({...formData, startTime: e.target.value})} required />
+                      <input type="datetime-local" className="admin-form__input admin-form__input--premium-date" value={formData.startTime} onChange={(e) => setFormData({...formData, startTime: e.target.value})} required />
                     </div>
                     <div className="admin-form__field">
                       <label className="admin-form__label">Estimated Termination</label>
-                      <input type="datetime-local" className="admin-form__input" value={formData.endTime} onChange={(e) => setFormData({...formData, endTime: e.target.value})} required />
+                      <input type="datetime-local" className="admin-form__input admin-form__input--premium-date" value={formData.endTime} onChange={(e) => setFormData({...formData, endTime: e.target.value})} required />
                     </div>
                   </div>
                 </div>
@@ -235,11 +243,13 @@ export default function AdminDashboard() {
                   </div>
 
                   <div className="admin-form__milestones">
-                    <div style={{display:'flex', justifyContent:'space-between', marginBottom:'10px', padding:'0 16px', fontSize:'0.7rem', fontWeight:'700', color:'var(--gray-400)'}}>
-                       <span style={{flex: 2}}>PHASE DESCRIPTION</span>
-                       <span style={{width: '70px', textAlign:'center'}}>ALLOCATION %</span>
-                       <span style={{flex: 1.5}}>ESTIMATED DEADLINE</span>
-                       <span style={{width: '30px'}}></span>
+                    {/* MODIFIED: Fixed overlapping headers using precise alignment weights */}
+                    <div className="admin-form__milestone-header">
+                       <span className="admin-form__header-col--num">#</span>
+                       <span className="admin-form__header-col--name">PHASE DESCRIPTION</span>
+                       <span className="admin-form__header-col--pct">ALLOC %</span>
+                       <span className="admin-form__header-col--date">ESTIMATED DEADLINE</span>
+                       <span className="admin-form__header-col--action"></span>
                     </div>
                     {formData.milestones.map((m, idx) => (
                       <div key={idx} className="admin-form__milestone-row">
@@ -254,24 +264,16 @@ export default function AdminDashboard() {
                           nm[idx].percentage = e.target.value;
                           setFormData({...formData, milestones: nm});
                         }} required />
-                        <input type="datetime-local" className="admin-form__input admin-form__input--date" value={m.deadline} onChange={e => {
+                        <input type="datetime-local" className="admin-form__input admin-form__input--date admin-form__input--premium-date" value={m.deadline} onChange={e => {
                           const nm = [...formData.milestones];
                           nm[idx].deadline = e.target.value;
                           setFormData({...formData, milestones: nm});
                         }} required />
-                        <button type="button" className="admin-form__remove" onClick={() => handleRemovePhase(idx)} style={{background:'none', border:'none', cursor:'pointer', color:'var(--pink-500)', fontSize:'1.2rem'}} title="Remove Phase">×</button>
+                        <button type="button" className="admin-form__remove" onClick={() => handleRemovePhase(idx)} title="Remove Phase">×</button>
                       </div>
                     ))}
                     
-                    <div className="admin-form__pct-summary" style={{
-                      display:'flex', 
-                      justifyContent:'space-between', 
-                      alignItems:'center',
-                      background: totalPercentage === 100 ? 'var(--status-completed-bg)' : 'var(--status-pending-bg)',
-                      padding:'12px 20px',
-                      borderRadius: 'var(--radius-md)',
-                      border: `1.5px dashed ${totalPercentage === 100 ? 'var(--status-completed)' : 'var(--status-pending)'}`
-                    }}>
+                    <div className="admin-form__pct-summary">
                        <span style={{fontFamily:'var(--font-mono)', fontSize:'0.8rem', color: totalPercentage === 100 ? 'var(--status-completed)' : 'var(--status-pending)'}}>
                          {totalPercentage === 100 ? '✓ Milestone allocation verified (100%)' : `⚠ Total allocation must equal 100% (Current: ${totalPercentage}%)`}
                        </span>
@@ -300,7 +302,6 @@ export default function AdminDashboard() {
                         <div className="admin-tender-card__status admin-tender-card__status--bidding">SEALED</div>
                         <span className="admin-tender-card__index">Ready for Finalization</span>
                       </div>
-                      {/* MODIFIED: Replaced full hash with hoverable info button */}
                       <div className="admin-tender-card__asset-info">
                         <div className="admin-tender-card__info-btn">
                           i
@@ -320,7 +321,11 @@ export default function AdminDashboard() {
                   ))}
                 </div>
                 {tenders.filter(t => t.status === 'BIDDING' && now >= Number(t.bidding_end_time)).length === 0 && (
-                   <div className="admin-ongoing__empty">No projects currently require finalization.</div>
+                   <div className="admin-ongoing__empty-centered">
+                     <span className="admin-ongoing__empty-icon">⚖️</span>
+                     <h3>Settlement Queue Clear</h3>
+                     <p>There are no projects currently awaiting administrative settlement.</p>
+                   </div>
                 )}
               </div>
             )}
@@ -331,7 +336,6 @@ export default function AdminDashboard() {
           <div className="admin-modal">
             <div className="admin-modal__content">
               <h3>Arbitration & Winning Bid Selection</h3>
-              {/* MODIFIED: Replaced inline hash with info button */}
               <p style={{fontSize:'0.8rem', color:'var(--gray-500)', marginBottom:'20px', display: 'flex', alignItems: 'center'}}>
                 Evaluating bids for asset: 
                 <span className="admin-tender-card__info-btn admin-tender-card__info-btn--inline" style={{marginLeft: '10px'}}>
