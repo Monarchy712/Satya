@@ -1,7 +1,7 @@
 import { ethers } from 'ethers';
 
 // ── Factory Contract ──
-export const FACTORY_ADDRESS = '0xb87d0f345b8497Ef86f0Fa8F65A0882A11B3613D';
+export const FACTORY_ADDRESS = '0xebc2847096aB4F2b747bC190515f288babda9211';
 
 export const FACTORY_ABI = [
   {
@@ -52,11 +52,19 @@ export const FACTORY_ABI = [
     outputs: [{ internalType: "bool", name: "", type: "bool" }],
     stateMutability: "view",
     type: "function"
+  },
+  {
+    inputs: [{ internalType: "address", name: "user", type: "address" }],
+    name: "getUserTenders",
+    outputs: [{ internalType: "address[]", name: "", type: "address[]" }],
+    stateMutability: "view",
+    type: "function"
   }
 ];
 
-// ── Tender Contract (individual tender instances) ──
+// ── Tender Contract (individual tender instances — EIP-712 Multisig) ──
 export const TENDER_ABI = [
+  // --- State getters ---
   {
     inputs: [], name: "tenderStatus",
     outputs: [{ internalType: "enum Tender.TenderStatus", name: "", type: "uint8" }],
@@ -88,11 +96,6 @@ export const TENDER_ABI = [
     stateMutability: "view", type: "function"
   },
   {
-    inputs: [], name: "contractorDeposit",
-    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
-    stateMutability: "view", type: "function"
-  },
-  {
     inputs: [], name: "retainedPercent",
     outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
     stateMutability: "view", type: "function"
@@ -103,47 +106,107 @@ export const TENDER_ABI = [
     stateMutability: "view", type: "function"
   },
   {
-    inputs: [], name: "onSiteEngineer",
+    inputs: [], name: "factory",
     outputs: [{ internalType: "address", name: "", type: "address" }],
+    stateMutability: "view", type: "function"
+  },
+
+  // --- EIP-712 constants ---
+  {
+    inputs: [], name: "DOMAIN_SEPARATOR",
+    outputs: [{ internalType: "bytes32", name: "", type: "bytes32" }],
     stateMutability: "view", type: "function"
   },
   {
-    inputs: [], name: "complianceOfficer",
-    outputs: [{ internalType: "address", name: "", type: "address" }],
+    inputs: [], name: "APPROVAL_TYPEHASH",
+    outputs: [{ internalType: "bytes32", name: "", type: "bytes32" }],
     stateMutability: "view", type: "function"
   },
-  {
-    inputs: [], name: "financialAuditor",
-    outputs: [{ internalType: "address", name: "", type: "address" }],
-    stateMutability: "view", type: "function"
-  },
-  {
-    inputs: [], name: "sanctioningAuthority",
-    outputs: [{ internalType: "address", name: "", type: "address" }],
-    stateMutability: "view", type: "function"
-  },
+
+  // --- Admin/role helpers ---
   {
     inputs: [{ internalType: "uint256", name: "", type: "uint256" }],
-    name: "bids",
+    name: "admins",
+    outputs: [{ internalType: "address", name: "", type: "address" }],
+    stateMutability: "view", type: "function"
+  },
+  {
+    inputs: [{ internalType: "address", name: "", type: "address" }],
+    name: "roles",
+    outputs: [{ internalType: "enum Tender.Role", name: "", type: "uint8" }],
+    stateMutability: "view", type: "function"
+  },
+  {
+    inputs: [{ internalType: "address", name: "user", type: "address" }],
+    name: "getUserRole",
+    outputs: [{ internalType: "enum Tender.Role", name: "", type: "uint8" }],
+    stateMutability: "view", type: "function"
+  },
+  {
+    inputs: [{ internalType: "address", name: "user", type: "address" }],
+    name: "getRoleName",
+    outputs: [{ internalType: "string", name: "", type: "string" }],
+    stateMutability: "view", type: "function"
+  },
+  {
+    inputs: [{ internalType: "address", name: "user", type: "address" }],
+    name: "getUserInfo",
     outputs: [
-      { internalType: "address", name: "bidder", type: "address" },
-      { internalType: "uint256", name: "amount", type: "uint256" }
+      { internalType: "bool", name: "involved", type: "bool" },
+      { internalType: "string", name: "role", type: "string" },
+      { internalType: "uint256", name: "milestoneId", type: "uint256" },
+      { internalType: "enum Tender.MilestoneStatus", name: "status", type: "uint8" }
     ],
     stateMutability: "view", type: "function"
   },
   {
-    inputs: [{ internalType: "uint256", name: "", "type": "uint256" }],
+    inputs: [{ internalType: "address", name: "user", type: "address" }],
+    name: "isAdmin",
+    outputs: [{ internalType: "bool", name: "", type: "bool" }],
+    stateMutability: "view", type: "function"
+  },
+
+  // --- Signing state ---
+  {
+    inputs: [
+      { internalType: "uint256", name: "", type: "uint256" },
+      { internalType: "address", name: "", type: "address" }
+    ],
+    name: "hasSigned",
+    outputs: [{ internalType: "bool", name: "", type: "bool" }],
+    stateMutability: "view", type: "function"
+  },
+  {
+    inputs: [
+      { internalType: "uint256", name: "id", type: "uint256" },
+      { internalType: "address", name: "user", type: "address" }
+    ],
+    name: "hasUserSigned",
+    outputs: [{ internalType: "bool", name: "", type: "bool" }],
+    stateMutability: "view", type: "function"
+  },
+  {
+    inputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    name: "executed",
+    outputs: [{ internalType: "bool", name: "", type: "bool" }],
+    stateMutability: "view", type: "function"
+  },
+
+  // --- Milestones ---
+  {
+    inputs: [{ internalType: "uint256", name: "", type: "uint256" }],
     name: "milestones",
     outputs: [
       { internalType: "string", name: "name", type: "string" },
       { internalType: "uint256", name: "percentage", type: "uint256" },
       { internalType: "uint256", name: "deadline", type: "uint256" },
-      { internalType: "uint256", name: "completionPercent", type: "uint256" },
       { internalType: "uint256", name: "depositShare", type: "uint256" },
       { internalType: "enum Tender.MilestoneStatus", name: "status", type: "uint8" }
     ],
     stateMutability: "view", type: "function"
   },
+
+  // --- Bidding ---
   {
     inputs: [{ internalType: "uint256", name: "_amount", type: "uint256" }],
     name: "placeBid",
@@ -159,41 +222,39 @@ export const TENDER_ABI = [
     outputs: [],
     stateMutability: "nonpayable", type: "function"
   },
+
+  // --- Milestone submission (Contractor calls directly) ---
   {
     inputs: [{ internalType: "uint256", name: "id", type: "uint256" }],
-    name: "submitWorkForReview",
+    name: "submitMilestone",
     outputs: [],
     stateMutability: "nonpayable", type: "function"
   },
+
+  // --- Milestone execution (Backend calls after 4/4 sigs) ---
   {
     inputs: [
       { internalType: "uint256", name: "id", type: "uint256" },
-      { internalType: "uint256", name: "percent", type: "uint256" }
+      { internalType: "bytes[]", name: "signatures", type: "bytes[]" }
     ],
-    name: "evaluateMilestone",
+    name: "executeMilestone",
     outputs: [],
     stateMutability: "nonpayable", type: "function"
   },
+
+  // --- Receive ETH ---
   {
-    inputs: [],
-    name: "fundContract",
-    outputs: [],
-    stateMutability: "payable", type: "function"
-  },
-  {
-    inputs: [], name: "factory",
-    outputs: [{ internalType: "address", name: "", type: "address" }],
-    stateMutability: "view", type: "function"
+    stateMutability: "payable", type: "receive"
   }
 ];
 
 // ── Status Enums (matching Solidity) ──
 export const TENDER_STATUS = ['BIDDING', 'ACTIVE', 'COMPLETED', 'CANCELLED'];
 export const MILESTONE_STATUS = ['PENDING', 'UNDER_REVIEW', 'APPROVED'];
+export const ROLE_NAMES = ['None', 'OnSiteEngineer', 'ComplianceOfficer', 'FinancialAuditor', 'SanctioningAuthority', 'Contractor', 'Government'];
 
 // ── Helper: get a provider (read-only, no wallet) ──
 export function getProvider() {
-  // Use Sepolia RPC for read-only calls
   return new ethers.JsonRpcProvider('https://eth-sepolia.g.alchemy.com/v2/Qq97YUiLlpEOjydTQA3QE');
 }
 
@@ -204,13 +265,11 @@ export async function getSigner() {
   const SEPOLIA_CHAIN_ID = '0xaa36a7'; // 11155111
   
   try {
-    // Attempt to switch to Sepolia
     await window.ethereum.request({
       method: 'wallet_switchEthereumChain',
       params: [{ chainId: SEPOLIA_CHAIN_ID }],
     });
   } catch (switchError) {
-    // This error code indicates that the chain has not been added to MetaMask.
     if (switchError.code === 4902) {
       try {
         await window.ethereum.request({
@@ -250,4 +309,33 @@ export function getFactoryContract(signerOrProvider) {
 
 export function getTenderContract(address, signerOrProvider) {
   return new ethers.Contract(address, TENDER_ABI, signerOrProvider);
+}
+
+// ── EIP-712 Signing Helper ──
+/**
+ * Signs an EIP-712 Approve(milestoneId, tender) typed message using MetaMask.
+ * Returns the raw hex signature string.
+ */
+export async function signMilestoneApproval(signer, tenderAddress, milestoneId) {
+  const domain = {
+    name: 'Tender',
+    version: '1',
+    chainId: 11155111, // Sepolia
+    verifyingContract: tenderAddress,
+  };
+
+  const types = {
+    Approve: [
+      { name: 'milestoneId', type: 'uint256' },
+      { name: 'tender', type: 'address' },
+    ],
+  };
+
+  const value = {
+    milestoneId: milestoneId,
+    tender: tenderAddress,
+  };
+
+  const signature = await signer.signTypedData(domain, types, value);
+  return signature;
 }

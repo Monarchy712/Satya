@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
+import { getSigner, getTenderContract } from '../../utils/contracts';
 import LoadingOverlay from '../UI/LoadingOverlay';
 import './ContractorDashboard.css';
 
@@ -51,28 +52,20 @@ export default function ContractorDashboard() {
     setSubmitting(true);
     
     try {
-      const payload = {
-        tender_address: selectedTask.tenderAddr,
-        milestone_id: selectedTask.mIdx,
-        report_note: report // Optional metadata for the backend/audit
-      };
+      // Submit milestone directly on-chain via MetaMask
+      const signer = await getSigner();
+      const tender = getTenderContract(selectedTask.tenderAddr, signer);
+      
+      const tx = await tender.submitMilestone(BigInt(selectedTask.mIdx));
+      await tx.wait();
 
-      const response = await axios.post(
-        'http://localhost:8000/api/contractor/apply-milestone',
-        payload,
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
-      );
-
-      if (response.data.success) {
-        alert('Phase successfully submitted for oversight review!');
-        setShowModal(false);
-        setReport('');
-        loadContractorData();
-      }
+      alert('Phase successfully submitted for oversight review on-chain!');
+      setShowModal(false);
+      setReport('');
+      loadContractorData();
     } catch (err) {
-      alert(`Submission failed: ${err.response?.data?.detail || err.message}`);
+      const reason = err.reason || err.message || 'Unknown error';
+      alert(`Submission failed: ${reason}`);
     } finally {
       setSubmitting(false);
     }

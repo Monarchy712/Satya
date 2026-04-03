@@ -49,6 +49,8 @@ class MilestoneApproval(Base):
     tender_address = Column(String, nullable=False, index=True)
     milestone_id = Column(Integer, nullable=False)
     admin_address = Column(String, nullable=False)
-    role = Column(String, nullable=False)  # Engineer, Compliance, Auditor, Authority
+    role = Column(String, nullable=False)  # OnSiteEngineer, ComplianceOfficer, etc.
+    signature = Column(String, nullable=False)  # Raw EIP-712 hex signature
     signed_at = Column(DateTime(timezone=True), server_default=func.now())
+
 

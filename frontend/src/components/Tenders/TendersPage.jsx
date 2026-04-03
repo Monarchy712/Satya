@@ -28,7 +28,7 @@ export default function TendersPage() {
 
   async function loadTenders() {
     setLoading(true);
-    setSyncStatus('Syncing with Backend...');
+    setSyncStatus('Fetching from Blockchain...');
     try {
       const response = await fetch('http://localhost:8000/api/tenders/list');
       if (!response.ok) throw new Error('Backend aggregation failed');
