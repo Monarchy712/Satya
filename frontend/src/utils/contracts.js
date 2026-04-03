@@ -151,6 +151,36 @@ export const TENDER_ABI = [
     stateMutability: "nonpayable", type: "function"
   },
   {
+    inputs: [
+      { internalType: "address", name: "_contractor", type: "address" },
+      { internalType: "uint256", name: "_winningBid", type: "uint256" }
+    ],
+    name: "selectContractor",
+    outputs: [],
+    stateMutability: "nonpayable", type: "function"
+  },
+  {
+    inputs: [{ internalType: "uint256", name: "id", type: "uint256" }],
+    name: "submitWorkForReview",
+    outputs: [],
+    stateMutability: "nonpayable", type: "function"
+  },
+  {
+    inputs: [
+      { internalType: "uint256", name: "id", type: "uint256" },
+      { internalType: "uint256", name: "percent", type: "uint256" }
+    ],
+    name: "evaluateMilestone",
+    outputs: [],
+    stateMutability: "nonpayable", type: "function"
+  },
+  {
+    inputs: [],
+    name: "fundContract",
+    outputs: [],
+    stateMutability: "payable", type: "function"
+  },
+  {
     inputs: [], name: "factory",
     outputs: [{ internalType: "address", name: "", type: "address" }],
     stateMutability: "view", type: "function"
@@ -170,6 +200,45 @@ export function getProvider() {
 // ── Helper: get signer from MetaMask ──
 export async function getSigner() {
   if (!window.ethereum) throw new Error('MetaMask not installed');
+  
+  const SEPOLIA_CHAIN_ID = '0xaa36a7'; // 11155111
+  
+  try {
+    // Attempt to switch to Sepolia
+    await window.ethereum.request({
+      method: 'wallet_switchEthereumChain',
+      params: [{ chainId: SEPOLIA_CHAIN_ID }],
+    });
+  } catch (switchError) {
+    // This error code indicates that the chain has not been added to MetaMask.
+    if (switchError.code === 4902) {
+      try {
+        await window.ethereum.request({
+          method: 'wallet_addEthereumChain',
+          params: [
+            {
+              chainId: SEPOLIA_CHAIN_ID,
+              chainName: 'Sepolia Test Network',
+              nativeCurrency: {
+                name: 'SepoliaETH',
+                symbol: 'SepoliaETH',
+                decimals: 18,
+              },
+              rpcUrls: ['https://eth-sepolia.g.alchemy.com/v2/Qq97YUiLlpEOjydTQA3QE'],
+              blockExplorerUrls: ['https://sepolia.etherscan.io'],
+            },
+          ],
+        });
+      } catch (addError) {
+        throw new Error('Failed to add Sepolia network to MetaMask');
+      }
+    } else if (switchError.code === 4001) {
+       throw new Error('User rejected network switch');
+    } else {
+       console.error('Switch error', switchError);
+    }
+  }
+
   const provider = new ethers.BrowserProvider(window.ethereum);
   return provider.getSigner();
 }
