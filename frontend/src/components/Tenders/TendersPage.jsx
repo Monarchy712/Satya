@@ -53,6 +53,14 @@ export default function TendersPage() {
 
   async function handlePlaceBid(tenderAddr) {
     if (!bidAmount) return;
+    
+    // Safety check for expiration before signing
+    const tenderData = tenders.find(t => t.address === tenderAddr);
+    if (tenderData && now >= tenderData.biddingEndTime) {
+      setTxStatus('❌ Bidding window has closed.');
+      return;
+    }
+
     setBidding(true);
     setTxStatus('Awaiting Signature...');
     try {
@@ -68,7 +76,11 @@ export default function TendersPage() {
       setBidAmount('');
       loadTenders();
     } catch (err) {
-      setTxStatus(`❌ Failed: ${err.message}`);
+      console.error('[Tenders] Bid error:', err);
+      // More user-friendly revert messages
+      let msg = err.message;
+      if (msg.includes('reverted')) msg = 'Execution reverted (Check if already bid or deadline passed)';
+      setTxStatus(`❌ Failed: ${msg}`);
     } finally {
       setBidding(false);
     }

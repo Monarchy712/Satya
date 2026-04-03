@@ -1,7 +1,7 @@
 import { ethers } from 'ethers';
 
 // ── Factory Contract ──
-export const FACTORY_ADDRESS = "0x9a300b71a204990e069B8057380C7b12cb058189";
+export const FACTORY_ADDRESS = "0x439D362653d6476Ab6D5Ee19960Bf8320340db1f";
 
 export const FACTORY_ABI = [
   {
@@ -64,188 +64,608 @@ export const FACTORY_ABI = [
 
 // ── Tender Contract (individual tender instances — EIP-712 Multisig) ──
 export const TENDER_ABI = [
-  // --- State getters ---
-  {
-    inputs: [], name: "tenderStatus",
-    outputs: [{ internalType: "enum Tender.TenderStatus", name: "", type: "uint8" }],
-    stateMutability: "view", type: "function"
-  },
-  {
-    inputs: [], name: "startTime",
-    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
-    stateMutability: "view", type: "function"
-  },
-  {
-    inputs: [], name: "endTime",
-    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
-    stateMutability: "view", type: "function"
-  },
-  {
-    inputs: [], name: "biddingEndTime",
-    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
-    stateMutability: "view", type: "function"
-  },
-  {
-    inputs: [], name: "winningBid",
-    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
-    stateMutability: "view", type: "function"
-  },
-  {
-    inputs: [], name: "contractor",
-    outputs: [{ internalType: "address", name: "", type: "address" }],
-    stateMutability: "view", type: "function"
-  },
-  {
-    inputs: [], name: "retainedPercent",
-    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
-    stateMutability: "view", type: "function"
-  },
-  {
-    inputs: [], name: "currentMilestone",
-    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
-    stateMutability: "view", type: "function"
-  },
-  {
-    inputs: [], name: "factory",
-    outputs: [{ internalType: "address", name: "", type: "address" }],
-    stateMutability: "view", type: "function"
-  },
-
-  // --- EIP-712 constants ---
-  {
-    inputs: [], name: "DOMAIN_SEPARATOR",
-    outputs: [{ internalType: "bytes32", name: "", type: "bytes32" }],
-    stateMutability: "view", type: "function"
-  },
-  {
-    inputs: [], name: "APPROVAL_TYPEHASH",
-    outputs: [{ internalType: "bytes32", name: "", type: "bytes32" }],
-    stateMutability: "view", type: "function"
-  },
-
-  // --- Admin/role helpers ---
-  {
-    inputs: [{ internalType: "uint256", name: "", type: "uint256" }],
-    name: "admins",
-    outputs: [{ internalType: "address", name: "", type: "address" }],
-    stateMutability: "view", type: "function"
-  },
-  {
-    inputs: [{ internalType: "address", name: "", type: "address" }],
-    name: "roles",
-    outputs: [{ internalType: "enum Tender.Role", name: "", type: "uint8" }],
-    stateMutability: "view", type: "function"
-  },
-  {
-    inputs: [{ internalType: "address", name: "user", type: "address" }],
-    name: "getUserRole",
-    outputs: [{ internalType: "enum Tender.Role", name: "", type: "uint8" }],
-    stateMutability: "view", type: "function"
-  },
-  {
-    inputs: [{ internalType: "address", name: "user", type: "address" }],
-    name: "getRoleName",
-    outputs: [{ internalType: "string", name: "", type: "string" }],
-    stateMutability: "view", type: "function"
-  },
-  {
-    inputs: [{ internalType: "address", name: "user", type: "address" }],
-    name: "getUserInfo",
-    outputs: [
-      { internalType: "bool", name: "involved", type: "bool" },
-      { internalType: "string", name: "role", type: "string" },
-      { internalType: "uint256", name: "milestoneId", type: "uint256" },
-      { internalType: "enum Tender.MilestoneStatus", name: "status", type: "uint8" }
-    ],
-    stateMutability: "view", type: "function"
-  },
-  {
-    inputs: [{ internalType: "address", name: "user", type: "address" }],
-    name: "isAdmin",
-    outputs: [{ internalType: "bool", name: "", type: "bool" }],
-    stateMutability: "view", type: "function"
-  },
-
-  // --- Signing state ---
-  {
-    inputs: [
-      { internalType: "uint256", name: "", type: "uint256" },
-      { internalType: "address", name: "", type: "address" }
-    ],
-    name: "hasSigned",
-    outputs: [{ internalType: "bool", name: "", type: "bool" }],
-    stateMutability: "view", type: "function"
-  },
-  {
-    inputs: [
-      { internalType: "uint256", name: "id", type: "uint256" },
-      { internalType: "address", name: "user", type: "address" }
-    ],
-    name: "hasUserSigned",
-    outputs: [{ internalType: "bool", name: "", type: "bool" }],
-    stateMutability: "view", type: "function"
-  },
-  {
-    inputs: [{ internalType: "uint256", name: "", type: "uint256" }],
-    name: "executed",
-    outputs: [{ internalType: "bool", name: "", type: "bool" }],
-    stateMutability: "view", type: "function"
-  },
-
-  // --- Milestones ---
-  {
-    inputs: [{ internalType: "uint256", name: "", type: "uint256" }],
-    name: "milestones",
-    outputs: [
-      { internalType: "string", name: "name", type: "string" },
-      { internalType: "uint256", name: "percentage", type: "uint256" },
-      { internalType: "uint256", name: "deadline", type: "uint256" },
-      { internalType: "uint256", name: "depositShare", type: "uint256" },
-      { internalType: "enum Tender.MilestoneStatus", name: "status", type: "uint8" }
-    ],
-    stateMutability: "view", type: "function"
-  },
-
-  // --- Bidding ---
-  {
-    inputs: [{ internalType: "uint256", name: "_amount", type: "uint256" }],
-    name: "placeBid",
-    outputs: [],
-    stateMutability: "nonpayable", type: "function"
-  },
-  {
-    inputs: [
-      { internalType: "address", name: "_contractor", type: "address" },
-      { internalType: "uint256", name: "_winningBid", type: "uint256" }
-    ],
-    name: "selectContractor",
-    outputs: [],
-    stateMutability: "nonpayable", type: "function"
-  },
-
-  // --- Milestone submission (Contractor calls directly) ---
-  {
-    inputs: [{ internalType: "uint256", name: "id", type: "uint256" }],
-    name: "submitMilestone",
-    outputs: [],
-    stateMutability: "nonpayable", type: "function"
-  },
-
-  // --- Milestone execution (Backend calls after 4/4 sigs) ---
-  {
-    inputs: [
-      { internalType: "uint256", name: "id", type: "uint256" },
-      { internalType: "bytes[]", name: "signatures", type: "bytes[]" }
-    ],
-    name: "executeMilestone",
-    outputs: [],
-    stateMutability: "nonpayable", type: "function"
-  },
-
-  // --- Receive ETH ---
-  {
-    stateMutability: "payable", type: "receive"
-  }
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_factory",
+				"type": "address"
+			},
+			{
+				"internalType": "address[]",
+				"name": "_admins",
+				"type": "address[]"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_startTime",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_endTime",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_biddingEndTime",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_retainedPercent",
+				"type": "uint256"
+			},
+			{
+				"internalType": "string[]",
+				"name": "_names",
+				"type": "string[]"
+			},
+			{
+				"internalType": "uint256[]",
+				"name": "_percentages",
+				"type": "uint256[]"
+			},
+			{
+				"internalType": "uint256[]",
+				"name": "_deadlines",
+				"type": "uint256[]"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "constructor"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "bidder",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "BidPlaced",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "contractor",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "bid",
+				"type": "uint256"
+			}
+		],
+		"name": "ContractorSelected",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "id",
+				"type": "uint256"
+			}
+		],
+		"name": "MilestoneExecuted",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "id",
+				"type": "uint256"
+			}
+		],
+		"name": "MilestoneSubmitted",
+		"type": "event"
+	},
+	{
+		"inputs": [],
+		"name": "APPROVAL_TYPEHASH",
+		"outputs": [
+			{
+				"internalType": "bytes32",
+				"name": "",
+				"type": "bytes32"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "DOMAIN_SEPARATOR",
+		"outputs": [
+			{
+				"internalType": "bytes32",
+				"name": "",
+				"type": "bytes32"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "admins",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "biddingEndTime",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "bids",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "bidder",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "contractor",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "currentMilestone",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "endTime",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "id",
+				"type": "uint256"
+			},
+			{
+				"internalType": "bytes[]",
+				"name": "signatures",
+				"type": "bytes[]"
+			}
+		],
+		"name": "executeMilestone",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "executed",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "factory",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "user",
+				"type": "address"
+			}
+		],
+		"name": "getRoleName",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "",
+				"type": "string"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "user",
+				"type": "address"
+			}
+		],
+		"name": "getUserInfo",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "involved",
+				"type": "bool"
+			},
+			{
+				"internalType": "string",
+				"name": "role",
+				"type": "string"
+			},
+			{
+				"internalType": "uint256",
+				"name": "milestoneId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "enum Tender.MilestoneStatus",
+				"name": "status",
+				"type": "uint8"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "user",
+				"type": "address"
+			}
+		],
+		"name": "getUserRole",
+		"outputs": [
+			{
+				"internalType": "enum Tender.Role",
+				"name": "",
+				"type": "uint8"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "hasBid",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "hasSigned",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "id",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address",
+				"name": "user",
+				"type": "address"
+			}
+		],
+		"name": "hasUserSigned",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "user",
+				"type": "address"
+			}
+		],
+		"name": "isAdmin",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "milestones",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "name",
+				"type": "string"
+			},
+			{
+				"internalType": "uint256",
+				"name": "percentage",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "deadline",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "depositShare",
+				"type": "uint256"
+			},
+			{
+				"internalType": "enum Tender.MilestoneStatus",
+				"name": "status",
+				"type": "uint8"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "placeBid",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "retainedPercent",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "roles",
+		"outputs": [
+			{
+				"internalType": "enum Tender.Role",
+				"name": "",
+				"type": "uint8"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_contractor",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_winningBid",
+				"type": "uint256"
+			}
+		],
+		"name": "selectContractor",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "startTime",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "id",
+				"type": "uint256"
+			}
+		],
+		"name": "submitMilestone",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "tenderStatus",
+		"outputs": [
+			{
+				"internalType": "enum Tender.TenderStatus",
+				"name": "",
+				"type": "uint8"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "winningBid",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"stateMutability": "payable",
+		"type": "receive"
+	}
 ];
 
 // ── Status Enums (matching Solidity) ──
