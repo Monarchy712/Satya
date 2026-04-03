@@ -7,6 +7,7 @@ from auth import get_current_user
 from blockchain import (
     get_user_role_on_tender,
     execute_milestone_with_signatures,
+    is_milestone_executed,
 )
 
 router = APIRouter(tags=["Admin & Oversight Tasks"])
@@ -87,33 +88,40 @@ def sign_milestone(
     if not signature or not signature.startswith("0x"):
         raise HTTPException(status_code=400, detail="Invalid signature format. Must be a hex string starting with 0x")
 
-    # 1. Check if already signed
+    # 1. Is it already executed on-chain?
+    if is_milestone_executed(tender_addr, milestone_id):
+        return {
+            "message": "Milestone already finalized on-chain.",
+            "success": True,
+            "count": _get_sig_count(db, tender_addr, milestone_id),
+            "executed": True,
+        }
+
+    # 2. Check if this specific admin has already signed
     existing = db.query(MilestoneApproval).filter(
         MilestoneApproval.tender_address == tender_addr,
         MilestoneApproval.milestone_id == milestone_id,
         MilestoneApproval.admin_address == wallet,
     ).first()
     
-    if existing:
-        return {"message": "Already signed", "success": True, "count": _get_sig_count(db, tender_addr, milestone_id)}
+    if not existing:
+        # Get users on-chain role for validation
+        role_name = get_user_role_on_tender(wallet, tender_addr)
+        if role_name in ("None", "Contractor", "Government"):
+            raise HTTPException(status_code=403, detail=f"Wallet does not have a committee role (got: {role_name})")
 
-    # 2. Get the user's on-chain role for this tender
-    role_name = get_user_role_on_tender(wallet, tender_addr)
-    if role_name in ("None", "Contractor", "Government"):
-        raise HTTPException(status_code=403, detail=f"Wallet does not have a committee role on this tender (got: {role_name})")
+        # Store the new signature
+        approval = MilestoneApproval(
+            tender_address=tender_addr,
+            milestone_id=milestone_id,
+            admin_address=wallet,
+            role=role_name,
+            signature=signature,
+        )
+        db.add(approval)
+        db.commit()
 
-    # 3. Store the signature
-    approval = MilestoneApproval(
-        tender_address=tender_addr,
-        milestone_id=milestone_id,
-        admin_address=wallet,
-        role=role_name,
-        signature=signature,
-    )
-    db.add(approval)
-    db.commit()
-
-    # 4. Check if 4/4 reached
+    # 3. Check for 4/4 sigs and attempt execution
     all_sigs = db.query(MilestoneApproval).filter(
         MilestoneApproval.tender_address == tender_addr,
         MilestoneApproval.milestone_id == milestone_id,
@@ -122,10 +130,9 @@ def sign_milestone(
     count = len(all_sigs)
 
     if count >= 4:
-        # All 4 signatures collected — execute on-chain!
         try:
-            sig_list = [s.signature for s in all_sigs[:4]]  # Take exactly 4
-            print(f">>> 4/4 signatures collected for tender {tender_addr} milestone {milestone_id}. Executing on-chain...")
+            sig_list = [s.signature for s in all_sigs[:4]]
+            print(f">>> Executing milestone {milestone_id} for tender {tender_addr}...")
             tx = execute_milestone_with_signatures(tender_addr, milestone_id, sig_list)
             receipt = tx.wait()
             return {
@@ -135,11 +142,15 @@ def sign_milestone(
                 "executed": True,
             }
         except Exception as e:
-            print(f"CRITICAL: On-chain execution failed: {e}")
-            raise HTTPException(
-                status_code=500,
-                detail=f"All 4 signatures collected but on-chain execution failed: {str(e)}"
-            )
+            # If 4 sigs are there but execution fails, return with executed=False 
+            # so the UI can show a retry button or error.
+            return {
+                "message": f"Signatures collected ({count}/4) but execution failed: {str(e)}",
+                "success": True,
+                "count": count,
+                "executed": False,
+                "error": str(e)
+            }
     
     return {
         "message": f"Signature recorded ({count}/4)",

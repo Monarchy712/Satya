@@ -139,6 +139,8 @@ export default function OversightDashboard() {
 
       if (data.executed) {
         setToast(`✅ Milestone executed on-chain! All 4 signatures collected.`);
+      } else if (data.count >= 4) {
+        setError(`⚠️ Signatures collected, but on-chain execution failed: ${data.error || 'Check wallet/gas'}`);
       } else {
         setToast(`✅ Signature recorded (${data.count}/4)`);
       }
@@ -220,18 +222,28 @@ export default function OversightDashboard() {
                   </div>
 
                   <div className="oversight-card__action">
-                    {t.alreadySigned ? (
+                    {t.milestoneStatusNum === 1 ? (
+                      t.sigCount >= 4 ? (
+                        <button
+                          className="oversight-card__btn oversight-card__btn--execute"
+                          onClick={() => handleSign(t.address, t.currentMilestone)}
+                          disabled={signing}
+                        >
+                          ⚙️ Execute On-Chain
+                        </button>
+                      ) : (
+                        <button
+                          className="oversight-card__btn"
+                          onClick={() => handleSign(t.address, t.currentMilestone)}
+                          disabled={signing}
+                        >
+                          {t.alreadySigned ? '🔄 Re-submit Sig' : '🖋️ Sign & Approve'}
+                        </button>
+                      )
+                    ) : t.milestoneStatusNum === 2 ? (
                       <div className="oversight-card__status oversight-card__status--signed">
-                        Signature Recorded ✓
+                        Phase Finalized ✓
                       </div>
-                    ) : t.milestoneStatusNum === 1 ? (
-                      <button
-                        className="oversight-card__btn"
-                        onClick={() => handleSign(t.address, t.currentMilestone)}
-                        disabled={signing}
-                      >
-                        🖋️ Sign & Approve
-                      </button>
                     ) : (
                       <div className="oversight-card__status oversight-card__status--waiting">
                         Awaiting Submission

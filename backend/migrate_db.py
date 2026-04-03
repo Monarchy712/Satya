@@ -34,9 +34,21 @@ def migrate():
                 milestone_id INTEGER NOT NULL,
                 admin_address VARCHAR NOT NULL,
                 role VARCHAR NOT NULL,
+                signature VARCHAR,
                 signed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         """))
+
+        print("\nEnsuring 'signature' column exists in 'milestone_approvals'...")
+        try:
+            conn.execute(text("ALTER TABLE milestone_approvals ADD COLUMN signature VARCHAR;"))
+            print("✓ Added signature column")
+        except Exception as e:
+            if "already exists" in str(e).lower():
+                print("✓ Column 'signature' already exists.")
+            else:
+                print(f"! Error adding signature column (may already exist or table missing): {e}")
+
         conn.commit()
     print("Migration complete.")
 

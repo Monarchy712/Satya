@@ -129,7 +129,7 @@ export default function ContractorDashboard() {
                                     </div>
                                  </div>
                                  
-                                 {isPending && (
+                                 {isPending && idx === t.current_milestone && (
                                    <button 
                                      className="contractor-milestone-btn"
                                      onClick={() => openSubmissionModal(t.tender_address, idx, m.name)}

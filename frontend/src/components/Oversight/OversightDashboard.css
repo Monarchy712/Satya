@@ -88,11 +88,19 @@
   color: #fff;
 }
 
+.oversight-card__meta {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  margin-top: 15px;
+}
+
 .oversight-card__role {
-  font-size: 0.9rem;
-  color: #666;
-  font-weight: 600;
+  font-size: 0.85rem;
+  color: #888;
+  font-weight: 700;
   text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .oversight-card__btn {
@@ -112,6 +120,16 @@
   background: #ee5253;
   transform: scale(1.05);
   box-shadow: 0 6px 20px rgba(255, 107, 107, 0.5);
+}
+
+.oversight-card__btn--execute {
+  background: linear-gradient(135deg, #f39c12 0%, #d35400 100%);
+  box-shadow: 0 4px 15px rgba(243, 156, 18, 0.3);
+}
+
+.oversight-card__btn--execute:hover {
+  background: linear-gradient(135deg, #e67e22 0%, #e67e22 100%);
+  box-shadow: 0 6px 20px rgba(243, 156, 18, 0.5);
 }
 
 .oversight-card__status--signed {

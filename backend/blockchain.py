@@ -447,6 +447,17 @@ def execute_milestone_with_signatures(tender_address: str, milestone_id: int, si
     tx_hash = w3.eth.send_raw_transaction(signed.raw_transaction)
     return TxWrapper(tx_hash)
 
+
+def is_milestone_executed(tender_address: str, milestone_id: int) -> bool:
+    """Checks the on-chain 'executed' mapping for a specific milestone."""
+    try:
+        tender = get_tender_read_contract(tender_address)
+        return tender.functions.executed(milestone_id).call()
+    except Exception as e:
+        print(f"Failed to check execution status for {tender_address} mapping {milestone_id}: {e}")
+        return False
+
+
 def get_identity_hash(identifier: str):
     """Generates a keccak256 hash for a given identifier (email, wallet, etc.)"""
     return keccak(text=identifier)
