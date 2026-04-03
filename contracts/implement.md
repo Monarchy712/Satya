@@ -1,574 +1,357 @@
-# 📘 Tender System Implementation Guide (Backend-Driven Version)
+# 🏗️ Tender Management System (Blockchain + EIP-712 Multisig)
 
-This document explains the **updated architecture and usage** of:
+This system implements a **fully on-chain tender lifecycle** with **EIP-712 multisignature milestone approvals**.
 
-* `TenderFactory.sol`
-* `Tender.sol`
-
-This version reflects your **final design change**:
-
-> ⚠️ **All file uploads + ML processing happen OFF-CHAIN (backend)**
-> Blockchain only handles **state + money + validation**
+It replaces backend-driven approvals with **cryptographic consensus between 4 admins (4/4 required)**.
 
 ---
 
-# 🧠 SYSTEM OVERVIEW
+# 📦 CONTRACTS OVERVIEW
 
-## 🔄 Updated Architecture
+## 1. TenderFactory
 
-```text
-Contractor → Backend (uploads images)
-Backend → ML model → computes % completion
-Backend → calls smart contract (evaluateMilestone)
-Contract → handles logic + payments
+* Deploys new Tender contracts
+* Tracks all tenders
+* Maps users → involved tenders
+
+## 2. Tender 
+
+* Handles bidding, contractor selection
+* Manages milestones
+* Enforces multisig approval (EIP-712)
+
+---
+
+# 🔁 COMPLETE SYSTEM FLOW
+
+### Step 1 — Government creates tender
+
+→ `TenderFactory.createTender()`
+
+### Step 2 — Government selects contractor
+
+→ `Tender.selectContractor()`
+
+### Step 3 — Contractor submits milestone
+
+→ `Tender.submitMilestone()`
+
+### Step 4 — Admins sign off-chain (EIP-712)
+
+### Step 5 — Anyone executes milestone
+
+→ `Tender.executeMilestone()`
+
+### Step 6 — Contract finalizes and pays contractor
+
+---
+
+# 🏭 TENDER FACTORY FUNCTIONS
+
+## 1. `createTender(...)`
+
+### 🔹 Who calls?
+
+Government only
+
+### 🔹 Purpose:
+
+Creates a new Tender contract
+
+### 🔹 When to call?
+
+When a new project/tender is created
+
+### 🔹 Inputs:
+
+* `_admins` → 4 admin wallet addresses
+* `_startTime`, `_endTime`, `_biddingEndTime`
+* `_retainedPercent`
+* `_names`, `_percentages`, `_deadlines` → milestone data
+
+### 🔹 Output:
+
+* Returns new Tender contract address
+
+---
+
+## 2. `getUserTenders(address user)`
+
+### 🔹 Purpose:
+
+Returns all tender contracts a user is involved in
+
+### 🔹 When to call?
+
+* Dashboard load
+* User login
+
+---
+
+## 3. `getAllTenders()`
+
+### 🔹 Purpose:
+
+Returns all tenders created
+
+### 🔹 When to call?
+
+* Admin panel
+* Explorer view
+
+---
+
+# 📜 TENDER CONTRACT FUNCTIONS
+
+---
+
+# 👤 ROLE & USER FUNCTIONS
+
+## 1. `getUserRole(address user)`
+
+### 🔹 Returns:
+
+Enum role
+
+### 🔹 Used internally
+
+---
+
+## 2. `getRoleName(address user)`
+
+### 🔹 Returns:
+
+String role
+
+### 🔹 When to call?
+
+Frontend display
+
+### 🔹 Possible values:
+
+* "OnSiteEngineer"
+* "ComplianceOfficer"
+* "FinancialAuditor"
+* "SanctioningAuthority"
+* "Contractor"
+* "Government"
+
+---
+
+## 3. `getUserInfo(address user)`
+
+### 🔹 Returns:
+
+* `involved` → bool
+* `role` → string
+* `milestoneId` → current milestone
+* `status` → milestone status
+
+### 🔹 When to call?
+
+* Dashboard load
+* Contract detail page
+
+---
+
+## 4. `hasUserSigned(uint256 id, address user)`
+
+### 🔹 Returns:
+
+Whether user has signed milestone
+
+### 🔹 When to call?
+
+* Show "Signed / Pending" UI
+* Approval progress tracking
+
+---
+
+# 🏗️ BIDDING / SETUP
+
+## 5. `selectContractor(address _contractor, uint256 _winningBid)`
+
+### 🔹 Who calls?
+
+Government
+
+### 🔹 When?
+
+After bidding phase ends
+
+### 🔹 Effect:
+
+* Sets contractor
+* Activates contract
+* Assigns CONTRACTOR role
+
+---
+
+# 📊 MILESTONE FLOW
+
+---
+
+## 6. `submitMilestone(uint256 id)`
+
+### 🔹 Who calls?
+
+Contractor
+
+### 🔹 When?
+
+When milestone work is completed
+
+### 🔹 Conditions:
+
+* Must be current milestone
+* Must be ACTIVE
+
+### 🔹 Effect:
+
+* Changes status → `UNDER_REVIEW`
+* Starts multisig process
+
+---
+
+## 7. `executeMilestone(uint256 id, bytes[] signatures)`
+
+### 🔹 Who calls?
+
+Anyone (backend or relayer typically)
+
+### 🔹 When?
+
+After collecting all 4 admin signatures
+
+### 🔹 Inputs:
+
+* `id` → milestone id
+* `signatures` → 4 EIP-712 signatures
+
+### 🔹 What it does:
+
+1. Verifies all signatures
+2. Confirms each signer is an admin
+3. Ensures no duplicates
+4. Executes milestone
+
+### 🔹 Effect:
+
+* Funds transferred
+* Milestone → APPROVED
+* Moves to next milestone
+
+---
+
+# 🔐 EIP-712 SIGNING (Frontend / Backend)
+
+Each admin signs:
+
 ```
-
-### Key Principle:
-
-👉 **Smart contract = financial + state engine**
-👉 **Backend = intelligence (ML + validation)**
-
----
-
-# 🏭 TENDER FACTORY CONTRACT
-
----
-
-## 🔹 constructor()
-
-### Purpose:
-
-Sets the government address.
-
-### Who calls:
-
-* Government wallet (deployment)
-
----
-
-## 🔹 createTender(...)
-
-### Purpose:
-
-Deploys a new Tender contract.
-
----
-
-### Parameters:
-
-| Parameter          | Description                                |
-| ------------------ | ------------------------------------------ |
-| `_admins`          | [Engineer, Compliance, Auditor, Authority] |
-| `_startTime`       | Tender start time                          |
-| `_endTime`         | Tender end time                            |
-| `_biddingEndTime`  | Bidding deadline                           |
-| `_retainedPercent` | % of deposit retained                      |
-| `_names`           | Milestone names                            |
-| `_percentages`     | Milestone payment distribution             |
-| `_deadlines`       | Milestone deadlines                        |
-
----
-
-### Backend Usage:
-
-```javascript
-await factory.createTender(
-  admins,
-  startTime,
-  endTime,
-  biddingEndTime,
-  retainedPercent,
-  names,
-  percentages,
-  deadlines
-);
-```
-
----
-
-### Output:
-
-* Deploys new Tender contract
-* Emits event
-* Stores metadata
-
----
-
-## 🔹 getAllTenders()
-
-### Purpose:
-
-Returns all deployed tenders.
-
-### Frontend Use:
-
-* Dashboard listing
-
----
-
-# 📄 TENDER CONTRACT
-
----
-
-# 🔐 ROLES
-
-| Role       | Responsibility                        |
-| ---------- | ------------------------------------- |
-| Government | Controls entire flow                  |
-| Contractor | Executes work                         |
-| Admins     | Stored but not actively used in logic |
-
----
-
-# 🧾 CONSTRUCTOR
-
-### Purpose:
-
-Initializes tender.
-
-### Validations:
-
-* Admin count = 4
-* Array lengths match
-* Percentages sum = 100
-* Timeline valid
-
----
-
-# 💰 FUNDING
-
----
-
-## 🔹 fundContract()
-
-### Purpose:
-
-Government deposits ETH for milestone payouts.
-
-### When:
-
-* Before milestone completion
-
-### Backend Example:
-
-```javascript
-await tender.fundContract({
-  value: totalBudgetInWei
-});
-```
-
----
-
-# 🏁 BIDDING PHASE
-
----
-
-## 🔹 placeBid(amount)
-
-### Who:
-
-* Contractors
-
-### Conditions:
-
-* Before `biddingEndTime`
-* Only once per address
-
----
-
-## 🔹 selectContractor(address, amount)
-
-### Who:
-
-* Government
-
-### When:
-
-* After bidding ends
-
-### Logic:
-
-* Verifies bidder exists
-* Verifies exact bid amount
-* Assigns contractor
-* Moves contract → ACTIVE
-
----
-
-# 💳 DEPOSIT SYSTEM
-
----
-
-## 🔹 deposit()
-
-### Who:
-
-* Selected contractor
-
-### Requirement:
-
-* Must send **30% of winning bid**
-
----
-
-### Logic:
-
-```text
-1. Calculate distributable deposit
-2. Spread across milestones
-3. Store depositShare per milestone
-```
-
----
-
-# 🏗️ MILESTONE FLOW (UPDATED)
-
----
-
-## 🚨 IMPORTANT CHANGE
-
-❌ No IPFS on-chain
-❌ No contractor-triggered submission
-
-✅ Backend controls evaluation trigger
-
----
-
-# 🔄 FLOW PER MILESTONE
-
-```text
-1. Contractor completes work (off-chain)
-2. Contractor uploads to backend
-3. Backend runs ML model
-4. Backend calls smart contract:
-   → submitWorkForReview()
-   → evaluateMilestone()
-```
-
----
-
-# 🔹 submitWorkForReview(id)
-
-### Who:
-
-* Government (or backend using gov wallet)
-
-### Purpose:
-
-Moves milestone into review state.
-
----
-
-### Logic:
-
-```text
-PENDING → UNDER_REVIEW
+Domain:
+- name: "Tender"
+- version: "1"
+- chainId
+- verifyingContract
+
+Types:
+Approve:
+  - milestoneId (uint256)
+  - tender (address)
 ```
 
 ---
 
-### When:
+# 📌 MILESTONE ID
 
-* After backend receives work
-
----
-
-# 🔹 evaluateMilestone(id, percent)
-
-### Who:
-
-* Government (backend-controlled)
-
-### Input:
-
-* `percent` → ML output (0–100)
+* Milestone ID = index in array
+* Starts from 0
+* Controlled by `currentMilestone`
 
 ---
 
-# ⚙️ DECISION ENGINE
+# 🔄 IMPORTANT RULES
+
+* Only **current milestone** can be processed
+* Requires **exactly 4 signatures**
+* Each admin can sign **only once**
+* Execution happens **only after all signatures**
 
 ---
 
-## ✅ Case 1: Good Work
+# 🧠 FRONTEND FLOW (ANTIGRAVITY)
 
-```text
-percent >= 90 AND before deadline
+## Dashboard Load
+
+1. Call `getUserTenders(user)`
+2. For each tender:
+
+   * `getUserInfo(user)`
+   * `getRoleName(user)`
+
+---
+
+## Milestone View
+
+1. Fetch `currentMilestone`
+2. Show:
+
+   * Status
+   * Who signed → `hasUserSigned`
+
+---
+
+## Signing Flow
+
+1. Admin clicks "Sign"
+2. Generate EIP-712 signature (OFF-CHAIN)
+3. Send signature to backend
+
+---
+
+## Execution Flow
+
+1. Collect 4 signatures
+2. Call:
+
 ```
-
-➡️ Milestone approved
-➡️ Contractor paid
-➡️ Deposit returned
-
----
-
-## 🔁 Case 2: Incomplete Work
-
-```text
-percent < 90 AND before deadline
-```
-
-➡️ Milestone reset
-➡️ Contractor must redo
-➡️ Status → PENDING
-
----
-
-## ⏰ Case 3: Late Completion
-
-```text
-After deadline (any %)
-```
-
-➡️ Milestone finalized
-➡️ Penalty applied
-
----
-
-# 💸 FINALIZATION LOGIC
-
----
-
-## 🔹 _finalize(id)
-
-### Internal Function
-
----
-
-## Step 1: Penalty
-
-```text
-If late → 50%
-Else → 0%
+executeMilestone(id, signatures)
 ```
 
 ---
 
-## Step 2: Deposit Split
+# ⚠️ IMPORTANT DESIGN NOTES
 
-```text
-slashAmount = depositShare * penalty
-returnAmount = depositShare - slashAmount
-```
+* Multisig is **fully on-chain verified**
+* Backend is **NOT trusted**, only used for coordination
+* No duplicate signatures allowed
+* Signatures are tied to:
 
----
-
-## Step 3: Transfers
-
-| Transfer | Destination |
-| -------- | ----------- |
-| Slash    | Government  |
-| Return   | Contractor  |
-| Payout   | Contractor  |
+  * milestoneId
+  * contract address
 
 ---
 
-## Step 4: State Update
+# 🚀 SUMMARY
 
-```text
-Milestone → APPROVED
-currentMilestone++
-```
+This system provides:
 
----
-
-## Step 5: Completion Check
-
-```text
-if last milestone → COMPLETED
-```
+* ✅ Trustless milestone approvals
+* ✅ Gas-efficient multisig (1 tx instead of 4)
+* ✅ Role-based access control
+* ✅ Clean frontend integration
+* ✅ Production-grade architecture
 
 ---
 
-# ❌ CANCELLATION
+# 🧩 OPTIONAL FUTURE EXTENSIONS
+
+* Partial multisig (3/4 quorum)
+* Rejection flow
+* Deadline penalties
+* Meta-transactions (gasless execution)
+* Event indexing for real-time UI
 
 ---
 
-## 🔹 cancelTender()
-
-### Who:
-
-* Government
-
-### Logic:
-
-* Cancels tender
-* Refunds remaining deposit
-
----
-
-# 📊 GETTERS
-
----
-
-## 🔹 getMilestone(id)
-
-Returns full milestone struct.
-
-### Used in:
-
-* Frontend milestone display
-
----
-
-## 🔹 getAllBids()
-
-Returns all bids.
-
-### Used in:
-
-* Backend sorting / analytics
-
----
-
-# 💳 PAYMENT SYSTEM
-
-All transfers use:
-
-```solidity
-(bool success, ) = receiver.call{value: amount}("");
-require(success);
-```
-
----
-
-# 🌐 BACKEND RESPONSIBILITIES
-
----
-
-## Backend MUST handle:
-
-### 1. File Upload
-
-* Store images/videos
-* No blockchain involvement
-
----
-
-### 2. ML Processing
-
-* Compute completion %
-* Ensure accuracy
-
----
-
-### 3. Smart Contract Calls
-
-```javascript
-await tender.submitWorkForReview(id);
-
-await tender.evaluateMilestone(id, percent);
-```
-
----
-
-### 4. Wallet Control
-
-Backend must:
-
-* Control government wallet OR
-* Use secure signer
-
----
-
-# 🖥️ FRONTEND FLOW
-
----
-
-## 👷 Contractor UI
-
-1. View tenders
-2. Place bid
-3. If selected → deposit
-4. Complete work (off-chain)
-5. Wait for evaluation
-
----
-
-## 🏛️ Government UI
-
-1. Create tender
-2. View bids
-3. Select contractor
-4. Trigger evaluation
-5. Monitor progress
-
----
-
-# ⚠️ IMPORTANT RULES
-
----
-
-## ❗ 1. Strict milestone order
-
-```text
-id == currentMilestone
-```
-
----
-
-## ❗ 2. Deposit required
-
-No work allowed without deposit
-
----
-
-## ❗ 3. Contract must be funded
-
-Before payouts:
-
-```text
-fundContract()
-```
-
----
-
-## ❗ 4. Backend is trusted
-
-Backend:
-
-* Decides completion %
-* Drives evaluation
-
----
-
-## ❗ 5. Percent must sum to 100
-
----
-
-# 🚀 DEPLOYMENT CHECKLIST
-
-* [ ] Deploy Factory
-* [ ] Create Tender
-* [ ] Fund contract
-* [ ] Test bidding
-* [ ] Test evaluation flow
-* [ ] Test penalty case
-* [ ] Test cancellation
-
----
-
-# 🧠 FINAL SYSTEM SUMMARY
-
-This system is:
-
-* ✔ Backend-driven (ML handled off-chain)
-* ✔ Gas-efficient
-* ✔ Simple and deterministic
-* ✔ Financially secure
-* ✔ Production-friendly
-
----
-
-# 🔥 FINAL ARCHITECTURE
-
-```text
-Backend (ML + Storage)
-        ↓
-Smart Contract (State + Payments)
-        ↓
-Users (Contractor + Government)
-```
-
----
-
-
+**End of Documentation**

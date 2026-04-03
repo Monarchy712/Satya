@@ -1,16 +1,21 @@
 [
 	{
+		"inputs": [],
+		"stateMutability": "nonpayable",
+		"type": "constructor"
+	},
+	{
+		"anonymous": false,
 		"inputs": [
 			{
+				"indexed": false,
 				"internalType": "address",
-				"name": "_gov",
+				"name": "tenderAddress",
 				"type": "address"
 			}
 		],
-		"name": "addGovernment",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
+		"name": "TenderCreated",
+		"type": "event"
 	},
 	{
 		"inputs": [
@@ -67,63 +72,6 @@
 		"type": "function"
 	},
 	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "_gov",
-				"type": "address"
-			}
-		],
-		"name": "removeGovernment",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"stateMutability": "nonpayable",
-		"type": "constructor"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": false,
-				"internalType": "address",
-				"name": "gov",
-				"type": "address"
-			}
-		],
-		"name": "GovernmentAdded",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": false,
-				"internalType": "address",
-				"name": "gov",
-				"type": "address"
-			}
-		],
-		"name": "GovernmentRemoved",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": false,
-				"internalType": "address",
-				"name": "tenderAddress",
-				"type": "address"
-			}
-		],
-		"name": "TenderCreated",
-		"type": "event"
-	},
-	{
 		"inputs": [],
 		"name": "getAllTenders",
 		"outputs": [
@@ -159,8 +107,14 @@
 		"type": "function"
 	},
 	{
-		"inputs": [],
-		"name": "getGovernmentList",
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "user",
+				"type": "address"
+			}
+		],
+		"name": "getUserTenders",
 		"outputs": [
 			{
 				"internalType": "address[]",
@@ -238,6 +192,30 @@
 				"internalType": "uint256",
 				"name": "biddingEndTime",
 				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "userToTenders",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
 			}
 		],
 		"stateMutability": "view",

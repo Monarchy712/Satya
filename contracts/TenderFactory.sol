@@ -5,7 +5,6 @@ import "./Tender.sol";
 
 contract TenderFactory {
 
-    // ---------------- STATE ----------------
     mapping(address => bool) public isGovernment;
     address[] public governmentList;
 
@@ -18,44 +17,22 @@ contract TenderFactory {
 
     TenderMeta[] public tenders;
 
-    // ---------------- EVENTS ----------------
-    event TenderCreated(address tenderAddress);
-    event GovernmentAdded(address gov);
-    event GovernmentRemoved(address gov);
+    mapping(address => address[]) public userToTenders;
 
-    // ---------------- MODIFIERS ----------------
+    event TenderCreated(address tenderAddress);
+
     modifier onlyGovernment() {
         require(isGovernment[msg.sender], "Not government");
         _;
     }
 
-    // ---------------- CONSTRUCTOR ----------------
     constructor() {
         isGovernment[msg.sender] = true;
         governmentList.push(msg.sender);
     }
 
-    // ---------------- GOVERNMENT MANAGEMENT ----------------
-    function addGovernment(address _gov) external onlyGovernment {
-        require(!isGovernment[_gov], "Already gov");
-
-        isGovernment[_gov] = true;
-        governmentList.push(_gov);
-
-        emit GovernmentAdded(_gov);
-    }
-
-    function removeGovernment(address _gov) external onlyGovernment {
-        require(isGovernment[_gov], "Not gov");
-
-        isGovernment[_gov] = false;
-
-        emit GovernmentRemoved(_gov);
-    }
-
-    // ---------------- CREATE TENDER ----------------
     function createTender(
-        address[] memory _admins,              // 🔥 array to avoid stack too deep
+        address[] memory _admins,
         uint256 _startTime,
         uint256 _endTime,
         uint256 _biddingEndTime,
@@ -65,10 +42,8 @@ contract TenderFactory {
         uint256[] memory _deadlines
     ) external onlyGovernment returns (address) {
 
-        require(_admins.length == 4, "Need 4 admins");
-
         Tender newTender = new Tender(
-            address(this),                     // factory reference
+            address(this),
             _admins,
             _startTime,
             _endTime,
@@ -79,24 +54,39 @@ contract TenderFactory {
             _deadlines
         );
 
+        address tAddr = address(newTender);
+
         tenders.push(TenderMeta({
-            tender: address(newTender),
+            tender: tAddr,
             startTime: _startTime,
             endTime: _endTime,
             biddingEndTime: _biddingEndTime
         }));
 
-        emit TenderCreated(address(newTender));
+        for (uint i = 0; i < _admins.length; i++) {
+            userToTenders[_admins[i]].push(tAddr);
+        }
 
-        return address(newTender);
+        userToTenders[msg.sender].push(tAddr);
+
+        emit TenderCreated(tAddr);
+
+        return tAddr;
     }
 
-    // ---------------- GETTERS ----------------
-    function getAllTenders() external view returns (TenderMeta[] memory) {
+    function getUserTenders(address user)
+        external
+        view
+        returns (address[] memory)
+    {
+        return userToTenders[user];
+    }
+
+    function getAllTenders()
+        external
+        view
+        returns (TenderMeta[] memory)
+    {
         return tenders;
-    }
-
-    function getGovernmentList() external view returns (address[] memory) {
-        return governmentList;
     }
 }
