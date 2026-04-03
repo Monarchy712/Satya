@@ -4,6 +4,7 @@ import {
   getSigner,
 } from '../../utils/contracts';
 import { useAuth } from '../../context/AuthContext';
+import LoadingOverlay from '../UI/LoadingOverlay';
 import './AdminDashboard.css'; // Reusing styles for consistency
 
 export default function SignatoryDashboard() {
@@ -93,11 +94,10 @@ export default function SignatoryDashboard() {
           </div>
         </header>
 
+        <LoadingOverlay active={!!processingId} context="signing" />
+
         {loading ? (
-          <div className="admin-loading">
-            <div className="admin-loading__spinner" />
-            <p>Scanning Ledger for Pending Authorizations...</p>
-          </div>
+          <LoadingOverlay active={true} context="oversight" inline={true} />
         ) : (
           <main className="admin-dashboard__content">
              <div className="admin-form__section">

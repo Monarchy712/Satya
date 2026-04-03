@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import LoadingOverlay from './components/UI/LoadingOverlay';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import AuthPage from './components/Auth/AuthPage';
@@ -72,10 +73,7 @@ function Dashboard() {
         />
         <main className="app__main" id="main-scroll-area">
           {loading ? (
-            <div className="app__loading-screen">
-              <div className="app__spinner" />
-              <p>Fetching Truth from Blockchain...</p>
-            </div>
+            <LoadingOverlay active={true} context="blockchain" inline={true} />
           ) : (
             <>
               <Hero stats={stats} />

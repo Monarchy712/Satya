@@ -5,6 +5,7 @@ import {
   getSigner,
 } from '../../utils/contracts';
 import { useAuth } from '../../context/AuthContext';
+import LoadingOverlay from '../UI/LoadingOverlay';
 import './AdminDashboard.css';
 
 export default function AdminDashboard() {
@@ -12,6 +13,8 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('ongoing');
   const [tenders, setTenders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [actionContext, setActionContext] = useState('deploying');
   const [now] = useState(Math.floor(Date.now() / 1000));
 
   // Form State
@@ -67,7 +70,8 @@ export default function AdminDashboard() {
       alert(`The sum of milestone percentages must equal exactly 100%. Current: ${totalPercentage}%`);
       return;
     }
-    setLoading(true);
+    setActionLoading(true);
+    setActionContext('deploying');
     try {
       const signer = await getSigner();
       const factory = getFactoryContract(signer);
@@ -88,7 +92,7 @@ export default function AdminDashboard() {
     } catch (err) {
       alert(`Deployment failed: ${err.message}`);
     } finally {
-      setLoading(false);
+      setActionLoading(false);
     }
   };
 
@@ -100,7 +104,8 @@ export default function AdminDashboard() {
 
   const handleSelectWinner = async () => {
     if (!selection.contractor || !selection.amount) return;
-    setLoading(true);
+    setActionLoading(true);
+    setActionContext('signing');
     try {
       const signer = await getSigner();
       const tender = getTenderContract(selection.tender.tender_address, signer);
@@ -112,7 +117,7 @@ export default function AdminDashboard() {
     } catch (err) {
       alert(`Finalization failed: ${err.message}`);
     } finally {
-      setLoading(false);
+      setActionLoading(false);
     }
   };
 
@@ -140,11 +145,10 @@ export default function AdminDashboard() {
           </button>
         </div>
 
+        <LoadingOverlay active={actionLoading} context={actionContext} />
+
         {loading ? (
-          <div className="admin-loading">
-            <div className="admin-loading__spinner"></div>
-            <p>Scanning Decentralized Ledger...</p>
-          </div>
+          <LoadingOverlay active={true} context="admin" inline={true} />
         ) : (
           <main className="admin-dashboard__content">
             {activeTab === 'ongoing' && (

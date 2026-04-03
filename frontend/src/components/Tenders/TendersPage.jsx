@@ -4,6 +4,7 @@ import {
   getSigner, 
 } from '../../utils/contracts';
 import { useAuth } from '../../context/AuthContext';
+import LoadingOverlay from '../UI/LoadingOverlay';
 import './TendersPage.css';
 
 export default function TendersPage() {
@@ -168,10 +169,7 @@ export default function TendersPage() {
         </header>
 
         {loading ? (
-          <div className="tenders-page__loading">
-             <div className="app__spinner" />
-             <p>Coordinating decentralized ledger states...</p>
-          </div>
+          <LoadingOverlay active={true} context="tenders" inline={true} />
         ) : (
           <div className="tenders-page__list">
             

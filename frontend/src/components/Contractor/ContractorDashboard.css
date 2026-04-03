@@ -1,151 +1,454 @@
-.contractor-view {
-  padding: 40px;
-  max-width: 1200px;
-  margin: 0 auto;
-  color: #fff;
-  font-family: 'Inter', sans-serif;
-  background: #0a0a0a;
-  min-height: 100vh;
+:root {
+  --c-bg: var(--cream);
+  --c-card: var(--white);
+  --c-border: var(--pink-100);
+  --c-accent: var(--pink-600);
+  --c-gold: var(--gold);
+  --c-text: var(--gray-900);
+  --c-text-dim: var(--gray-500);
 }
 
-.contractor-view__header {
+.contractor-dashboard {
+  background: var(--c-bg);
+  min-height: 100vh;
+  color: var(--c-text);
+  font-family: var(--font-body);
+  padding: 100px 24px 60px; /* Increased top padding */
+}
+
+.contractor-dashboard__container {
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+/* Header Section */
+.contractor-header {
+  margin-bottom: 50px;
+  padding-bottom: 30px;
+  border-bottom: 2px solid var(--c-border);
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 40px;
-  border-bottom: 1px solid #333;
-  padding-bottom: 20px;
+  align-items: flex-end;
 }
 
-.contractor-view__header h1 {
-  font-size: 2.5rem;
-  font-weight: 800;
-  letter-spacing: -0.05em;
-  background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+.contractor-header__title {
+  font-family: var(--font-display);
+  font-size: 3rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--c-accent);
+  margin: 0;
+}
+
+.contractor-header__subtitle {
+  color: var(--c-text-dim);
+  font-weight: 500;
+  margin-top: 8px;
 }
 
 .contractor-view__badge {
-  background: rgba(0, 242, 254, 0.1);
-  color: #00f2fe;
+  background: var(--pink-100);
+  color: var(--pink-800);
   padding: 8px 16px;
-  border-radius: 20px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  border: 1px solid rgba(0, 242, 254, 0.3);
-  box-shadow: 0 0 15px rgba(0, 242, 254, 0.2);
+  border-radius: var(--radius-pill);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  font-size: 0.75rem;
+  border: 1px solid var(--pink-200);
 }
 
-.contractor-view__section {
+/* Sections */
+.contractor-section {
   margin-bottom: 60px;
 }
 
-.contractor-view__section h2 {
-  font-size: 1.5rem;
-  margin-bottom: 24px;
+.contractor-section__title {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--c-text-dim);
+  margin-bottom: 30px;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 15px;
 }
 
-.contractor-view__grid {
+.contractor-section__title::after {
+  content: '';
+  height: 2px;
+  flex: 1;
+  background: var(--c-border);
+}
+
+/* Grid Layout */
+.contractor-dashboard__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 24px;
+  grid-template-columns: 1fr 340px;
+  gap: 40px;
 }
 
+@media (max-width: 1024px) {
+  .contractor-dashboard__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Contract Cards */
 .contractor-card {
-  background: #1a1a1a;
-  border: 1px solid #333;
-  border-radius: 16px;
-  padding: 24px;
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
+  background: var(--c-card);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-xl);
+  padding: 32px;
+  box-shadow: var(--shadow-md);
+  margin-bottom: 24px;
+  transition: transform var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast);
 }
 
 .contractor-card:hover {
-  transform: translateY(-5px);
-  border-color: #444;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--c-accent);
 }
 
-.contractor-card h3 {
-  margin-bottom: 16px;
-  font-size: 1.25rem;
-  color: #eee;
+.contractor-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
 }
 
-.contractor-card__status {
-  position: absolute;
-  top: 24px;
-  right: 24px;
+.contractor-card__tag {
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
   font-size: 0.75rem;
+  font-weight: 700;
   text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 1px solid transparent;
+}
+
+.contractor-card__tag--bidding { background: #fff8eb; color: #b45309; border-color: #fcd34d; }
+.contractor-card__tag--active { background: #eff6ff; color: #1d4ed8; border-color: #93c5fd; }
+.contractor-card__tag--completed { background: #f0fdf4; color: #15803d; border-color: #86efac; }
+
+.contractor-card__addr {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--c-text-dim);
+  background: var(--pink-50);
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+}
+
+/* Milestones Row */
+.contractor-milestones {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.contractor-milestone-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: var(--gray-50);
+  border-radius: var(--radius-lg);
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.contractor-milestone-row:hover {
+  background: var(--white);
+  border-color: var(--c-border);
+}
+
+.contractor-milestone-info {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.contractor-milestone-status {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 0.8rem;
   font-weight: 700;
-  letter-spacing: 0.1em;
-  color: #4facfe;
 }
 
-.contractor-card__meta {
-  margin-bottom: 24px;
-  color: #999;
-  font-size: 0.9rem;
-}
+.contractor-milestone-status--todo { background: var(--gray-200); color: var(--gray-600); }
+.contractor-milestone-status--wait { background: var(--pink-100); color: var(--pink-800); }
+.contractor-milestone-status--done { background: var(--status-completed); color: var(--white); }
 
-.contractor-card__btn {
-  width: 100%;
-  padding: 12px;
-  border-radius: 8px;
-  background: #4facfe;
-  color: #000;
+.contractor-milestone-btn {
+  background: var(--c-gold);
+  color: var(--white);
   border: none;
+  padding: 10px 20px;
+  border-radius: var(--radius-pill);
   font-weight: 700;
+  font-size: 0.8rem;
+  box-shadow: 0 4px 0 #c28246;
+  transition: all 0.1s ease;
+}
+
+.contractor-milestone-btn:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #c28246;
+}
+
+.contractor-milestone-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.contractor-milestone-indicator {
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--c-text-dim);
+}
+
+/* Sidebar / Bids Registry */
+.contractor-bid-item {
+  background: var(--white);
+  border: 1px solid var(--c-border);
+  padding: 16px;
+  border-radius: var(--radius-lg);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.contractor-bid-badge {
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.contractor-bid-badge--won { background: var(--status-completed); color: #fff; }
+.contractor-bid-badge--pending { background: var(--gold-light); color: #854d0e; }
+.contractor-bid-badge--lost { background: var(--gray-100); color: var(--gray-400); }
+
+/* Empty state */
+.contractor-empty {
+  text-align: center;
+  padding: 40px 24px;
+  color: var(--gray-400);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+}
+
+.contractor-empty h3 {
+  font-family: var(--font-display);
+  color: var(--gray-600);
+  margin-bottom: 8px;
+}
+
+/* ================================================================
+   Modal — Premium Contractor Submission Dialog
+   ================================================================ */
+.contractor-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9500;
+  background: rgba(43, 31, 23, 0.55);
+  backdrop-filter: blur(8px) saturate(1.3);
+  -webkit-backdrop-filter: blur(8px) saturate(1.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  animation: cModalFadeIn 0.3s var(--ease-out) forwards;
+}
+
+.contractor-modal {
+  position: relative;
+  background: var(--white);
+  border: 1px solid var(--pink-200);
+  border-radius: var(--radius-xl);
+  padding: 44px 40px 36px;
+  box-shadow:
+    0 24px 64px -16px rgba(84, 107, 43, 0.2),
+    0 8px 20px rgba(0, 0, 0, 0.06);
+  max-width: 520px;
+  width: 100%;
+  animation: cModalSlideUp 0.4s var(--ease-out) forwards;
+  overflow: hidden;
+}
+
+.contractor-modal__accent {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--pink-400), var(--gold), var(--pink-600));
+  background-size: 200% 100%;
+  animation: cAccentShift 4s ease infinite;
+}
+
+.contractor-modal__title {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--c-accent);
+  margin-bottom: 8px;
+}
+
+.contractor-modal__desc {
+  font-size: 0.88rem;
+  color: var(--gray-500);
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+
+.contractor-modal__label {
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--gray-500);
+  display: block;
+  margin-bottom: 8px;
+}
+
+.contractor-modal__textarea {
+  width: 100%;
+  padding: 14px 16px;
+  border: 2px solid var(--pink-100);
+  border-radius: var(--radius-lg);
+  background: var(--gray-50);
+  color: var(--gray-900);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  margin-bottom: 20px;
+}
+
+.contractor-modal__textarea:focus {
+  border-color: var(--c-accent);
+  box-shadow: 0 0 0 4px rgba(139, 162, 98, 0.12);
+}
+
+.contractor-modal__textarea::placeholder {
+  color: var(--gray-400);
+}
+
+.contractor-modal__file-wrapper {
+  margin-bottom: 24px;
+}
+
+.contractor-modal__file-input {
+  width: 100%;
+  padding: 14px;
+  border: 2px dashed var(--pink-200);
+  border-radius: var(--radius-lg);
+  background: var(--gray-50);
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: var(--gray-600);
+  transition: all 0.2s ease;
+}
+
+.contractor-modal__file-input:hover {
+  background: var(--pink-50);
+  border-color: var(--pink-400);
+}
+
+.contractor-modal__actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.contractor-modal__btn {
+  padding: 12px 24px;
+  border-radius: var(--radius-md);
+  font-family: var(--font-display);
+  font-size: 0.88rem;
+  font-weight: 700;
+  border: none;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
-.contractor-card__btn:hover:not(:disabled) {
-  background: #00f2fe;
-  transform: scale(1.02);
-}
-
-.contractor-card__btn:disabled {
+.contractor-modal__btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.contractor-card--bidding {
-  border-left: 4px solid #f97316;
+.contractor-modal__btn--secondary {
+  background: var(--gray-100);
+  color: var(--gray-600);
+  border: 1px solid var(--gray-200);
 }
 
-.contractor-card__bid-status {
-  padding: 12px;
-  background: rgba(249, 115, 22, 0.1);
-  color: #f97316;
-  border-radius: 8px;
-  text-align: center;
-  font-weight: 600;
-  font-size: 0.9rem;
+.contractor-modal__btn--secondary:hover:not(:disabled) {
+  background: var(--gray-200);
 }
 
-.contractor-view__toast {
-  position: fixed;
-  bottom: 40px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: #1a1a1a;
-  color: #fff;
-  padding: 16px 32px;
-  border-radius: 12px;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.8);
-  border: 1px solid #4facfe;
-  z-index: 1000;
-  animation: slideUp 0.3s ease-out;
+.contractor-modal__btn--primary {
+  background: linear-gradient(135deg, var(--c-accent), var(--pink-700));
+  color: var(--white);
+  box-shadow: 0 4px 12px rgba(139, 162, 98, 0.3);
 }
 
-@keyframes slideUp {
-  from { transform: translate(-50%, 20px); opacity: 0; }
-  to { transform: translate(-50%, 0); opacity: 1; }
+.contractor-modal__btn--primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(139, 162, 98, 0.4);
+}
+
+.contractor-modal__btn--primary:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: 0 2px 6px rgba(139, 162, 98, 0.2);
+}
+
+/* ── Modal Keyframes ── */
+@keyframes cModalFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes cModalSlideUp {
+  from { transform: translateY(20px) scale(0.97); opacity: 0; }
+  to   { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+@keyframes cAccentShift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .contractor-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .contractor-header__title {
+    font-size: 2rem;
+  }
+
+  .contractor-modal {
+    padding: 32px 24px 28px;
+  }
 }
