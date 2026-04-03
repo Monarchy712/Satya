@@ -365,9 +365,9 @@ session.verify = False
 w3 = Web3(Web3.HTTPProvider(RPC_URL, session=session))
 
 try:
-    account = w3.eth.account.from_key(PRIVATE_KEY)
-    contract = w3.eth.contract(address=w3.to_checksum_address(CONTRACT_ADDRESS), abi=ABI)
-    factory_contract = w3.eth.contract(address=w3.to_checksum_address(FACTORY_ADDRESS), abi=FACTORY_ABI)
+    account = w3.eth.account.from_key(PRIVATE_KEY) if PRIVATE_KEY else None
+    contract = w3.eth.contract(address=w3.to_checksum_address(CONTRACT_ADDRESS), abi=ABI) if CONTRACT_ADDRESS else None
+    factory_contract = w3.eth.contract(address=w3.to_checksum_address(FACTORY_ADDRESS), abi=FACTORY_ABI) if FACTORY_ADDRESS else None
 except Exception as e:
     print(f"Blockchain module warned: {e}")
     contract = None
