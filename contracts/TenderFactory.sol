@@ -21,14 +21,26 @@ contract TenderFactory {
 
     event TenderCreated(address tenderAddress);
 
+    // ✅ NEW: owner
+    address public owner;
+
     modifier onlyGovernment() {
         require(isGovernment[msg.sender], "Not government");
+        _;
+    }
+
+    // ✅ NEW: onlyOwner modifier
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Not owner");
         _;
     }
 
     constructor() {
         isGovernment[msg.sender] = true;
         governmentList.push(msg.sender);
+
+        // ✅ NEW: set deployer as owner
+        owner = msg.sender;
     }
 
     function createTender(
@@ -88,5 +100,32 @@ contract TenderFactory {
         returns (TenderMeta[] memory)
     {
         return tenders;
+    }
+
+    // =========================================================
+    // ✅ NEW FUNCTIONS (NO EXISTING LOGIC TOUCHED)
+    // =========================================================
+
+    function addGovernment(address user) external onlyOwner {
+        require(user != address(0), "Invalid address");
+        require(!isGovernment[user], "Already government");
+
+        isGovernment[user] = true;
+        governmentList.push(user);
+    }
+
+    function removeGovernment(address user) external onlyOwner {
+        require(isGovernment[user], "Not government");
+
+        isGovernment[user] = false;
+
+        // swap & pop removal
+        for (uint i = 0; i < governmentList.length; i++) {
+            if (governmentList[i] == user) {
+                governmentList[i] = governmentList[governmentList.length - 1];
+                governmentList.pop();
+                break;
+            }
+        }
     }
 }

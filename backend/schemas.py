@@ -78,7 +78,6 @@ class MilestoneData(BaseModel):
     name: str
     percentage: int
     deadline: int
-    completion_percent: int
     deposit_share: str
     status: int
 
@@ -91,7 +90,6 @@ class TenderDetail(BaseModel):
     end_time: int
     bidding_end_time: int
     winning_bid: str
-    contractor_deposit: str
     retained_percent: int
     current_milestone: int
     on_site_engineer: str

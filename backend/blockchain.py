@@ -468,7 +468,7 @@ def check_is_government(wallet_address: str) -> bool:
 # ── Tender Aggregation Logic ──
 
 def get_tender_details(tender_address: str) -> dict:
-    """Aggregates all tender data from the blockchain by iterating through missing getters."""
+    """Aggregates all tender data from the blockchain. Uses the new admins array and EIP-712 multisig fields."""
     contract_addr = w3.to_checksum_address(tender_address)
     tender_contract = w3.eth.contract(address=contract_addr, abi=TENDER_ABI)
 
@@ -481,20 +481,30 @@ def get_tender_details(tender_address: str) -> dict:
         "end_time": tender_contract.functions.endTime().call(),
         "bidding_end_time": tender_contract.functions.biddingEndTime().call(),
         "winning_bid": str(tender_contract.functions.winningBid().call()),
-        "contractor_deposit": str(tender_contract.functions.contractorDeposit().call()),
         "retained_percent": tender_contract.functions.retainedPercent().call(),
         "current_milestone": tender_contract.functions.currentMilestone().call(),
-        "on_site_engineer": tender_contract.functions.onSiteEngineer().call(),
-        "compliance_officer": tender_contract.functions.complianceOfficer().call(),
-        "financial_auditor": tender_contract.functions.financialAuditor().call(),
-        "sanctioning_authority": tender_contract.functions.sanctioningAuthority().call(),
     }
+
+    # Admins array lookup
+    try:
+        data["on_site_engineer"] = tender_contract.functions.admins(0).call()
+        data["compliance_officer"] = tender_contract.functions.admins(1).call()
+        data["financial_auditor"] = tender_contract.functions.admins(2).call()
+        data["sanctioning_authority"] = tender_contract.functions.admins(3).call()
+    except Exception:
+        # Fallback for older contracts if any exist
+        zero_addr = "0x0000000000000000000000000000000000000000"
+        data["on_site_engineer"] = zero_addr
+        data["compliance_officer"] = zero_addr
+        data["financial_auditor"] = zero_addr
+        data["sanctioning_authority"] = zero_addr
 
     # Bids (Index Loop)
     bids = []
     idx = 0
     while True:
         try:
+            # Note: Tender.sol doesnt have a bids count, so we loop until error
             bid = tender_contract.functions.bids(idx).call()
             bids.append({"bidder": bid[0], "amount": str(bid[1])})
             idx += 1
@@ -508,13 +518,14 @@ def get_tender_details(tender_address: str) -> dict:
     while True:
         try:
             m = tender_contract.functions.milestones(idx).call()
+            # New struct: (string name, uint256 percentage, uint256 deadline, uint256 depositShare, MilestoneStatus status)
+            # Indices: 0: name, 1: percentage, 2: deadline, 3: depositShare, 4: status
             milestones.append({
                 "name": m[0],
                 "percentage": m[1],
                 "deadline": m[2],
-                "completion_percent": m[3],
-                "deposit_share": str(m[4]),
-                "status": m[5]
+                "deposit_share": str(m[3]),
+                "status": m[4]
             })
             idx += 1
         except Exception:
