@@ -1,10 +1,10 @@
 .oversight-view {
-  padding: 100px 40px 40px;
+  padding: 120px 40px 60px;
   max-width: 1200px;
   margin: 0 auto;
-  color: #fff;
-  font-family: 'Outfit', sans-serif;
-  background: #0f1115;
+  color: var(--gray-800);
+  font-family: var(--font-body);
+  background: linear-gradient(135deg, var(--gray-50) 0%, var(--ivory) 50%, var(--cream) 100%);
   min-height: 100vh;
 }
 
@@ -12,156 +12,258 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 50px;
-  border-bottom: 2px solid rgba(255, 107, 107, 0.2);
+  margin-bottom: 60px;
+  border-bottom: 2px solid var(--pink-200);
   padding-bottom: 30px;
 }
 
 .oversight-view__header h1 {
+  font-family: var(--font-display);
   font-size: 2.8rem;
-  font-weight: 900;
+  font-weight: 800;
   letter-spacing: -0.04em;
-  background: linear-gradient(135deg, #ff6b6b 0%, #ee5253 100%);
+  background: linear-gradient(135deg, var(--pink-600) 0%, var(--pink-800) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 .oversight-view__badge {
-  background: rgba(255, 107, 107, 0.1);
-  color: #ff6b6b;
-  padding: 10px 20px;
-  border-radius: 30px;
-  font-size: 1rem;
+  background: var(--pink-50);
+  color: var(--pink-700);
+  padding: 10px 24px;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
   font-weight: 700;
-  border: 1px solid rgba(255, 107, 107, 0.3);
+  border: 1.5px solid var(--pink-300);
+  box-shadow: var(--shadow-sm);
 }
 
 .oversight-view__container {
   display: grid;
-  grid-template-columns: 1fr 320px;
-  gap: 40px;
+  grid-template-columns: 1fr 340px;
+  gap: 50px;
 }
 
 .oversight-view__list h2 {
-  font-size: 1.6rem;
-  margin-bottom: 30px;
-  color: #ddd;
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  margin-bottom: 40px;
+  color: var(--gray-900);
+  font-weight: 700;
 }
 
 .oversight-card {
-  background: rgba(45, 52, 54, 0.4);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 20px;
-  padding: 30px;
-  margin-bottom: 24px;
+  background: var(--white);
+  border: 1px solid var(--pink-100);
+  border-radius: var(--radius-xl);
+  padding: 35px;
+  margin-bottom: 30px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.4s var(--ease-out);
+  box-shadow: var(--shadow-md);
+  position: relative;
+  overflow: hidden;
+}
+
+.oversight-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 6px;
+  height: 100%;
+  background: var(--pink-200);
+  opacity: 0;
+  transition: opacity 0.3s;
 }
 
 .oversight-card:hover {
-  background: rgba(45, 52, 54, 0.6);
-  border-color: rgba(255, 107, 107, 0.4);
-  transform: translateX(10px);
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--pink-300);
 }
 
-.oversight-card--signed {
-  border-left: 6px solid #48dbfb;
+.oversight-card:hover::after {
+  opacity: 1;
+}
+
+.oversight-card--signed::after {
+  opacity: 1;
+  background: var(--status-completed);
 }
 
 .oversight-card--completed {
-  background: rgba(39, 174, 96, 0.2);
-  border-left: 6px solid #2ecc71;
-  border-color: rgba(46, 204, 113, 0.4);
+  background: var(--pink-50);
+  border-color: var(--pink-200);
 }
 
-.oversight-card--completed:hover {
-  background: rgba(39, 174, 96, 0.3);
-  border-color: #2ecc71;
+.oversight-card--completed::after {
+  opacity: 1;
+  background: var(--pink-600);
 }
 
 .oversight-card__info h3 {
-  font-size: 1.4rem;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
   margin-bottom: 12px;
-  color: #fff;
+  color: var(--gray-900);
+  font-weight: 700;
 }
 
 .oversight-card__milestone {
-  font-size: 1rem;
-  color: #aaa;
-  margin-bottom: 8px;
+  font-size: 1.05rem;
+  color: var(--gray-600);
+  margin-bottom: 12px;
 }
 
 .oversight-card__milestone strong {
-  color: #fff;
+  color: var(--gray-900);
+  font-weight: 700;
 }
 
 .oversight-card__meta {
   display: flex;
-  gap: 20px;
+  gap: 25px;
   align-items: center;
-  margin-top: 15px;
+  margin-top: 20px;
+  flex-wrap: wrap;
 }
 
 .oversight-card__role {
-  font-size: 0.85rem;
-  color: #888;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--pink-700);
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
+  background: var(--pink-50);
+  padding: 4px 12px;
+  border-radius: var(--radius-sm);
 }
 
 .oversight-card__btn {
-  background: #ff6b6b;
-  color: #fff;
+  background: linear-gradient(135deg, var(--pink-600), var(--pink-700));
+  color: var(--white);
   border: none;
-  padding: 14px 28px;
-  border-radius: 12px;
+  padding: 16px 32px;
+  border-radius: var(--radius-lg);
   font-weight: 800;
+  font-family: var(--font-display);
   font-size: 1rem;
   cursor: pointer;
-  box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
-  transition: all 0.2s ease;
+  box-shadow: 0 4px 15px rgba(113, 139, 77, 0.25);
+  transition: all 0.3s var(--ease-bounce);
 }
 
-.oversight-card__btn:hover {
-  background: #ee5253;
-  transform: scale(1.05);
-  box-shadow: 0 6px 20px rgba(255, 107, 107, 0.5);
+.oversight-card__btn:hover:not(:disabled) {
+  transform: scale(1.05) translateY(-2px);
+  box-shadow: 0 8px 25px rgba(113, 139, 77, 0.35);
+}
+
+.oversight-card__btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .oversight-card__btn--execute {
-  background: linear-gradient(135deg, #f39c12 0%, #d35400 100%);
-  box-shadow: 0 4px 15px rgba(243, 156, 18, 0.3);
+  background: linear-gradient(135deg, var(--gold), var(--coral));
+  box-shadow: 0 4px 15px rgba(237, 163, 90, 0.3);
 }
 
-.oversight-card__btn--execute:hover {
-  background: linear-gradient(135deg, #e67e22 0%, #e67e22 100%);
-  box-shadow: 0 6px 20px rgba(243, 156, 18, 0.5);
+.oversight-card__status {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+}
+
+.oversight-card__status--approved {
+  color: var(--pink-700);
+  background: var(--pink-100);
+  border: 1.5px solid var(--pink-300);
+  font-weight: 800;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: var(--shadow-sm);
 }
 
 .oversight-card__status--signed {
-  color: #48dbfb;
-  font-weight: 800;
-  font-size: 1.1rem;
-  text-shadow: 0 0 10px rgba(72, 219, 251, 0.5);
+  color: var(--status-completed);
+  background: rgba(78, 205, 196, 0.1);
+  border: 1px solid rgba(78, 205, 196, 0.2);
+}
+
+.oversight-card__progress {
+  flex: 1;
+  min-width: 200px;
+  max-width: 300px;
+}
+
+.oversight-card__progress-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--gray-500);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  letter-spacing: 0.05em;
+}
+
+.oversight-card__progress-label strong {
+  color: var(--pink-700);
+  font-size: 0.85rem;
+}
+
+.oversight-card__progress-track {
+  height: 8px;
+  background: var(--pink-100);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  border: 1px solid var(--pink-200);
+}
+
+.oversight-card__progress-fill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+  transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+  box-shadow: 0 0 10px rgba(113, 139, 77, 0.2);
+}
+
+.oversight-card__balance {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.oversight-card__sigs {
+  display: none;
 }
 
 .oversight-view__rules {
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 24px;
-  padding: 30px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--white);
+  border-radius: var(--radius-xl);
+  padding: 40px;
+  border: 1px solid var(--pink-100);
   height: fit-content;
+  box-shadow: var(--shadow-md);
 }
 
 .oversight-view__rules h3 {
-  font-size: 1.2rem;
-  margin-bottom: 20px;
-  color: #ff6b6b;
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  margin-bottom: 25px;
+  color: var(--pink-700);
+  font-weight: 800;
 }
 
 .oversight-view__rules ul {
@@ -170,42 +272,76 @@
 }
 
 .oversight-view__rules li {
-  margin-bottom: 16px;
+  margin-bottom: 20px;
   font-size: 0.95rem;
-  color: #999;
+  color: var(--gray-600);
   position: relative;
-  padding-left: 24px;
+  padding-left: 28px;
+  line-height: 1.5;
 }
 
 .oversight-view__rules li::before {
   content: '→';
   position: absolute;
   left: 0;
-  color: #ff6b6b;
+  color: var(--pink-600);
+  font-weight: 900;
 }
 
 .oversight-view__note {
-  margin-top: 30px;
+  margin-top: 35px;
   font-size: 0.85rem;
-  color: #555;
+  color: var(--gray-400);
   font-style: italic;
-  border-top: 1px solid #333;
-  padding-top: 20px;
+  border-top: 1.5px dashed var(--pink-100);
+  padding-top: 25px;
 }
 
 .oversight-view__toast {
   position: fixed;
   bottom: 40px;
   right: 40px;
-  background: #1a1e26;
-  border: 2px solid #ff6b6b;
+  background: var(--gray-900);
+  color: var(--white);
+  border: 2px solid var(--pink-600);
   padding: 20px 40px;
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
+  font-family: var(--font-display);
   font-weight: 700;
-  animation: bounceIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: var(--shadow-xl);
+  z-index: 1000;
+  animation: slideUp 0.5s var(--ease-bounce);
 }
 
-@keyframes bounceIn {
-  from { transform: scale(0.8); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
+.oversight-view__error {
+  background: rgba(224, 128, 92, 0.1);
+  border: 1px solid var(--coral);
+  color: var(--coral);
+  padding: 15px 25px;
+  border-radius: var(--radius-md);
+  margin-bottom: 30px;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.oversight-view__empty {
+  text-align: center;
+  padding: 80px 40px;
+  background: var(--white);
+  border-radius: var(--radius-xl);
+  border: 2px dashed var(--pink-200);
+  color: var(--gray-400);
+}
+
+.oversight-view__empty-icon {
+  font-size: 3rem;
+  display: block;
+  margin-bottom: 20px;
+  color: var(--pink-200);
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }

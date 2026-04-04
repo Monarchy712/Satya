@@ -494,6 +494,7 @@ def get_tender_details(tender_address: str) -> dict:
         "winning_bid": str(tender_contract.functions.winningBid().call()),
         "retained_percent": tender_contract.functions.retainedPercent().call(),
         "current_milestone": tender_contract.functions.currentMilestone().call(),
+        "total_funds": str(tender_contract.functions.totalFunds().call()),
     }
 
     # Admins array lookup
