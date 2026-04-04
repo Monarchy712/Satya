@@ -488,14 +488,29 @@ contract Tender {
 
         address[] memory voters = new address[](n);
 
-        for (uint i = 0; i < n; i++) {
+        uint selected = 0;
+        uint nonce = 0;
+
+        while (selected < n) {
             uint rand = uint(
                 keccak256(
-                    abi.encodePacked(block.timestamp, block.prevrandao, i)
+                    abi.encodePacked(block.timestamp, block.prevrandao, nonce++)
                 )
             ) % pool.length;
 
-            voters[i] = pool[rand];
+            address candidate = pool[rand];
+            
+            bool alreadyPicked = false;
+            for (uint i = 0; i < selected; i++) {
+                if (voters[i] == candidate) {
+                    alreadyPicked = true;
+                    break;
+                }
+            }
+
+            if (!alreadyPicked) {
+                voters[selected++] = candidate;
+            }
         }
 
         dispute = Dispute({
