@@ -6,6 +6,8 @@ import {
 } from '../../utils/contracts';
 import { useAuth } from '../../context/AuthContext';
 import LoadingOverlay from '../UI/LoadingOverlay';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 import './AdminDashboard.css';
 
 export default function AdminDashboard() {
@@ -205,15 +207,39 @@ export default function AdminDashboard() {
                   <div className="admin-form__grid">
                     <div className="admin-form__field">
                       <label className="admin-form__label">Bidding Deadline (Cut-off)</label>
-                      <input type="datetime-local" className="admin-form__input" value={formData.biddingEndTime} onChange={(e) => setFormData({...formData, biddingEndTime: e.target.value})} required />
+                      <DatePicker 
+                        selected={formData.biddingEndTime ? new Date(formData.biddingEndTime) : null}
+                        onChange={(d) => setFormData({...formData, biddingEndTime: d})}
+                        showTimeSelect
+                        dateFormat="Pp"
+                        className="admin-form__input"
+                        placeholderText="Select Date & Time"
+                        required 
+                      />
                     </div>
                     <div className="admin-form__field">
                       <label className="admin-form__label">Execution Commencement</label>
-                      <input type="datetime-local" className="admin-form__input" value={formData.startTime} onChange={(e) => setFormData({...formData, startTime: e.target.value})} required />
+                      <DatePicker 
+                        selected={formData.startTime ? new Date(formData.startTime) : null}
+                        onChange={(d) => setFormData({...formData, startTime: d})}
+                        showTimeSelect
+                        dateFormat="Pp"
+                        className="admin-form__input"
+                        placeholderText="Select Date & Time"
+                        required 
+                      />
                     </div>
                     <div className="admin-form__field">
                       <label className="admin-form__label">Estimated Termination</label>
-                      <input type="datetime-local" className="admin-form__input" value={formData.endTime} onChange={(e) => setFormData({...formData, endTime: e.target.value})} required />
+                      <DatePicker 
+                        selected={formData.endTime ? new Date(formData.endTime) : null}
+                        onChange={(d) => setFormData({...formData, endTime: d})}
+                        showTimeSelect
+                        dateFormat="Pp"
+                        className="admin-form__input"
+                        placeholderText="Select Date & Time"
+                        required 
+                      />
                     </div>
                   </div>
                 </div>
@@ -235,11 +261,12 @@ export default function AdminDashboard() {
                   </div>
 
                   <div className="admin-form__milestones">
-                    <div style={{display:'flex', justifyContent:'space-between', marginBottom:'10px', padding:'0 16px', fontSize:'0.7rem', fontWeight:'700', color:'var(--gray-400)'}}>
-                       <span style={{flex: 2}}>PHASE DESCRIPTION</span>
-                       <span style={{width: '70px', textAlign:'center'}}>ALLOCATION %</span>
-                       <span style={{flex: 1.5}}>ESTIMATED DEADLINE</span>
-                       <span style={{width: '30px'}}></span>
+                    <div style={{display:'flex', alignItems:'center', gap:'var(--space-md)', marginBottom:'10px', padding:'0 16px', fontSize:'0.7rem', fontWeight:'700', color:'var(--gray-400)', textTransform:'uppercase'}}>
+                       <span style={{width: '34px', flexShrink: 0}}></span>
+                       <span style={{flex: 2}}>Phase Description</span>
+                       <span style={{width: '70px', flexShrink: 0, textAlign:'center'}}>Allocation %</span>
+                       <span style={{flex: 1.5}}>Estimated Deadline</span>
+                       <span style={{width: '30px', flexShrink: 0}}></span>
                     </div>
                     {formData.milestones.map((m, idx) => (
                       <div key={idx} className="admin-form__milestone-row">
@@ -254,11 +281,20 @@ export default function AdminDashboard() {
                           nm[idx].percentage = e.target.value;
                           setFormData({...formData, milestones: nm});
                         }} required />
-                        <input type="datetime-local" className="admin-form__input admin-form__input--date" value={m.deadline} onChange={e => {
-                          const nm = [...formData.milestones];
-                          nm[idx].deadline = e.target.value;
-                          setFormData({...formData, milestones: nm});
-                        }} required />
+                        <DatePicker 
+                          selected={m.deadline ? new Date(m.deadline) : null}
+                          onChange={(d) => {
+                            const nm = [...formData.milestones];
+                            nm[idx].deadline = d;
+                            setFormData({...formData, milestones: nm});
+                          }}
+                          showTimeSelect
+                          dateFormat="Pp"
+                          className="admin-form__input admin-form__input--date"
+                          wrapperClassName="admin-form__input--date"
+                          placeholderText="Select Deadline"
+                          required 
+                        />
                         <button type="button" className="admin-form__remove" onClick={() => handleRemovePhase(idx)} style={{background:'none', border:'none', cursor:'pointer', color:'var(--pink-500)', fontSize:'1.2rem'}} title="Remove Phase">×</button>
                       </div>
                     ))}
