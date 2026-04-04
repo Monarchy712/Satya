@@ -78,8 +78,9 @@ class MilestoneData(BaseModel):
     name: str
     percentage: int
     deadline: int
-    deposit_share: str
     status: int
+    signatures_collected: int
+    is_executed: bool
 
 
 class TenderDetail(BaseModel):

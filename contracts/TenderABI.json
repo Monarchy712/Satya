@@ -94,6 +94,19 @@
 			{
 				"indexed": false,
 				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "Funded",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "uint256",
 				"name": "id",
 				"type": "uint256"
 			}
@@ -286,6 +299,13 @@
 		"type": "function"
 	},
 	{
+		"inputs": [],
+		"name": "fundContract",
+		"outputs": [],
+		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
 		"inputs": [
 			{
 				"internalType": "address",
@@ -299,59 +319,6 @@
 				"internalType": "string",
 				"name": "",
 				"type": "string"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "user",
-				"type": "address"
-			}
-		],
-		"name": "getUserInfo",
-		"outputs": [
-			{
-				"internalType": "bool",
-				"name": "involved",
-				"type": "bool"
-			},
-			{
-				"internalType": "string",
-				"name": "role",
-				"type": "string"
-			},
-			{
-				"internalType": "uint256",
-				"name": "milestoneId",
-				"type": "uint256"
-			},
-			{
-				"internalType": "enum Tender.MilestoneStatus",
-				"name": "status",
-				"type": "uint8"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "user",
-				"type": "address"
-			}
-		],
-		"name": "getUserRole",
-		"outputs": [
-			{
-				"internalType": "enum Tender.Role",
-				"name": "",
-				"type": "uint8"
 			}
 		],
 		"stateMutability": "view",
@@ -404,49 +371,6 @@
 		"inputs": [
 			{
 				"internalType": "uint256",
-				"name": "id",
-				"type": "uint256"
-			},
-			{
-				"internalType": "address",
-				"name": "user",
-				"type": "address"
-			}
-		],
-		"name": "hasUserSigned",
-		"outputs": [
-			{
-				"internalType": "bool",
-				"name": "",
-				"type": "bool"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "user",
-				"type": "address"
-			}
-		],
-		"name": "isAdmin",
-		"outputs": [
-			{
-				"internalType": "bool",
-				"name": "",
-				"type": "bool"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
 				"name": "",
 				"type": "uint256"
 			}
@@ -466,11 +390,6 @@
 			{
 				"internalType": "uint256",
 				"name": "deadline",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "depositShare",
 				"type": "uint256"
 			},
 			{
@@ -542,7 +461,7 @@
 		],
 		"name": "selectContractor",
 		"outputs": [],
-		"stateMutability": "nonpayable",
+		"stateMutability": "payable",
 		"type": "function"
 	},
 	{
@@ -579,6 +498,19 @@
 				"internalType": "enum Tender.TenderStatus",
 				"name": "",
 				"type": "uint8"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "totalFunds",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
 			}
 		],
 		"stateMutability": "view",

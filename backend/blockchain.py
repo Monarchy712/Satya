@@ -529,22 +529,25 @@ def get_tender_details(tender_address: str) -> dict:
     while True:
         try:
             m = tender_contract.functions.milestones(idx).call()
-            # Indices: 0: name, 1: percentage, 2: deadline, 3: depositShare, 4: status
+            # New Indices: 0: name, 1: percentage, 2: deadline, 3: status
             
             # Check signatures for this milestone
             sig_count = 0
+            # Indices for admins: on_site(0), compliance(1), financial(2), sanctioning(3)
             for i in range(4):
-                admin_addr = data.get(["on_site_engineer", "compliance_officer", "financial_auditor", "sanctioning_authority"][i])
-                if admin_addr and admin_addr != "0x0000000000000000000000000000000000000000":
-                    if tender_contract.functions.hasSigned(idx, admin_addr).call():
-                        sig_count += 1
+                try:
+                    admin_addr = tender_contract.functions.admins(i).call()
+                    if admin_addr and admin_addr != "0x0000000000000000000000000000000000000000":
+                        if tender_contract.functions.hasSigned(idx, admin_addr).call():
+                            sig_count += 1
+                except:
+                    continue
 
             milestones.append({
                 "name": m[0],
                 "percentage": m[1],
                 "deadline": m[2],
-                "deposit_share": str(m[3]),
-                "status": m[4],
+                "status": m[3],
                 "signatures_collected": sig_count,
                 "is_executed": tender_contract.functions.executed(idx).call()
             })
