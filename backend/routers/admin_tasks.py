@@ -43,6 +43,17 @@ def has_signed(
     return existing is not None
 
 
+@router.get("/api/committee/signatures")
+def get_signatures(
+    tender_address: str,
+    milestone_id: int,
+    db: Session = Depends(get_db),
+    user: dict = Depends(get_current_user),
+):
+    """Get the current signature count for a milestone."""
+    if user["role"] not in ["committee", "super_admin"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
     sigs = db.query(MilestoneApproval).filter(
         MilestoneApproval.tender_address == tender_address.lower(),
         MilestoneApproval.milestone_id == milestone_id,
