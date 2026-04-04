@@ -402,24 +402,124 @@
 
 .navbar__logout-btn:hover {
   background: rgba(255, 107, 107, 0.2);
+  transform: translateY(-1px);
 }
 
-.navbar__login-btn {
-  padding: 6px 16px;
-  background: var(--pink-700);
-  color: var(--white);
+.navbar__logout-group {
+  position: relative;
+  min-width: 120px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.navbar__logout-confirm-pop {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  background: var(--white);
+  border: 1px solid #ff6b6b;
+  border-radius: var(--radius-sm);
+  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.15);
+  animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.navbar__logout-confirm-pop span {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--gray-500);
+  margin-right: 4px;
+}
+
+.navbar__confirm-btn, .navbar__cancel-btn {
+  padding: 2px 8px;
   border: none;
   font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: 0.65rem;
   font-weight: bold;
-  letter-spacing: 0.05em;
-  border-radius: var(--radius-md);
-  margin-right: var(--space-md);
+  border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
+.navbar__confirm-btn {
+  background: #ff6b6b;
+  color: var(--white);
+}
+
+.navbar__confirm-btn:hover {
+  background: #fa5252;
+  transform: scale(1.05);
+}
+
+.navbar__cancel-btn {
+  background: var(--pink-50);
+  color: var(--gray-500);
+}
+
+.navbar__cancel-btn:hover {
+  background: var(--pink-100);
+}
+
+@keyframes popIn {
+  0% { transform: scale(0.9); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+
+.navbar__login-btn {
+  padding: 10px 24px;
+  background: linear-gradient(135deg, var(--pink-600), var(--pink-800));
+  color: var(--white);
+  border: none;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border-radius: var(--radius-md);
+  margin-right: var(--space-md);
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 4px 15px rgba(230, 57, 117, 0.3);
+  position: relative;
+  overflow: hidden;
+  animation: login-pulse 2s infinite;
+}
+
+@keyframes login-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(230, 57, 117, 0.5); }
+  70% { box-shadow: 0 0 0 12px rgba(230, 57, 117, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(230, 57, 117, 0); }
+}
+
+.navbar__login-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  transition: 0.5s;
+}
+
+.navbar__login-btn:hover::before {
+  left: 100%;
+}
+
 .navbar__login-btn:hover {
-  background: var(--pink-600);
-  transform: translateY(-1px);
+  background: linear-gradient(135deg, var(--pink-500), var(--pink-700));
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 8px 25px rgba(230, 57, 117, 0.4);
+  letter-spacing: 0.15em;
+}
+
+.navbar__login-btn:active {
+  transform: translateY(0) scale(0.98);
 }

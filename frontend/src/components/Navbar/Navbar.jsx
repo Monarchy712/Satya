@@ -79,13 +79,16 @@ export default function Navbar({ user, onLogout }) {
   const [scrolled, setScrolled] = useState(false);
   const [time, setTime] = useState(new Date());
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
 
   const handleLogoutClick = async () => {
+    setShowLogoutConfirm(false);
     setIsLoggingOut(true);
-    await new Promise(r => setTimeout(r, 800));
+    // Simulate security cleanup
+    await new Promise(r => setTimeout(r, 1200));
     onLogout();
     setIsLoggingOut(false);
     navigate('/');
@@ -199,9 +202,19 @@ export default function Navbar({ user, onLogout }) {
           {user ? (
             <div className="navbar__user">
               <AadhaarProfile user={user} />
-              <button className="navbar__logout-btn" onClick={handleLogoutClick}>
-                Logout
-              </button>
+              <div className="navbar__logout-group">
+                {showLogoutConfirm ? (
+                  <div className="navbar__logout-confirm-pop">
+                    <span>End Session?</span>
+                    <button className="navbar__confirm-btn" onClick={handleLogoutClick}>Yes</button>
+                    <button className="navbar__cancel-btn" onClick={() => setShowLogoutConfirm(false)}>No</button>
+                  </div>
+                ) : (
+                  <button className="navbar__logout-btn" onClick={() => setShowLogoutConfirm(true)}>
+                    Logout
+                  </button>
+                )}
+              </div>
             </div>
           ) : (
             <button
