@@ -180,7 +180,7 @@ export default function ContractorDashboard() {
                                     </div>
                                  </div>
                                  
-                                 {isPending && idx === t.current_milestone && !t.dispute?.reason && (
+                                 {isPending && idx === t.current_milestone && !(t.dispute?.reason && t.dispute?.milestone_id === t.current_milestone) && (
                                    <div style={{ display: 'flex', gap: '10px' }}>
                                      <button 
                                        className="contractor-milestone-btn"
@@ -197,7 +197,7 @@ export default function ContractorDashboard() {
                                      </button>
                                    </div>
                                  )}
-                                 {t.dispute?.reason && idx === t.current_milestone && (
+                                 {t.dispute?.reason && t.dispute?.milestone_id === t.current_milestone && idx === t.current_milestone && (
                                    <span className="contractor-milestone-indicator" style={{color: 'var(--pink-500)'}}>Active Conflict Under Review</span>
                                  )}
                                  {isSubmitted && <span className="contractor-milestone-indicator" style={{color: 'var(--status-review)'}}>Oversight Review</span>}

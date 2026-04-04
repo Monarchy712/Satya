@@ -509,13 +509,15 @@ def get_tender_details(tender_address: str) -> dict:
         # 5. MAP DISPUTE
         try:
             disp = tender_contract.functions.dispute().call()
-            # dispute struct: (milestoneId, reason, votesForGov, votesForContractor, resolved)
+            # dispute struct public getter returns: 
+            # (milestoneId, reason, votesForGov, votesForContractor, votesForNone, resolved)
             data["dispute"] = {
                 "milestone_id": disp[0],
                 "reason": disp[1],
                 "votes_for_gov": disp[2],
                 "votes_for_contractor": disp[3],
-                "resolved": disp[4],
+                "votes_for_none": disp[4],
+                "resolved": disp[5],
             }
         except Exception as e:
             data["dispute"] = None

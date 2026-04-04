@@ -129,31 +129,39 @@ export default function OversightDashboard() {
           let disputeObj = null;
           try {
             const dState = await tender.dispute();
-            if (dState[1] !== "") { // Has reason
+            const dMilestoneId = Number(dState[0]);
+            const dReason = dState[1];
+            const dResolved = dState[5];
+
+            // Only process if there is a reason AND it belongs to the current milestone
+            if (dReason !== "" && dMilestoneId === mIdx) {
                let isVoter = false;
                let hasVoted = false;
-               if (!dState[4]) {
-                  // Active dispute
+               
+               if (!dResolved) {
+                  // Active dispute logic
                   hasVoted = await tender.hasVoted(user.wallet);
                   if (hasVoted) {
                     isVoter = true;
                   } else {
+                    // Check if user is in any role pool by simulating a vote
                     try {
-                      await tender.vote.staticCall(true, { gasLimit: 300000 });
-                      isVoter = true; // No revert means they can vote
+                      await tender.vote.staticCall(2, { gasLimit: 300000 }); // Choice 2 is Neutral
+                      isVoter = true;
                     } catch (e) {
                       if (e.message && e.message.includes("Already voted")) isVoter = true;
                       else isVoter = false;
                     }
                   }
                }
+               
                disputeObj = {
-                 milestoneId: Number(dState[0]),
-                 reason: dState[1],
+                 milestoneId: dMilestoneId,
+                 reason: dReason,
                  votesForGov: Number(dState[2]),
                  votesForContractor: Number(dState[3]),
                  votesForNone: Number(dState[4]),
-                 resolved: dState[5],
+                 resolved: dResolved,
                  isVoter,
                  hasVoted
                };
