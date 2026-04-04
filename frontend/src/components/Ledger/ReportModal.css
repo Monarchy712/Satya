@@ -1,137 +1,310 @@
-/* ReportModal.css */
 .report-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(254, 232, 217, 0.85); /* cream semi-transparent */
-  backdrop-filter: blur(4px);
-  z-index: 1000;
+  background: rgba(254, 232, 217, 0.75); /* cream semi-transparent */
+  backdrop-filter: blur(12px) saturate(1.2);
+  -webkit-backdrop-filter: blur(12px) saturate(1.2);
+  z-index: 10000;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1rem;
+  padding: var(--space-md);
+  animation: fadeIn 0.3s ease;
 }
 
 .report-modal {
   background: var(--white);
-  border: 1px solid var(--pink-200);
-  border-radius: var(--radius-xl);
-  padding: 2.5rem;
+  border: 1px solid var(--pink-100);
+  border-radius: var(--radius-2xl);
+  padding: var(--space-2xl);
   width: 100%;
-  max-width: 500px;
-  box-shadow: 
-    0 16px 32px -8px rgba(84, 107, 43, 0.15),
-    0 0 0 1px var(--pink-100) inset;
+  max-width: 580px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-xl);
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: var(--space-xl);
   position: relative;
+  animation: fadeInUp 0.5s var(--ease-out);
 }
 
+.report-modal--success {
+  border-color: var(--status-completed);
+  text-align: center;
+}
+
+/* ── Header ── */
 .report-modal__close {
   position: absolute;
-  top: 1rem;
-  right: 1.5rem;
+  top: var(--space-md);
+  right: var(--space-lg);
   background: none;
   border: none;
-  font-size: 2rem;
-  line-height: 1;
+  font-size: 1.8rem;
   cursor: pointer;
-  color: var(--pink-400);
+  color: var(--pink-300);
   transition: color 0.2s;
+  z-index: 10;
 }
+
 .report-modal__close:hover {
-  color: var(--pink-800);
+  color: var(--pink-700);
+}
+
+.report-modal__header {
+  display: flex;
+  gap: var(--space-md);
+  align-items: center;
+}
+
+.report-modal__icon {
+  width: 48px;
+  height: 48px;
+  background: var(--pink-50);
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  flex-shrink: 0;
 }
 
 .report-modal__title {
   font-family: var(--font-display);
-  color: var(--pink-900);
-  font-size: 2rem;
+  color: var(--gray-900);
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
   margin: 0;
 }
 
-.report-modal__input-group {
+.report-modal__subtitle {
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  color: var(--gray-500);
+  margin-top: 4px;
+}
+
+.report-modal__id {
+  font-family: var(--font-mono);
+  color: var(--pink-700);
+  font-weight: 600;
+}
+
+/* ── Form ── */
+.report-modal__form {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--space-lg);
+}
+
+.report-modal__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.report-modal__label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .report-modal__label {
-  font-weight: 600;
-  color: var(--pink-800);
-  font-size: 0.9rem;
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--gray-800);
+  font-size: 0.95rem;
 }
 
+.report-modal__label-hint {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--gray-400);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ── File Zone ── */
+.report-modal__file-zone {
+  position: relative;
+}
+
+.report-modal__file-input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.report-modal__file-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: var(--space-md);
+  background: var(--pink-50);
+  border: 2px dashed var(--pink-200);
+  border-radius: var(--radius-lg);
+  color: var(--pink-700);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all 0.3s var(--ease-out);
+}
+
+.report-modal__file-input:hover + .report-modal__file-trigger {
+  background: var(--pink-100);
+  border-color: var(--pink-400);
+}
+
+/* ── Preview Grid ── */
+.report-modal__preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: var(--space-sm);
+  margin-top: var(--space-sm);
+}
+
+.report-modal__preview-item {
+  aspect-ratio: 1;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 2px solid var(--white);
+  box-shadow: var(--shadow-sm);
+}
+
+.report-modal__preview-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ── Inputs ── */
 .report-modal__textarea {
-  border: 1px solid var(--pink-200);
-  border-radius: var(--radius-sm);
-  padding: 0.75rem;
-  font-family: inherit;
-  resize: vertical;
-  min-height: 80px;
+  background: var(--gray-50);
+  border: 1.5px solid var(--pink-100);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--gray-800);
+  resize: none;
+  transition: all 0.3s var(--ease-out);
 }
 
 .report-modal__textarea:focus {
   outline: none;
   border-color: var(--pink-500);
-  box-shadow: 0 0 0 3px rgba(220,175,189,0.2);
+  background: var(--white);
+  box-shadow: 0 0 0 4px rgba(164, 183, 120, 0.1);
 }
 
-.report-modal__file-input {
-  font-size: 0.9rem;
-  color: var(--pink-700);
-}
-
-.report-modal__file-input::file-selector-button {
-  background: var(--pink-100);
-  border: 1px solid var(--pink-300);
-  border-radius: var(--radius-sm);
-  padding: 0.5rem 1rem;
-  color: var(--pink-900);
-  font-weight: 600;
-  cursor: pointer;
-  margin-right: 1rem;
-  transition: background var(--duration-fast) ease;
-}
-
-.report-modal__file-input::file-selector-button:hover {
-  background: var(--pink-200);
+/* ── Status & Actions ── */
+.report-modal__error {
+  padding: var(--space-md);
+  background: rgba(255, 107, 107, 0.08);
+  border: 1px solid rgba(255, 107, 107, 0.2);
+  border-radius: var(--radius-md);
+  color: var(--status-pending);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  line-height: 1.4;
 }
 
 .report-modal__submit {
-  background: var(--pink-700);
+  width: 100%;
+  background: linear-gradient(135deg, var(--gray-800), var(--gray-900));
   color: var(--white);
   border: none;
-  padding: 0.8rem;
-  border-radius: var(--radius-md);
-  font-weight: bold;
+  padding: var(--space-md);
+  border-radius: var(--radius-lg);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.1rem;
   cursor: pointer;
-  transition: all var(--duration-fast) ease;
+  transition: all 0.3s var(--ease-out);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
 }
 
 .report-modal__submit:hover:not(:disabled) {
-  background: var(--pink-800);
+  transform: translateY(-2px);
+  background: var(--gray-900);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
 }
 
 .report-modal__submit:disabled {
-  opacity: 0.7;
+  opacity: 0.6;
   cursor: not-allowed;
 }
 
-.report-modal__status {
-  text-align: center;
+/* ── Success State ── */
+.report-modal__success-msg {
+  padding: var(--space-xl) 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.report-modal__success-icon {
+  width: 64px;
+  height: 64px;
+  background: var(--status-completed);
+  color: var(--white);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  box-shadow: 0 0 20px rgba(78, 205, 196, 0.4);
+  animation: pulse 2s infinite;
+}
+
+.report-modal__success-msg h3 {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  color: var(--gray-900);
+  margin: 0;
+}
+
+.report-modal__success-msg p {
+  color: var(--gray-500);
   font-size: 0.95rem;
-  font-weight: 500;
-  color: var(--pink-800);
-  padding: 0.5rem;
-  border-radius: var(--radius-sm);
-  background: var(--pink-50);
+  max-width: 320px;
 }
-.report-modal__status.error {
-  color: #c92a2a;
-  background: #fff5f5;
+
+/* ── Footer ── */
+.report-modal__footer {
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--pink-50);
 }
-.report-modal__status.success {
-  color: #2b8a3e;
-  background: #ebfbee;
+
+.report-modal__footer p {
+  font-size: 0.75rem;
+  color: var(--gray-400);
+  line-height: 1.5;
+  text-align: center;
+}
+
+.report-modal__footer strong {
+  color: var(--pink-700);
+}
+
+/* Scrollbar adjustment */
+.report-modal::-webkit-scrollbar {
+  width: 4px;
+}
+.report-modal::-webkit-scrollbar-track {
+  background: transparent;
+}
+.report-modal::-webkit-scrollbar-thumb {
+  background: var(--pink-100);
+  border-radius: 4px;
 }

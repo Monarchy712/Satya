@@ -49,6 +49,12 @@ const CONTEXT_MESSAGES = {
     'Fetching active bidding windows…',
     'Loading infrastructure project catalog…',
   ],
+  signatory: [
+    'Verifying onsite inspection status…',
+    'Syncing milestone deliverables from the field…',
+    'Authenticating inspection credentials…',
+    'Connecting to the transparency node…',
+  ],
   auth: [
     'Authenticating identity…',
     'Verifying credentials…',
@@ -58,6 +64,12 @@ const CONTEXT_MESSAGES = {
     'Recording signature on-chain…',
     'Awaiting blockchain confirmation…',
     'Transmitting approval to network…',
+  ],
+  citizen_report: [
+    'Satya Vision™ Analyzing Image Integrity…',
+    'Neural Validation of Project State…',
+    'Bundling Encrypted Report Assets…',
+    'Committing to Immutable Transparency Ledger…',
   ],
   deploying: [
     'Deploying contract to network…',
