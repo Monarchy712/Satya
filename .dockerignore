@@ -10,19 +10,6 @@ README.md
 implementation_plan.md
 task.md
 walkthrough.md
-requirements.txt (at root)
-context.txt
-status.txt
-changes/
-admin_approval_feature/
-context_comparator/
-fault_detection/
-gas_price_prediction/
-geoLocationCheck/
-ipfs_folder/
 package-lock.json
-requirements.txt
-final_parity_check.ps1
-check_revert.py
-check_tender_diag.py
-verification_test.py
+# Root files removed in thorough cleanup:
+# context.txt, status.txt, requirements.txt, etc.

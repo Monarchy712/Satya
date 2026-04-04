@@ -10,8 +10,8 @@ export async function getUnifiedLedgerData() {
   try {
     // 1. Fetch data from backend (Single trip for everything)
     const [contractorsRes, tendersRes] = await Promise.all([
-      fetch('http://localhost:8000/api/contractors/list'),
-      fetch('http://localhost:8000/api/tenders/list')
+      fetch('/api/contractors/list'),
+      fetch('/api/tenders/list')
     ]);
 
     if (!contractorsRes.ok || !tendersRes.ok) throw new Error('Backend aggregation layer unavailable');

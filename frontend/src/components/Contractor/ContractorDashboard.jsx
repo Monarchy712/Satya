@@ -27,7 +27,7 @@ export default function ContractorDashboard() {
   async function loadContractorData() {
     setLoading(true);
     try {
-      const response = await axios.get('http://localhost:8000/api/tenders/list');
+      const response = await axios.get('/api/tenders/list');
       const allTenders = response.data;
       
       const myAddress = user.wallet.toLowerCase();

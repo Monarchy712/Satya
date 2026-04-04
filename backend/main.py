@@ -1,5 +1,8 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import JSONResponse, FileResponse
+import os
 from routers.citizen import router as citizen_router
 from routers.wallet import router as wallet_router, contractor_router
 from routers.report import router as report_router
@@ -62,11 +65,35 @@ async def generic_exception_handler(request, exc):
 
 
 
-@app.get("/")
-def root():
-    return {"status": "online", "service": "Satya Sentinel API"}
+
 
 
 @app.get("/health")
 def health():
     return {"status": "healthy"}
+
+# ── Unified Frontend Serving ──
+# Mount the static files directory (built from frontend/dist)
+# This should be at the end so it doesn't mask API routes
+if os.path.exists("static"):
+    app.mount("/assets", StaticFiles(directory="static/assets"), name="assets")
+
+    @app.get("/{full_path:path}")
+    async def serve_frontend(request: Request, full_path: str):
+        # 1. API routes should have been caught; if not, return 404
+        if full_path.startswith("api/"):
+            return JSONResponse(status_code=404, content={"detail": "Not Found"})
+        
+        # 2. Check if requested path is a file in 'static/' (e.g., favicon.ico)
+        static_file = os.path.join("static", full_path)
+        if os.path.isfile(static_file):
+            return FileResponse(static_file)
+            
+        # 3. Serve index.html for SPA routes or if file not found
+        index_path = os.path.join("static", "index.html")
+        if os.path.exists(index_path):
+            return FileResponse(index_path)
+            
+        return JSONResponse(status_code=404, content={"detail": "Frontend assets not found"})
+
+

@@ -22,7 +22,7 @@ export default function RoleManagement() {
     setLoading(true);
     try {
       // Use backend API since it returns mapped object, OR ethers.js
-      const res = await fetch('http://localhost:8000/api/roles/all');
+      const res = await fetch('/api/roles/all');
       if (res.ok) {
         const data = await res.json();
         setPools(data);

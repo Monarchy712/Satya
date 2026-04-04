@@ -21,7 +21,7 @@ export default function SignatoryDashboard() {
   async function loadPendingTasks() {
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:8000/api/tenders/list');
+      const response = await fetch('/api/tenders/list');
       if (!response.ok) throw new Error('Failed to load tasks');
       const allTenders = await response.json();
       
@@ -49,7 +49,7 @@ export default function SignatoryDashboard() {
           t.milestones.forEach((m, idx) => {
             if (m.status === 1) { // UNDER_REVIEW
               const checkSigned = async () => {
-                const res = await fetch(`http://localhost:8000/api/committee/has-signed?tender_address=${t.tender_address}&milestone_id=${idx}`, {
+                const res = await fetch(`/api/committee/has-signed?tender_address=${t.tender_address}&milestone_id=${idx}`, {
                   headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const alreadySignedDB = res.ok ? await res.json() : false;
@@ -89,7 +89,7 @@ export default function SignatoryDashboard() {
       const { signMilestoneApproval } = await import('../../utils/contracts');
       const signature = await signMilestoneApproval(signer, task.tenderAddress, task.milestoneIndex);
       
-      const response = await fetch('http://localhost:8000/api/committee/sign', {
+      const response = await fetch('/api/committee/sign', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

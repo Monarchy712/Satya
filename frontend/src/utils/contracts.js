@@ -1,7 +1,7 @@
 import { ethers } from 'ethers';
 
 // ── Factory Contract ──
-export const FACTORY_ADDRESS = "0x760a12501f98E1b4Fbd4b821C55c0432C17C3C8c";
+export const FACTORY_ADDRESS = import.meta.env.VITE_FACTORY_ADDRESS || "0x760a12501f98E1b4Fbd4b821C55c0432C17C3C8c";
 
 import FACTORY_ABI_JSON from './TenderFactoryABI.json';
 export const FACTORY_ABI = FACTORY_ABI_JSON;
@@ -17,7 +17,8 @@ export const ROLE_NAMES = ['None', 'OnSiteEngineer', 'ComplianceOfficer', 'Finan
 
 // ── Helper: get a provider (read-only, no wallet) ──
 export function getProvider() {
-  return new ethers.JsonRpcProvider('https://eth-sepolia.g.alchemy.com/v2/Qq97YUiLlpEOjydTQA3QE');
+  const rpc = import.meta.env.VITE_RPC_URL || 'https://eth-sepolia.g.alchemy.com/v2/Qq97YUiLlpEOjydTQA3QE';
+  return new ethers.JsonRpcProvider(rpc);
 }
 
 // ── Helper: get signer from MetaMask ──
@@ -45,7 +46,7 @@ export async function getSigner() {
                 symbol: 'SepoliaETH',
                 decimals: 18,
               },
-              rpcUrls: ['https://eth-sepolia.g.alchemy.com/v2/Qq97YUiLlpEOjydTQA3QE'],
+              rpcUrls: [import.meta.env.VITE_RPC_URL || 'https://eth-sepolia.g.alchemy.com/v2/Qq97YUiLlpEOjydTQA3QE'],
               blockExplorerUrls: ['https://sepolia.etherscan.io'],
             },
           ],

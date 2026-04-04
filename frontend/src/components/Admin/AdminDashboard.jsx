@@ -118,7 +118,7 @@ export default function AdminDashboard() {
   async function loadTenderData() {
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:8000/api/tenders/list');
+      const response = await fetch('/api/tenders/list');
       if (!response.ok) throw new Error('Failed to load aggregated tender data');
       const data = await response.json();
       setTenders(data);
@@ -158,7 +158,7 @@ export default function AdminDashboard() {
 
       const fallbackToken = localStorage.getItem('satya_token') || '';
       
-      await fetch('http://localhost:8000/api/admin/tender-metadata', {
+      await fetch('/api/admin/tender-metadata', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -207,7 +207,7 @@ export default function AdminDashboard() {
       await txSelect.wait();
       
       const fallbackToken = localStorage.getItem('satya_token') || '';
-      await fetch('http://localhost:8000/api/admin/tender-metadata', {
+      await fetch('/api/admin/tender-metadata', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

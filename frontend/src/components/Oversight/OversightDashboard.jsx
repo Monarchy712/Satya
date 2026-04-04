@@ -76,7 +76,7 @@ export default function OversightDashboard() {
           let offchainSigned = false;
           try {
             const hasSignedRes = await fetch(
-              `http://localhost:8000/api/committee/has-signed?tender_address=${tAddr}&milestone_id=${mIdx}`,
+              `/api/committee/has-signed?tender_address=${tAddr}&milestone_id=${mIdx}`,
               { headers: { Authorization: `Bearer ${token}` } }
             );
             if (hasSignedRes.ok) {
@@ -92,7 +92,7 @@ export default function OversightDashboard() {
           let sigCount = 0;
           try {
             const res = await fetch(
-              `http://localhost:8000/api/committee/signatures?tender_address=${tAddr}&milestone_id=${mIdx}`,
+              `/api/committee/signatures?tender_address=${tAddr}&milestone_id=${mIdx}`,
               { headers: { Authorization: `Bearer ${token}` } }
             );
             if (res.ok) {
@@ -107,7 +107,7 @@ export default function OversightDashboard() {
           let balance = '0';
           let tenderName = null, tenderDesc = null, createdByDept = null, lat = null, lng = null;
           try {
-            const bres = await fetch(`http://localhost:8000/api/tenders/${tAddr}`, {
+            const bres = await fetch(`/api/tenders/${tAddr}`, {
               headers: { Authorization: `Bearer ${token}` }
             });
             if (bres.ok) {
@@ -216,7 +216,7 @@ export default function OversightDashboard() {
       const signature = await signMilestoneApproval(signer, tenderAddr, milestoneId);
 
       // 3. Send signature to backend for accumulation
-      const res = await fetch('http://localhost:8000/api/committee/sign', {
+      const res = await fetch('/api/committee/sign', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -255,7 +255,7 @@ export default function OversightDashboard() {
     setToast('');
     setError('');
     try {
-      const res = await fetch('http://localhost:8000/api/committee/execute', {
+      const res = await fetch('/api/committee/execute', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
