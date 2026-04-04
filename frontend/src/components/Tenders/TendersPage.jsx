@@ -39,7 +39,12 @@ export default function TendersPage() {
         status: t.status,
         biddingEndTime: Number(t.bidding_end_time),
         bidCount: t.bids.length,
-        bids: t.bids
+        bids: t.bids,
+        tenderName: t.tender_name,
+        tenderDescription: t.tender_description,
+        createdByDept: t.created_by_dept,
+        latitude: t.latitude,
+        longitude: t.longitude
       })));
       
       setSyncStatus(`Synced ${data.length} Assets`);
@@ -108,8 +113,20 @@ export default function TendersPage() {
                 ) : (
                   <span className={`tenders-card__status tenders-card__status--${t.status?.toLowerCase()}`}>{t.status}</span>
                 )}
-                <span className="tenders-card__id">Asset #{i+1}</span>
              </div>
+
+             <h3 className="tenders-card__heading">{t.tenderName || `Asset #${i+1}`}</h3>
+             
+             {(t.tenderDescription || t.createdByDept || t.latitude != null) && (
+               <div className="tenders-card__metadata-preview">
+                 {t.tenderDescription && <p className="tenders-card__desc">{t.tenderDescription}</p>}
+                 <div className="tenders-card__pills">
+                   {t.createdByDept && <span className="tenders-card__pill tenders-card__pill--dept">🏛️ {t.createdByDept}</span>}
+                   {t.latitude != null && t.longitude != null && <span className="tenders-card__pill tenders-card__pill--loc">📍 {Number(t.latitude).toFixed(4)}, {Number(t.longitude).toFixed(4)}</span>}
+                 </div>
+               </div>
+             )}
+
              <div 
                 className="tenders-card__address-chip"
                 onClick={(e) => {
@@ -134,7 +151,7 @@ export default function TendersPage() {
         
         {expandedTender === t.address && (
           <div className="tenders-card__details" onClick={e => e.stopPropagation()}>
-             <div className="tenders-card__info-row" style={{marginBottom:'15px', color: isAwaitingSelection ? 'var(--pink-700)' : 'inherit'}}>
+             <div className="tenders-card__info-row" style={{marginBottom:'10px', color: isAwaitingSelection ? 'var(--pink-700)' : 'inherit'}}>
                <span>{isAwaitingSelection ? 'Bidding Closed At:' : 'Deadline:'} <strong>{new Date(t.biddingEndTime * 1000).toLocaleString()}</strong></span>
              </div>
 

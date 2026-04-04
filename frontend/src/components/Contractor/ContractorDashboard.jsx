@@ -104,12 +104,41 @@ export default function ContractorDashboard() {
                       key={t.tender_address} 
                       className={`contractor-card ${t.status === 'COMPLETED' ? 'contractor-card--completed' : ''}`}
                     >
-                       <div className="contractor-card__header">
-                          <div className={`contractor-card__tag contractor-card__tag--${t.status.toLowerCase()}`}>
-                            {t.status}
+                       <div className="contractor-card__top" style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                            <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', color: 'var(--c-text)', margin: 0, paddingRight: '16px', lineHeight: 1.2 }}>
+                              {t.tender_name || 'Active Project'}
+                            </h3>
+                            <div className={`contractor-card__tag contractor-card__tag--${t.status.toLowerCase()}`}>
+                              {t.status}
+                            </div>
                           </div>
-                          <span className="contractor-card__addr">{t.tender_address}</span>
+                          <div style={{ display: 'flex' }}>
+                            <span className="contractor-card__addr">{t.tender_address}</span>
+                          </div>
                        </div>
+                       
+                       {(t.tender_description || t.created_by_dept || t.latitude != null) && (
+                         <div className="contractor-card__metadata" style={{ marginBottom: '24px' }}>
+                           {t.tender_description && (
+                             <p className="contractor-card__desc" style={{ fontSize: '0.85rem', color: 'var(--c-text-dim)', marginBottom: '12px', lineHeight: '1.6', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                               {t.tender_description}
+                             </p>
+                           )}
+                           <div className="contractor-card__pills" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                             {t.created_by_dept && (
+                               <span className="contractor-card__pill" style={{ background: 'var(--gray-50)', border: '1px solid var(--c-border)', color: 'var(--c-text-dim)', padding: '6px 12px', borderRadius: 'var(--radius-pill)', fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.05em' }}>
+                                 🏛️ {t.created_by_dept}
+                               </span>
+                             )}
+                             {t.latitude != null && t.longitude != null && (
+                               <span className="contractor-card__pill" style={{ background: 'var(--gray-50)', border: '1px solid var(--c-border)', color: 'var(--c-text-dim)', padding: '6px 12px', borderRadius: 'var(--radius-pill)', fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.05em' }}>
+                                 📍 {Number(t.latitude).toFixed(4)}, {Number(t.longitude).toFixed(4)}
+                               </span>
+                             )}
+                           </div>
+                         </div>
+                       )}
                        
                        <div className="contractor-milestones">
                           {t.milestones.map((m, idx) => {
@@ -167,9 +196,13 @@ export default function ContractorDashboard() {
                       const isWinning = t.contractor.toLowerCase() === user.wallet.toLowerCase();
                       return (
                         <div key={t.tender_address} className="contractor-bid-item">
-                           <div className="contractor-bid-info">
-                              <strong>Asset: {t.tender_address.slice(0,14)}...</strong>
-                              <span>Status: {t.status}</span>
+                           <div className="contractor-bid-info" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              <strong style={{ fontSize: '0.9rem', color: 'var(--c-text)', lineHeight: 1.2 }}>
+                                {t.tender_name ? t.tender_name.slice(0,25) + (t.tender_name.length > 25 ? '...' : '') : t.tender_address.slice(0,14) + '...'}
+                              </strong>
+                              <span style={{ fontSize: '0.75rem', color: 'var(--c-text-dim)', fontFamily: 'var(--font-mono)' }}>
+                                {t.tender_address.slice(0, 6)}...{t.tender_address.slice(-4)}
+                              </span>
                            </div>
                            <div className={`contractor-bid-badge contractor-bid-badge--${isWinning ? 'won' : t.status === 'BIDDING' ? 'pending' : 'lost'}`}>
                              {isWinning ? 'WON' : t.status === 'BIDDING' ? 'PENDING' : 'LOST'}
