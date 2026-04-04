@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
-import { getSigner, getTenderContract } from '../../utils/contracts';
+import { getSigner, getTenderContract, submitDispute } from '../../utils/contracts';
 import LoadingOverlay from '../UI/LoadingOverlay';
 import './ContractorDashboard.css';
 
@@ -17,6 +17,8 @@ export default function ContractorDashboard() {
   const [showModal, setShowModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
   const [report, setReport] = useState('');
+  const [showDisputeModal, setShowDisputeModal] = useState({ show: false, tenderAddr: '', mIdx: null });
+  const [disputeReason, setDisputeReason] = useState('');
 
   useEffect(() => {
     loadContractorData();
@@ -66,6 +68,23 @@ export default function ContractorDashboard() {
     } catch (err) {
       const reason = err.reason || err.message || 'Unknown error';
       alert(`Submission failed: ${reason}`);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleRaiseDispute = async () => {
+    if (!disputeReason || submitting) return;
+    setSubmitting(true);
+    try {
+      const signer = await getSigner();
+      await submitDispute(signer, showDisputeModal.tenderAddr, showDisputeModal.mIdx, disputeReason);
+      alert('Conflict raised successfully! Jury is established.');
+      setShowDisputeModal({ show: false, tenderAddr: '', mIdx: null });
+      setDisputeReason('');
+      loadContractorData();
+    } catch (err) {
+      alert(`Raise dispute failed: ${err.message}`);
     } finally {
       setSubmitting(false);
     }
@@ -161,13 +180,25 @@ export default function ContractorDashboard() {
                                     </div>
                                  </div>
                                  
-                                 {isPending && idx === t.current_milestone && (
-                                   <button 
-                                     className="contractor-milestone-btn"
-                                     onClick={() => openSubmissionModal(t.tender_address, idx, m.name)}
-                                   >
-                                     Apply for Approval
-                                   </button>
+                                 {isPending && idx === t.current_milestone && !t.dispute?.reason && (
+                                   <div style={{ display: 'flex', gap: '10px' }}>
+                                     <button 
+                                       className="contractor-milestone-btn"
+                                       onClick={() => openSubmissionModal(t.tender_address, idx, m.name)}
+                                     >
+                                       Apply for Approval
+                                     </button>
+                                     <button 
+                                       className="contractor-milestone-btn"
+                                       style={{ backgroundColor: 'transparent', color: 'var(--pink-500)', border: '1px solid var(--pink-500)' }}
+                                       onClick={() => setShowDisputeModal({ show: true, tenderAddr: t.tender_address, mIdx: idx })}
+                                     >
+                                       Raise Conflict
+                                     </button>
+                                   </div>
+                                 )}
+                                 {t.dispute?.reason && idx === t.current_milestone && (
+                                   <span className="contractor-milestone-indicator" style={{color: 'var(--pink-500)'}}>Active Conflict Under Review</span>
                                  )}
                                  {isSubmitted && <span className="contractor-milestone-indicator" style={{color: 'var(--status-review)'}}>Oversight Review</span>}
                                  {isCompleted && <span className="contractor-milestone-indicator" style={{color: 'var(--status-approved)'}}>Phase Finalized</span>}
@@ -259,6 +290,34 @@ export default function ContractorDashboard() {
                 </button>
                 <button className="contractor-modal__btn contractor-modal__btn--primary" onClick={handleSubmitMilestone} disabled={submitting}>
                   {submitting ? 'Transmitting…' : 'Authorize Submission'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Dispute Modal */}
+        {showDisputeModal.show && (
+          <div className="contractor-modal-overlay" onClick={() => !submitting && setShowDisputeModal({show:false, tenderAddr:'', mIdx:null})}>
+            <div className="contractor-modal" onClick={e => e.stopPropagation()}>
+              <div className="contractor-modal__accent" style={{ background: 'var(--pink-500)' }} />
+              <h2 className="contractor-modal__title" style={{ color: 'var(--pink-500)' }}>Initiate Conflict Arbitration</h2>
+              <p className="contractor-modal__desc">
+                Raising a conflict will trigger a decentralized arbitration process from randomized administration pools.
+              </p>
+              <textarea 
+                className="contractor-modal__textarea" 
+                rows="4"
+                placeholder="State the reason for this dispute..."
+                value={disputeReason}
+                onChange={(e) => setDisputeReason(e.target.value)}
+              />
+              <div className="contractor-modal__actions">
+                <button className="contractor-modal__btn contractor-modal__btn--secondary" onClick={() => setShowDisputeModal({show:false, tenderAddr:'', mIdx:null})} disabled={submitting}>
+                  Cancel
+                </button>
+                <button className="contractor-modal__btn contractor-modal__btn--primary" style={{ background: 'var(--pink-500)' }} onClick={handleRaiseDispute} disabled={submitting || !disputeReason}>
+                  {submitting ? 'Transmitting…' : 'Submit Conflict'}
                 </button>
               </div>
             </div>

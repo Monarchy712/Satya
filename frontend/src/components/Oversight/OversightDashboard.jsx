@@ -462,7 +462,7 @@ export default function OversightDashboard() {
                             Sign & Approve
                           </button>
                         )}
-                        {(t.role === 'Government' || t.role === 'Contractor') && (
+                        {(t.role === 'Government') && (
                           <button
                              className="oversight-card__btn"
                              onClick={() => setShowDisputeModal({ show: true, tenderAddr: t.address, milestoneId: t.currentMilestone })}
