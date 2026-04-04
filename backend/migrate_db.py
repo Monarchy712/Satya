@@ -2,7 +2,7 @@ from sqlalchemy import text
 from database import engine
 
 def migrate():
-    with engine.connect() as conn:
+    with engine.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
         print("Adding missing columns to 'contractors' table...")
         cols = [
             ("registration_id", "VARCHAR"),
@@ -21,10 +21,27 @@ def migrate():
         conn.execute(text("""
             CREATE TABLE IF NOT EXISTS tender_metadata (
                 tender_address VARCHAR PRIMARY KEY,
+                tender_name VARCHAR,
+                tender_description VARCHAR,
+                created_by_dept VARCHAR,
                 selection_note VARCHAR,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         """))
+
+        print("\nAdding missing columns to 'tender_metadata' table...")
+        tm_cols = [
+            ("tender_name", "VARCHAR"),
+            ("tender_description", "VARCHAR"),
+            ("created_by_dept", "VARCHAR")
+        ]
+        for col, type_ in tm_cols:
+            try:
+                conn.execute(text(f"ALTER TABLE tender_metadata ADD COLUMN {col} {type_};"))
+                print(f"✓ Added {col} to tender_metadata")
+            except Exception as e:
+                print(f"! Could not add {col} to tender_metadata: {e}")
+                
 
         print("\nCreating 'milestone_approvals' table if not exists...")
         conn.execute(text("""
@@ -49,7 +66,6 @@ def migrate():
             else:
                 print(f"! Error adding signature column (may already exist or table missing): {e}")
 
-        conn.commit()
     print("Migration complete.")
 
 if __name__ == "__main__":

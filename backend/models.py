@@ -38,6 +38,9 @@ class TenderMetadata(Base):
     __tablename__ = "tender_metadata"
 
     tender_address = Column(String, primary_key=True)
+    tender_name = Column(String, nullable=True)
+    tender_description = Column(String, nullable=True)
+    created_by_dept = Column(String, nullable=True)
     selection_note = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 

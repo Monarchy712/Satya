@@ -99,7 +99,17 @@ class TenderDetail(BaseModel):
     sanctioning_authority: str
     bids: List[BidData]
     milestones: List[MilestoneData]
+    tender_name: Optional[str] = None
+    tender_description: Optional[str] = None
+    created_by_dept: Optional[str] = None
+    selection_note: Optional[str] = None
 
+class TenderMetadataSave(BaseModel):
+    tender_address: str
+    tender_name: Optional[str] = None
+    tender_description: Optional[str] = None
+    created_by_dept: Optional[str] = None
+    note: Optional[str] = None
 
 # ── Contractor Registration ──
 
