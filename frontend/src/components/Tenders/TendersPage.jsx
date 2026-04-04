@@ -110,7 +110,19 @@ export default function TendersPage() {
                 )}
                 <span className="tenders-card__id">Asset #{i+1}</span>
              </div>
-             <p className="tenders-card__address">{t.address}</p>
+             <div 
+                className="tenders-card__address-chip"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigator.clipboard.writeText(t.address);
+                }}
+                title="Click to copy full contract address"
+             >
+                <code className="tenders-card__hash">
+                  {t.address.slice(0, 6)}...{t.address.slice(-4)}
+                </code>
+                <span className="tenders-card__copy-icon">⎘</span>
+             </div>
           </div>
           <div className="tenders-card__right">
              <div className="tenders-card__bid-count">
@@ -196,7 +208,16 @@ export default function TendersPage() {
 
             {expiredTenders.length > 0 && (
                <div className="tenders-section" style={{marginTop:'40px'}}>
-                  <h2 className="tenders-section__title" style={{color:'var(--pink-700)', borderColor:'var(--pink-300)'}}>AWAITING ARBITRATION</h2>
+                  <div className="tenders-section__banner tenders-section__banner--arbitration">
+                    <div className="tenders-section__banner-icon">
+                      <div className="pulse-ring"></div>
+                      ⚖️
+                    </div>
+                    <div className="tenders-section__banner-text">
+                      <h2 className="tenders-section__title">Awaiting Arbitration</h2>
+                      <p>These assets have closed bidding windows and are pending administrative selection.</p>
+                    </div>
+                  </div>
                   <div className="tenders-section__grid tenders-section__grid--expired">
                     {expiredTenders.map((t, i) => renderTenderCard(t, i, 'expired'))}
                   </div>

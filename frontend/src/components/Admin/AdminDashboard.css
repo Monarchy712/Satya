@@ -433,26 +433,30 @@
 }
 
 .admin-ongoing__grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: var(--space-lg);
+  display: flex;
+  flex-wrap: wrap;
   justify-content: center;
+  gap: var(--space-lg);
 }
 
 /* ── Tender Cards ── */
 .admin-tender-card {
+  width: 100%;
+  max-width: 320px;
   background: var(--white);
   border: 1px solid var(--pink-100);
   border-radius: var(--radius-lg);
   padding: var(--space-lg);
-  box-shadow: 0 2px 12px rgba(0,0,0,0.03);
-  transition: all 0.25s ease;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  display: flex;
+  flex-direction: column;
 }
 
 .admin-tender-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 28px rgba(0,0,0,0.06);
-  border-color: var(--pink-300);
+  transform: translateY(-6px);
+  box-shadow: 0 16px 40px rgba(113, 139, 77, 0.1);
+  border-color: rgba(113, 139, 77, 0.3);
 }
 
 .admin-tender-card__header {
@@ -503,9 +507,13 @@
 
 .admin-tender-card__index {
   font-family: var(--font-mono);
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--gray-400);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--pink-700);
+  background: var(--ivory);
+  padding: 4px 10px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--pink-200);
 }
 
 /* MODIFIED: Replaced full address styling with info button + tooltip */
@@ -579,7 +587,9 @@
 .admin-tender-card__meta-row {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-end;
+  border-bottom: 1.5px dotted var(--pink-200);
+  padding-bottom: 6px;
 }
 
 .admin-tender-card__meta-label {
@@ -588,6 +598,9 @@
   color: var(--gray-500);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  background: var(--white);
+  padding-right: 8px;
+  margin-bottom: -10px; /* pull down over dotted line */
 }
 
 .admin-tender-card__meta-value {
@@ -595,6 +608,9 @@
   font-size: 0.95rem;
   color: var(--gray-800);
   font-weight: 700;
+  background: var(--white);
+  padding-left: 8px;
+  margin-bottom: -10px;
 }
 
 .admin-tender-card__meta-value--highlight {
