@@ -201,7 +201,7 @@ export default function Navbar({ user, onLogout }) {
         <div className="navbar__right">
           {user ? (
             <div className="navbar__user">
-              <AadhaarProfile user={user} />
+              {user?.role === 'citizen' && <AadhaarProfile user={user} />}
               <div className="navbar__logout-group">
                 {showLogoutConfirm ? (
                   <div className="navbar__logout-confirm-pop">

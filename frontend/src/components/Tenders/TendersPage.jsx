@@ -102,7 +102,12 @@ export default function TendersPage() {
     const isContractor = user?.role?.toLowerCase() === 'contractor';
     
     return (
-      <div key={t.address} className={`tenders-card ${isAwaitingSelection ? 'tenders-card--expired' : ''}`} onClick={() => setExpandedTender(expandedTender === t.address ? null : t.address)}>
+      <div
+        key={t.address}
+        className={`tenders-card ${isAwaitingSelection ? 'tenders-card--expired' : ''} ${expandedTender === t.address ? 'tenders-card--expanded' : ''}`}
+        onMouseEnter={() => setExpandedTender(t.address)}
+        onMouseLeave={() => setExpandedTender(null)}
+      >
         <div className="tenders-card__main">
           <div className="tenders-card__left">
              <div className="tenders-card__top">
@@ -150,7 +155,7 @@ export default function TendersPage() {
         </div>
         
         {expandedTender === t.address && (
-          <div className="tenders-card__details" onClick={e => e.stopPropagation()}>
+          <div className="tenders-card__details">
              <div className="tenders-card__info-row" style={{marginBottom:'10px', color: isAwaitingSelection ? 'var(--pink-700)' : 'inherit'}}>
                <span>{isAwaitingSelection ? 'Bidding Closed At:' : 'Deadline:'} <strong>{new Date(t.biddingEndTime * 1000).toLocaleString()}</strong></span>
              </div>
