@@ -139,7 +139,7 @@ export default function OversightDashboard() {
                     isVoter = true;
                   } else {
                     try {
-                      await tender.vote.staticCall(true);
+                      await tender.vote.staticCall(true, { gasLimit: 300000 });
                       isVoter = true; // No revert means they can vote
                     } catch (e) {
                       if (e.message && e.message.includes("Already voted")) isVoter = true;
@@ -428,8 +428,17 @@ export default function OversightDashboard() {
                           </div>
                           {!t.dispute.resolved && t.dispute.isVoter && !t.dispute.hasVoted && (
                             <div style={{ display: 'flex', gap: '10px' }}>
-                              <button className="oversight-card__btn" style={{ flex: 1, backgroundColor: '#3498db', borderColor: '#3498db' }} onClick={() => handleVote(t.address, true)} disabled={signing}>Vote for Government</button>
-                              <button className="oversight-card__btn oversight-card__btn--execute" style={{ flex: 1 }} onClick={() => handleVote(t.address, false)} disabled={signing}>Vote for Contractor</button>
+                              <button className="oversight-card__btn" style={{ flex: 1, backgroundColor: '#3498db', borderColor: '#3498db', fontSize: '0.8rem', padding: '8px' }} onClick={() => handleVote(t.address, true)} disabled={signing}>
+                                Vote Government <br/><small>(Void & Refund Gov)</small>
+                              </button>
+                              <button className="oversight-card__btn oversight-card__btn--execute" style={{ flex: 1, fontSize: '0.8rem', padding: '8px' }} onClick={() => handleVote(t.address, false)} disabled={signing}>
+                                Vote Contractor <br/><small>(Pay Phase & Void)</small>
+                              </button>
+                            </div>
+                          )}
+                          {!t.dispute.resolved && !t.dispute.isVoter && (
+                            <div className="oversight-card__status oversight-card__status--waiting" style={{ color: 'var(--gray-400)', borderColor: 'var(--gray-600)' }}>
+                              You are not in the randomly selected arbitration jury.
                             </div>
                           )}
                           {!t.dispute.resolved && t.dispute.isVoter && t.dispute.hasVoted && (
@@ -462,7 +471,7 @@ export default function OversightDashboard() {
                             Sign & Approve
                           </button>
                         )}
-                        {(t.role === 'Government' || t.role === 'Contractor') && (
+                        {(t.role === 'Government') && (
                           <button
                              className="oversight-card__btn"
                              onClick={() => setShowDisputeModal({ show: true, tenderAddr: t.address, milestoneId: t.currentMilestone })}

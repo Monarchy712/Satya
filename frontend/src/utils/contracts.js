@@ -114,12 +114,13 @@ export async function revokeRole(signer, userAddress) {
 // ── Dispute & Voting Helpers ──
 export async function submitDispute(signer, tenderAddress, milestoneId, reason) {
   const tender = getTenderContract(tenderAddress, signer);
-  const tx = await tender.raiseDispute(milestoneId, reason);
+  // Add an explicit gasLimit override to prevent MetaMask OOG estimations due to variable storage strings
+  const tx = await tender.raiseDispute(milestoneId, reason, { gasLimit: 800000 });
   return tx.wait();
 }
 
 export async function castDisputeVote(signer, tenderAddress, supportGovernment) {
   const tender = getTenderContract(tenderAddress, signer);
-  const tx = await tender.vote(supportGovernment);
+  const tx = await tender.vote(supportGovernment, { gasLimit: 300000 });
   return tx.wait();
 }
