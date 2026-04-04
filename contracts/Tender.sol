@@ -7,7 +7,6 @@ interface ITenderFactory {
 
 contract Tender {
 
-    // ---------------- ENUMS ----------------
     enum TenderStatus { BIDDING, ACTIVE, COMPLETED, CANCELLED }
     enum MilestoneStatus { PENDING, UNDER_REVIEW, APPROVED }
 
@@ -21,7 +20,6 @@ contract Tender {
         GOVERNMENT
     }
 
-    // ---------------- STATE ----------------
     address public factory;
     address public contractor;
 
@@ -36,7 +34,6 @@ contract Tender {
 
     TenderStatus public tenderStatus;
 
-    // ---------------- ADMINS ----------------
     address[4] public admins;
     mapping(address => Role) public roles;
 
@@ -48,6 +45,9 @@ contract Tender {
 
     Bid[] public bids;
     mapping(address => bool) public hasBid;
+
+    // ---------------- FUNDS ----------------
+    uint256 public totalFunds;
 
     // ---------------- EIP712 ----------------
     bytes32 public DOMAIN_SEPARATOR;
@@ -63,17 +63,17 @@ contract Tender {
         string name;
         uint256 percentage;
         uint256 deadline;
-        uint256 depositShare;
         MilestoneStatus status;
     }
 
     Milestone[] public milestones;
 
     // ---------------- EVENTS ----------------
-    event MilestoneSubmitted(uint256 id);
-    event MilestoneExecuted(uint256 id);
+    event Funded(uint256 amount);
     event BidPlaced(address bidder, uint256 amount);
     event ContractorSelected(address contractor, uint256 bid);
+    event MilestoneSubmitted(uint256 id);
+    event MilestoneExecuted(uint256 id);
 
     // ---------------- MODIFIERS ----------------
     modifier onlyGovernment() {
@@ -107,15 +107,11 @@ contract Tender {
         uint256[] memory _deadlines
     ) {
         require(_admins.length == 4, "Need 4 admins");
-        require(_names.length == _percentages.length &&
-                _names.length == _deadlines.length,
-                "Array mismatch");
 
         factory = _factory;
 
         admins = [_admins[0], _admins[1], _admins[2], _admins[3]];
 
-        // assign roles
         roles[_admins[0]] = Role.ON_SITE_ENGINEER;
         roles[_admins[1]] = Role.COMPLIANCE_OFFICER;
         roles[_admins[2]] = Role.FINANCIAL_AUDITOR;
@@ -134,9 +130,7 @@ contract Tender {
 
         DOMAIN_SEPARATOR = keccak256(
             abi.encode(
-                keccak256(
-                    "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
-                ),
+                keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
                 keccak256(bytes("Tender")),
                 keccak256(bytes("1")),
                 chainId,
@@ -152,7 +146,6 @@ contract Tender {
                 name: _names[i],
                 percentage: _percentages[i],
                 deadline: _deadlines[i],
-                depositShare: 0,
                 status: MilestoneStatus.PENDING
             }));
         }
@@ -162,65 +155,33 @@ contract Tender {
         tenderStatus = TenderStatus.BIDDING;
     }
 
-    // ---------------- ROLE HELPERS ----------------
+    // ---------------- FUNDING ----------------
 
-    function getUserRole(address user) public view returns (Role) {
-        if (ITenderFactory(factory).isGovernment(user)) {
-            return Role.GOVERNMENT;
-        }
-        return roles[user];
+    function fundContract() external payable onlyGovernment {
+        require(msg.value > 0, "No funds");
+        totalFunds += msg.value;
+
+        emit Funded(msg.value);
     }
 
-    function getRoleName(address user)
-        external
-        view
-        returns (string memory)
-    {
-        Role r = getUserRole(user);
+    // ---------------- ROLE HELPERS ----------------
 
+    function getRoleName(address user) external view returns (string memory) {
+        Role r = roles[user];
+        if (ITenderFactory(factory).isGovernment(user)) return "Government";
         if (r == Role.ON_SITE_ENGINEER) return "OnSiteEngineer";
         if (r == Role.COMPLIANCE_OFFICER) return "ComplianceOfficer";
         if (r == Role.FINANCIAL_AUDITOR) return "FinancialAuditor";
         if (r == Role.SANCTIONING_AUTHORITY) return "SanctioningAuthority";
         if (r == Role.CONTRACTOR) return "Contractor";
-        if (r == Role.GOVERNMENT) return "Government";
-
         return "None";
-    }
-
-    function getUserInfo(address user)
-        external
-        view
-        returns (
-            bool involved,
-            string memory role,
-            uint256 milestoneId,
-            MilestoneStatus status
-        )
-    {
-        Role r = getUserRole(user);
-
-        return (
-            r != Role.NONE,
-            this.getRoleName(user),
-            currentMilestone,
-            milestones[currentMilestone].status
-        );
-    }
-
-    function hasUserSigned(uint256 id, address user)
-        external
-        view
-        returns (bool)
-    {
-        return hasSigned[id][user];
     }
 
     // ---------------- BIDDING ----------------
 
     function placeBid(uint256 amount) external {
         require(tenderStatus == TenderStatus.BIDDING, "Not bidding");
-        require(block.timestamp < biddingEndTime, "Bidding ended");
+        require(block.timestamp < biddingEndTime, "Ended");
         require(!hasBid[msg.sender], "Already bid");
 
         bids.push(Bid(msg.sender, amount));
@@ -233,21 +194,8 @@ contract Tender {
         external
         onlyGovernment
     {
-        require(block.timestamp >= biddingEndTime, "Bidding not over");
+        require(block.timestamp >= biddingEndTime, "Not over");
         require(hasBid[_contractor], "Not bidder");
-
-        bool valid;
-        for (uint i = 0; i < bids.length; i++) {
-            if (
-                bids[i].bidder == _contractor &&
-                bids[i].amount == _winningBid
-            ) {
-                valid = true;
-                break;
-            }
-        }
-
-        require(valid, "Invalid bid");
 
         contractor = _contractor;
         roles[_contractor] = Role.CONTRACTOR;
@@ -258,19 +206,16 @@ contract Tender {
         emit ContractorSelected(_contractor, _winningBid);
     }
 
-    // ---------------- MILESTONE FLOW ----------------
+    // ---------------- MILESTONE ----------------
 
     function submitMilestone(uint256 id)
         external
         onlyContractor
         onlyActive
     {
-        require(id == currentMilestone, "Wrong milestone");
+        require(id == currentMilestone, "Wrong id");
 
-        Milestone storage m = milestones[id];
-        require(m.status == MilestoneStatus.PENDING, "Invalid");
-
-        m.status = MilestoneStatus.UNDER_REVIEW;
+        milestones[id].status = MilestoneStatus.UNDER_REVIEW;
 
         emit MilestoneSubmitted(id);
     }
@@ -280,8 +225,8 @@ contract Tender {
         bytes[] calldata signatures
     ) external {
         require(id == currentMilestone, "Wrong milestone");
-        require(!executed[id], "Already executed");
-        require(signatures.length == 4, "Need 4 sigs");
+        require(!executed[id], "Done");
+        require(signatures.length == 4, "Need 4");
 
         bytes32 structHash = keccak256(
             abi.encode(APPROVAL_TYPEHASH, id, address(this))
@@ -291,12 +236,9 @@ contract Tender {
             abi.encodePacked("\x19\x01", DOMAIN_SEPARATOR, structHash)
         );
 
-        for (uint i = 0; i < signatures.length; i++) {
+        for (uint i = 0; i < 4; i++) {
             address signer = recover(digest, signatures[i]);
-
-            require(isAdmin(signer), "Not admin");
             require(!hasSigned[id][signer], "Duplicate");
-
             hasSigned[id][signer] = true;
         }
 
@@ -305,13 +247,6 @@ contract Tender {
         _finalize(id);
 
         emit MilestoneExecuted(id);
-    }
-
-    function isAdmin(address user) public view returns (bool) {
-        for (uint i = 0; i < 4; i++) {
-            if (admins[i] == user) return true;
-        }
-        return false;
     }
 
     function recover(bytes32 digest, bytes memory sig)
@@ -338,6 +273,8 @@ contract Tender {
         Milestone storage m = milestones[id];
 
         uint256 payout = (winningBid * m.percentage) / 100;
+
+        require(address(this).balance >= payout, "Insufficient funds");
 
         (bool sent,) = contractor.call{value: payout}("");
         require(sent, "Payment failed");

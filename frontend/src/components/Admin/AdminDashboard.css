@@ -679,6 +679,95 @@
   background-color: var(--pink-600) !important;
 }
 
+/* ── MINI Time Input (Satya Compact) ── */
+.satya-mini-time {
+  background: var(--white);
+  border-top: 1px solid var(--pink-100);
+  padding: 8px 12px;
+  width: 100%;
+}
+
+.satya-mini-time__row {
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.satya-mini-time__label {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: var(--pink-600);
+  letter-spacing: 0.05em;
+  margin-right: 4px;
+}
+
+.satya-mini-time__control {
+  display: flex;
+  align-items: center;
+  background: var(--pink-50);
+  border: 1px solid var(--pink-200);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.satya-mini-time__control button {
+  width: 20px;
+  height: 24px;
+  border: none;
+  background: none;
+  color: var(--pink-700);
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.satya-mini-time__control button:hover {
+  background: var(--pink-100);
+}
+
+.satya-mini-time__value {
+  width: 26px;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--gray-800);
+  border-left: 1px solid var(--pink-100);
+  border-right: 1px solid var(--pink-100);
+}
+
+.satya-mini-time__sep {
+  font-weight: 800;
+  color: var(--pink-300);
+}
+
+.satya-mini-time__period {
+  display: flex;
+  background: var(--pink-50);
+  border: 1px solid var(--pink-200);
+  border-radius: var(--radius-sm);
+  padding: 2px;
+}
+
+.satya-mini-time__period button {
+  padding: 2px 6px;
+  border: none;
+  background: none;
+  font-size: 0.65rem;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--pink-400);
+  cursor: pointer;
+  border-radius: 2px;
+}
+
+.satya-mini-time__period button.active {
+  background: var(--pink-600);
+  color: var(--white);
+}
+
 /* ── Responsive ── */
 @media (max-width: 768px) {
   .admin-form__grid,

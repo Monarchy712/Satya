@@ -8,6 +8,7 @@ import {
   signMilestoneApproval,
   TENDER_STATUS,
   MILESTONE_STATUS,
+  ROLE_NAMES,
 } from '../../utils/contracts';
 import LoadingOverlay from '../UI/LoadingOverlay';
 import './OversightDashboard.css';
@@ -46,28 +47,28 @@ export default function OversightDashboard() {
         try {
           const tender = getTenderContract(tAddr, provider);
 
-          // Get user info from this tender
-          const [involved, roleName, currentMilestoneId, milestoneStatus] =
-            await tender.getUserInfo(user.wallet);
+          // Get role name (returns "None", "OnSiteEngineer", etc.)
+          const roleName = await tender.getRoleName(user.wallet);
 
-          if (!involved) continue;
+          // Skip if NOT involved (None) or if role is Government or Contractor
+          if (roleName === 'None' || roleName === 'Government' || roleName === 'Contractor') continue;
 
-          // Skip if role is Government or Contractor (not a committee member on this tender)
-          if (roleName === 'Government' || roleName === 'Contractor' || roleName === 'None') continue;
-
+          // Get status and current milestone
           const statusNum = await tender.tenderStatus();
           const tenderStatusStr = TENDER_STATUS[Number(statusNum)];
 
-          // Only show ACTIVE tenders (those with milestones to review)
-          // Show ACTIVE and COMPLETED tenders
+          // Show ACTIVE or COMPLETED tenders
           if (tenderStatusStr !== 'ACTIVE' && tenderStatusStr !== 'COMPLETED') continue;
 
-          const mIdx = Number(currentMilestoneId);
+          const mIdxBigInt = await tender.currentMilestone();
+          const mIdx = Number(mIdxBigInt);
+
+          // Get milestone details (struct returns name, percentage, deadline, status)
           const milestone = await tender.milestones(mIdx);
           const mStatusNum = Number(milestone.status);
 
-          // Check if this user already signed
-          const alreadySigned = await tender.hasUserSigned(mIdx, user.wallet);
+          // Check if this user already signed (mapping: hasSigned[id][user])
+          const alreadySigned = await tender.hasSigned(mIdx, user.wallet);
 
           // Get signature count from backend
           let sigCount = 0;
@@ -81,8 +82,15 @@ export default function OversightDashboard() {
               sigCount = data.count;
             }
           } catch {
-            // Backend may not have data yet, that's fine
+            // Backend may not have data yet
           }
+
+          // Contract balance
+          let balance = '0';
+          try {
+            const balRaw = await tender.totalFunds();
+            balance = ethers.formatEther(balRaw);
+          } catch {}
 
           results.push({
             address: tAddr,
@@ -95,7 +103,7 @@ export default function OversightDashboard() {
             milestonePercentage: Number(milestone.percentage),
             alreadySigned,
             sigCount,
-            tenderStatus: tenderStatusStr,
+            balance,
           });
         } catch (err) {
           console.error(`Error loading tender ${tAddr}:`, err);
@@ -251,6 +259,9 @@ export default function OversightDashboard() {
                       </span>
                       <span className="oversight-card__sigs">
                         Signatures: {t.sigCount}/4
+                      </span>
+                      <span className="oversight-card__sigs" style={{color: Number(t.balance) > 0 ? '#2ecc71' : '#e74c3c'}}>
+                        Contract Balance: {t.balance} ETH
                       </span>
                     </div>
                   </div>

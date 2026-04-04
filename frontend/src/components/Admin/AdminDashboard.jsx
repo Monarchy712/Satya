@@ -7,6 +7,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import LoadingOverlay from '../UI/LoadingOverlay';
 import DatePicker from 'react-datepicker';
+import TimeColumnInput from './TimeColumnInput';
 import 'react-datepicker/dist/react-datepicker.css';
 import './AdminDashboard.css';
 
@@ -22,14 +23,14 @@ export default function AdminDashboard() {
   // Form State
   const [formData, setFormData] = useState({
     admins: ['', '', '', ''],
-    startTime: '',
-    endTime: '',
-    biddingEndTime: '',
+    startTime: new Date(Date.now() + 3600000).toISOString(), // 1 hour buffer
+    endTime: new Date(Date.now() + 604800000).toISOString(), // 1 week buffer
+    biddingEndTime: new Date(Date.now() + 1800000).toISOString(), // 30 min buffer
     retainedPercent: '30',
     milestones: [
-      { name: 'Initial Research & Logistics', percentage: '20', deadline: '' },
-      { name: 'Primary Infrastructure Execution', percentage: '50', deadline: '' },
-      { name: 'Final Integration & Compliance', percentage: '30', deadline: '' }
+      { name: 'Initial Research & Logistics', percentage: '20', deadline: new Date(Date.now() + 172800000).toISOString() },
+      { name: 'Primary Infrastructure Execution', percentage: '50', deadline: new Date(Date.now() + 432000000).toISOString() },
+      { name: 'Final Integration & Compliance', percentage: '30', deadline: new Date(Date.now() + 604800000).toISOString() }
     ]
   });
 
@@ -111,13 +112,21 @@ export default function AdminDashboard() {
     try {
       const signer = await getSigner();
       const tender = getTenderContract(selection.tender.tender_address, signer);
-      const tx = await tender.selectContractor(selection.contractor, BigInt(selection.amount));
-      await tx.wait();
-      alert('Contractor Finalized & Tender Activated!');
+      
+      // 1. Select Contractor
+      const txSelect = await tender.selectContractor(selection.contractor, BigInt(selection.amount));
+      await txSelect.wait();
+      
+      // 2. Fund Contract (transfer winning bid amount)
+      setActionContext('funding');
+      const txFund = await tender.fundContract({ value: BigInt(selection.amount) });
+      await txFund.wait();
+
+      alert('Contractor Finalized & Tender Funded Successfully!');
       setSelection({ show: false, tender: null, contractor: '', amount: '', note: '' });
       loadTenderData();
     } catch (err) {
-      alert(`Finalization failed: ${err.message}`);
+      alert(`Finalization/Funding failed: ${err.message}`);
     } finally {
       setActionLoading(false);
     }
@@ -210,8 +219,9 @@ export default function AdminDashboard() {
                       <DatePicker 
                         selected={formData.biddingEndTime ? new Date(formData.biddingEndTime) : null}
                         onChange={(d) => setFormData({...formData, biddingEndTime: d})}
-                        showTimeSelect
-                        dateFormat="Pp"
+                        showTimeInput
+                        customTimeInput={<TimeColumnInput />}
+                        dateFormat="MMMM d, yyyy h:mm:ss aa"
                         className="admin-form__input"
                         placeholderText="Select Date & Time"
                         required 
@@ -222,8 +232,9 @@ export default function AdminDashboard() {
                       <DatePicker 
                         selected={formData.startTime ? new Date(formData.startTime) : null}
                         onChange={(d) => setFormData({...formData, startTime: d})}
-                        showTimeSelect
-                        dateFormat="Pp"
+                        showTimeInput
+                        customTimeInput={<TimeColumnInput />}
+                        dateFormat="MMMM d, yyyy h:mm:ss aa"
                         className="admin-form__input"
                         placeholderText="Select Date & Time"
                         required 
@@ -234,8 +245,9 @@ export default function AdminDashboard() {
                       <DatePicker 
                         selected={formData.endTime ? new Date(formData.endTime) : null}
                         onChange={(d) => setFormData({...formData, endTime: d})}
-                        showTimeSelect
-                        dateFormat="Pp"
+                        showTimeInput
+                        customTimeInput={<TimeColumnInput />}
+                        dateFormat="MMMM d, yyyy h:mm:ss aa"
                         className="admin-form__input"
                         placeholderText="Select Date & Time"
                         required 
@@ -288,8 +300,9 @@ export default function AdminDashboard() {
                             nm[idx].deadline = d;
                             setFormData({...formData, milestones: nm});
                           }}
-                          showTimeSelect
-                          dateFormat="Pp"
+                          showTimeInput
+                          customTimeInput={<TimeColumnInput />}
+                          dateFormat="MMMM d, yyyy h:mm:ss aa"
                           className="admin-form__input admin-form__input--date"
                           wrapperClassName="admin-form__input--date"
                           placeholderText="Select Deadline"
