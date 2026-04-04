@@ -9,6 +9,8 @@ import {
   TENDER_STATUS,
   MILESTONE_STATUS,
   ROLE_NAMES,
+  submitDispute,
+  castDisputeVote,
 } from '../../utils/contracts';
 import LoadingOverlay from '../UI/LoadingOverlay';
 import './OversightDashboard.css';
@@ -24,6 +26,10 @@ export default function OversightDashboard() {
   useEffect(() => {
     if (user?.wallet) loadData();
   }, [user]);
+
+  // Handle dispute raising
+  const [showDisputeModal, setShowDisputeModal] = useState({ show: false, tenderAddr: '', milestoneId: null });
+  const [disputeReason, setDisputeReason] = useState('');
 
   async function loadData() {
     setLoading(true);
@@ -50,15 +56,12 @@ export default function OversightDashboard() {
           // Get role name (returns "None", "OnSiteEngineer", etc.)
           const roleName = await tender.getRoleName(user.wallet);
 
-          // Skip if NOT involved (None) or if role is Government or Contractor
-          if (roleName === 'None' || roleName === 'Government' || roleName === 'Contractor') continue;
-
           // Get status and current milestone
           const statusNum = await tender.tenderStatus();
-          const tenderStatusStr = TENDER_STATUS[Number(statusNum)];
+          const tenderStatusStr = TENDER_STATUS[Number(statusNum)] || "VOID";
 
-          // Show ACTIVE or COMPLETED tenders
-          if (tenderStatusStr !== 'ACTIVE' && tenderStatusStr !== 'COMPLETED') continue;
+          // Show ACTIVE or COMPLETED or VOID tenders for Oversight / Dispute
+          if (tenderStatusStr !== 'ACTIVE' && tenderStatusStr !== 'COMPLETED' && tenderStatusStr !== 'VOID') continue;
 
           const mIdxBigInt = await tender.currentMilestone();
           const mIdx = Number(mIdxBigInt);
@@ -122,6 +125,43 @@ export default function OversightDashboard() {
             console.error(`Failed to fetch backend data for ${tAddr}:`, err);
           }
 
+          // --- DISPUTE FETCHING LOGIC ---
+          let disputeObj = null;
+          try {
+            const dState = await tender.dispute();
+            if (dState[1] !== "") { // Has reason
+               let isVoter = false;
+               let hasVoted = false;
+               if (!dState[4]) {
+                  // Active dispute
+                  hasVoted = await tender.hasVoted(user.wallet);
+                  if (hasVoted) {
+                    isVoter = true;
+                  } else {
+                    try {
+                      await tender.vote.staticCall(true);
+                      isVoter = true; // No revert means they can vote
+                    } catch (e) {
+                      if (e.message && e.message.includes("Already voted")) isVoter = true;
+                      else isVoter = false;
+                    }
+                  }
+               }
+               disputeObj = {
+                 milestoneId: Number(dState[0]),
+                 reason: dState[1],
+                 votesForGov: Number(dState[2]),
+                 votesForContractor: Number(dState[3]),
+                 resolved: dState[4],
+                 isVoter,
+                 hasVoted
+               };
+            }
+          } catch(err) {
+            console.error("Dispute check failed", err);
+          }
+          // --- END DISPUTE FETCHING ---
+
           results.push({
             address: tAddr,
             role: roleName,
@@ -139,6 +179,7 @@ export default function OversightDashboard() {
             createdByDept,
             lat,
             lng,
+            dispute: disputeObj
           });
         } catch (err) {
           console.error(`Error loading tender ${tAddr}:`, err);
@@ -224,6 +265,42 @@ export default function OversightDashboard() {
       loadData();
     } catch (err) {
       setError(`Execution failed: ${err.message}`);
+    } finally {
+      setSigning(false);
+    }
+  }
+
+  async function handleRaiseDispute() {
+    if (!disputeReason) return;
+    setSigning(true);
+    setToast('');
+    setError('');
+    const { tenderAddr, milestoneId } = showDisputeModal;
+    try {
+      const signer = await getSigner();
+      await submitDispute(signer, tenderAddr, milestoneId, disputeReason);
+      setToast('Dispute raised successfully! Jury has been established.');
+      setShowDisputeModal({ show: false, tenderAddr: '', milestoneId: null });
+      setDisputeReason('');
+      loadData();
+    } catch(err) {
+      setError(`Failed to raise dispute: ${err.message}`);
+    } finally {
+      setSigning(false);
+    }
+  }
+
+  async function handleVote(tenderAddr, supportGov) {
+    setSigning(true);
+    setToast('');
+    setError('');
+    try {
+      const signer = await getSigner();
+      await castDisputeVote(signer, tenderAddr, supportGov);
+      setToast('Vote cast successfully!');
+      loadData();
+    } catch(err) {
+      setError(`Failed to vote: ${err.message}`);
     } finally {
       setSigning(false);
     }
@@ -337,35 +414,84 @@ export default function OversightDashboard() {
                       <div className="oversight-card__status oversight-card__status--signed" style={{ color: '#2ecc71', textShadow: '0 0 10px rgba(46, 204, 113, 0.5)' }}>
                         PROJECT COMPLETED ✓
                       </div>
-                                        ) : t.milestoneStatusNum === 1 ? (
-                      t.sigCount >= 4 ? (
-                        <button
-                          className="oversight-card__btn oversight-card__btn--execute"
-                          onClick={() => handleExecute(t.address, t.currentMilestone)}
-                          disabled={signing}
-                        >
-                          ⚙️ Execute On-Chain
-                        </button>
-                      ) : t.alreadySigned ? (
-                        <div className="oversight-card__status oversight-card__status--approved">
-                          Successful ✓
-                        </div>
-                      ) : (
-                        <button
-                          className="oversight-card__btn"
-                          onClick={() => handleSign(t.address, t.currentMilestone)}
-                          disabled={signing}
-                        >
-                          Sign & Approve
-                        </button>
-                      )
+                    ) : t.tenderStatus === 'VOID' ? (
+                       <div className="oversight-card__status oversight-card__status--waiting" style={{ color: 'var(--pink-500)', borderColor: 'var(--pink-500)' }}>
+                         Tender Voided (Dispute Resolved)
+                       </div>
+                    ) : t.dispute ? (
+                       <div className="oversight-dispute-panel" style={{ width: '100%', marginTop: '10px', padding: '10px', background: 'rgba(255,0,0,0.1)', border: '1px solid var(--pink-600)', borderRadius: '6px' }}>
+                          <h4 style={{ color: 'var(--pink-500)', marginBottom: '8px' }}>🚨 Active Dispute</h4>
+                          <p style={{ fontSize: '0.8rem', marginBottom: '10px' }}><strong>Reason:</strong> {t.dispute.reason}</p>
+                          <div style={{ display: 'flex', gap: '15px', fontSize: '0.8rem', marginBottom: '10px' }}>
+                            <span><strong>Gov Votes:</strong> {t.dispute.votesForGov}</span>
+                            <span><strong>Contractor Votes:</strong> {t.dispute.votesForContractor}</span>
+                          </div>
+                          {!t.dispute.resolved && t.dispute.isVoter && !t.dispute.hasVoted && (
+                            <div style={{ display: 'flex', gap: '10px' }}>
+                              <button className="oversight-card__btn" style={{ flex: 1, backgroundColor: '#3498db', borderColor: '#3498db' }} onClick={() => handleVote(t.address, true)} disabled={signing}>Vote for Government</button>
+                              <button className="oversight-card__btn oversight-card__btn--execute" style={{ flex: 1 }} onClick={() => handleVote(t.address, false)} disabled={signing}>Vote for Contractor</button>
+                            </div>
+                          )}
+                          {!t.dispute.resolved && t.dispute.isVoter && t.dispute.hasVoted && (
+                             <div className="oversight-card__status oversight-card__status--signed">Vote Submitted ✓</div>
+                          )}
+                          {t.dispute.resolved && (
+                             <div className="oversight-card__status oversight-card__status--signed">Dispute Resolved</div>
+                          )}
+                       </div>
+                    ) : t.milestoneStatusNum === 1 ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%' }}>
+                        {t.sigCount >= 4 ? (
+                          <button
+                            className="oversight-card__btn oversight-card__btn--execute"
+                            onClick={() => handleExecute(t.address, t.currentMilestone)}
+                            disabled={signing}
+                          >
+                            ⚙️ Execute On-Chain
+                          </button>
+                        ) : t.alreadySigned ? (
+                          <div className="oversight-card__status oversight-card__status--approved">
+                            Successful ✓
+                          </div>
+                        ) : (
+                          <button
+                            className="oversight-card__btn"
+                            onClick={() => handleSign(t.address, t.currentMilestone)}
+                            disabled={signing}
+                          >
+                            Sign & Approve
+                          </button>
+                        )}
+                        {(t.role === 'Government' || t.role === 'Contractor') && (
+                          <button
+                             className="oversight-card__btn"
+                             onClick={() => setShowDisputeModal({ show: true, tenderAddr: t.address, milestoneId: t.currentMilestone })}
+                             style={{ backgroundColor: 'transparent', color: 'var(--pink-500)', border: '1px solid var(--pink-500)' }}
+                             disabled={signing}
+                          >
+                            Raise Dispute
+                          </button>
+                        )}
+                      </div>
                     ) : t.milestoneStatusNum === 2 ? (
                       <div className="oversight-card__status oversight-card__status--signed">
                         Phase Finalized ✓
                       </div>
                     ) : (
-                      <div className="oversight-card__status oversight-card__status--waiting">
-                        Awaiting Submission
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%' }}>
+                        <div className="oversight-card__status oversight-card__status--waiting">
+                          Awaiting Submission
+                        </div>
+                        {(t.role === 'Government' || t.role === 'Contractor') && (
+                          <button
+                             className="oversight-card__btn"
+                             onClick={() => setShowDisputeModal({ show: true, tenderAddr: t.address, milestoneId: t.currentMilestone })}
+                             style={{ backgroundColor: 'transparent', color: 'var(--pink-500)', border: '1px solid var(--pink-500)' }}
+                             disabled={signing}
+                          >
+                            Raise Dispute
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>
@@ -392,6 +518,29 @@ export default function OversightDashboard() {
       {toast && (
         <div className="oversight-view__toast" onClick={() => setToast('')}>
           {toast}
+        </div>
+      )}
+
+      {showDisputeModal.show && (
+        <div className="admin-modal">
+          <div className="admin-modal__content">
+            <h3>Raise Dispute</h3>
+            <p style={{fontSize:'0.85rem', color:'var(--gray-300)', marginBottom:'15px'}}>
+              This will trigger a decentralized arbitration process from randomized administration pools.
+            </p>
+            <textarea
+              className="admin-form__input"
+              rows={4}
+              placeholder="State the reason for this dispute..."
+              value={disputeReason}
+              onChange={(e) => setDisputeReason(e.target.value)}
+              style={{ width: '100%', marginBottom: '15px' }}
+            />
+            <div className="admin-modal__actions">
+              <button className="admin-header__back" onClick={() => setShowDisputeModal({ show: false, tenderAddr: '', milestoneId: null })}>Cancel</button>
+              <button className="admin-denied__btn" onClick={handleRaiseDispute} disabled={!disputeReason || signing}>Submit Dispute</button>
+            </div>
+          </div>
         </div>
       )}
     </div>

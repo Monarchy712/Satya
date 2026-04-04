@@ -5,6 +5,8 @@ from routers.wallet import router as wallet_router, contractor_router
 from routers.report import router as report_router
 from routers.admin_tasks import router as admin_tasks_router
 from routers.tenders import router as tenders_router
+from routers.roles import router as roles_router
+from routers.dispute import router as dispute_router
 
 
 app = FastAPI(
@@ -29,6 +31,8 @@ app.include_router(contractor_router)
 app.include_router(report_router)
 app.include_router(admin_tasks_router)
 app.include_router(tenders_router)
+app.include_router(roles_router)
+app.include_router(dispute_router)
 
 # Custom Error Handlers to ensure CORS headers are present on exceptions
 from fastapi.responses import JSONResponse
