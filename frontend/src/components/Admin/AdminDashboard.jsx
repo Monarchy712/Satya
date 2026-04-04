@@ -8,6 +8,7 @@ import { useAuth } from '../../context/AuthContext';
 import LoadingOverlay from '../UI/LoadingOverlay';
 import DatePicker from 'react-datepicker';
 import TimeColumnInput from './TimeColumnInput';
+import RoleManagement from './RoleManagement';
 import 'react-datepicker/dist/react-datepicker.css';
 import './AdminDashboard.css';
 
@@ -84,7 +85,6 @@ export default function AdminDashboard() {
     createdByDept: '',
     latitude: '',
     longitude: '',
-    admins: ['', '', '', ''],
     startTime: new Date(Date.now() + 3600000).toISOString(), // 1 hour buffer
     endTime: new Date(Date.now() + 604800000).toISOString(), // 1 week buffer
     biddingEndTime: new Date(Date.now() + 1800000).toISOString(), // 30 min buffer
@@ -98,7 +98,7 @@ export default function AdminDashboard() {
 
   // Derived State
   const totalPercentage = formData.milestones.reduce((acc, m) => acc + (Number(m.percentage) || 0), 0);
-  const isFormValid = totalPercentage === 100 && formData.admins.every(a => a.startsWith('0x'));
+  const isFormValid = totalPercentage === 100;
 
   // Winner Selection State
   const [selection, setSelection] = useState({
@@ -142,7 +142,6 @@ export default function AdminDashboard() {
       const factory = getFactoryContract(signer);
       
       const tx = await factory.createTender(
-        formData.admins,
         BigInt(Math.floor(new Date(formData.startTime).getTime() / 1000)),
         BigInt(Math.floor(new Date(formData.endTime).getTime() / 1000)),
         BigInt(Math.floor(new Date(formData.biddingEndTime).getTime() / 1000)),
@@ -249,6 +248,9 @@ export default function AdminDashboard() {
           <button className={`admin-tab ${activeTab === 'create' ? 'admin-tab--active' : ''}`} onClick={() => setActiveTab('create')}>
             <span className="admin-tab__icon">📜</span> Tender Portal
           </button>
+          <button className={`admin-tab ${activeTab === 'roles' ? 'admin-tab--active' : ''}`} onClick={() => setActiveTab('roles')}>
+            <span className="admin-tab__icon">🎭</span> Role Framework
+          </button>
           <button className={`admin-tab ${activeTab === 'finalize' ? 'admin-tab--active' : ''}`} onClick={() => setActiveTab('finalize')}>
             <span className="admin-tab__icon">⚖️</span> Settlement
           </button>
@@ -291,6 +293,10 @@ export default function AdminDashboard() {
               </div>
             )}
 
+            {activeTab === 'roles' && (
+              <RoleManagement />
+            )}
+
             {activeTab === 'create' && (
               <form className="admin-form" onSubmit={handleCreateTender}>
                 <div className="admin-form__section">
@@ -326,22 +332,6 @@ export default function AdminDashboard() {
                   <p className="admin-form__help-text" style={{fontSize: '0.75rem', color: 'var(--gray-500)', marginTop: '10px'}}>
                     * Image submissions must be within 1km of these coordinates.
                   </p>
-                </div>
-
-                <div className="admin-form__section">
-                  <h3 className="admin-form__section-title"><span className="admin-form__section-icon">🔐</span> Multi-Signature Activation</h3>
-                  <div className="admin-form__grid">
-                    {formData.admins.map((admin, idx) => (
-                      <div key={idx} className="admin-form__field">
-                        <label className="admin-form__label">Authority Wallet {idx+1}</label>
-                        <input type="text" className="admin-form__input" placeholder="0x..." value={admin} onChange={(e) => {
-                          const newAdmins = [...formData.admins];
-                          newAdmins[idx] = e.target.value;
-                          setFormData({...formData, admins: newAdmins});
-                        }} required />
-                      </div>
-                    ))}
-                  </div>
                 </div>
 
                 <div className="admin-form__section">

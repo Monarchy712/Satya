@@ -1,357 +1,433 @@
-# 🏗️ Tender Management System (Blockchain + EIP-712 Multisig)
+# 📄 SATYA – COMPLETE SYSTEM DOCUMENTATION
 
-This system implements a **fully on-chain tender lifecycle** with **EIP-712 multisignature milestone approvals**.
-
-It replaces backend-driven approvals with **cryptographic consensus between 4 admins (4/4 required)**.
+## Randomized Admin Selection + Jury-Based Dispute Resolution
 
 ---
 
-# 📦 CONTRACTS OVERVIEW
+# 🧩 1. SYSTEM OVERVIEW
 
-## 1. TenderFactory
+This system enhances the traditional tender lifecycle by introducing:
 
-* Deploys new Tender contracts
-* Tracks all tenders
-* Maps users → involved tenders
+* 🎲 Randomized Admin Assignment
+* 🧑‍⚖️ Jury-Based Dispute Resolution
+* 🗳️ On-Chain Voting Mechanism
+* 💸 Automated Fund Settlement
+* 🚫 VOID Tender State
 
-## 2. Tender 
-
-* Handles bidding, contractor selection
-* Manages milestones
-* Enforces multisig approval (EIP-712)
+These features collectively reduce bribery risk, improve fairness, and introduce decentralized governance.
 
 ---
 
-# 🔁 COMPLETE SYSTEM FLOW
+# 🏗️ 2. ARCHITECTURE
 
-### Step 1 — Government creates tender
+## 📍 Contracts
 
-→ `TenderFactory.createTender()`
+### 1. TenderFactory.sol
 
-### Step 2 — Government selects contractor
+* Manages:
 
-→ `Tender.selectContractor()`
+  * Government roles
+  * Role pools (Engineers, Auditors, etc.)
+  * Tender deployment
+  * Random admin assignment
 
-### Step 3 — Contractor submits milestone
+### 2. Tender.sol
 
-→ `Tender.submitMilestone()`
+* Manages:
 
-### Step 4 — Admins sign off-chain (EIP-712)
-
-### Step 5 — Anyone executes milestone
-
-→ `Tender.executeMilestone()`
-
-### Step 6 — Contract finalizes and pays contractor
-
----
-
-# 🏭 TENDER FACTORY FUNCTIONS
-
-## 1. `createTender(...)`
-
-### 🔹 Who calls?
-
-Government only
-
-### 🔹 Purpose:
-
-Creates a new Tender contract
-
-### 🔹 When to call?
-
-When a new project/tender is created
-
-### 🔹 Inputs:
-
-* `_admins` → 4 admin wallet addresses
-* `_startTime`, `_endTime`, `_biddingEndTime`
-* `_retainedPercent`
-* `_names`, `_percentages`, `_deadlines` → milestone data
-
-### 🔹 Output:
-
-* Returns new Tender contract address
+  * Bidding
+  * Milestones
+  * Fund distribution
+  * Dispute resolution (NEW)
 
 ---
 
-## 2. `getUserTenders(address user)`
-
-### 🔹 Purpose:
-
-Returns all tender contracts a user is involved in
-
-### 🔹 When to call?
-
-* Dashboard load
-* User login
-
----
-
-## 3. `getAllTenders()`
-
-### 🔹 Purpose:
-
-Returns all tenders created
-
-### 🔹 When to call?
-
-* Admin panel
-* Explorer view
-
----
-
-# 📜 TENDER CONTRACT FUNCTIONS
-
----
-
-# 👤 ROLE & USER FUNCTIONS
-
-## 1. `getUserRole(address user)`
-
-### 🔹 Returns:
-
-Enum role
-
-### 🔹 Used internally
-
----
-
-## 2. `getRoleName(address user)`
-
-### 🔹 Returns:
-
-String role
-
-### 🔹 When to call?
-
-Frontend display
-
-### 🔹 Possible values:
-
-* "OnSiteEngineer"
-* "ComplianceOfficer"
-* "FinancialAuditor"
-* "SanctioningAuthority"
-* "Contractor"
-* "Government"
-
----
-
-## 3. `getUserInfo(address user)`
-
-### 🔹 Returns:
-
-* `involved` → bool
-* `role` → string
-* `milestoneId` → current milestone
-* `status` → milestone status
-
-### 🔹 When to call?
-
-* Dashboard load
-* Contract detail page
-
----
-
-## 4. `hasUserSigned(uint256 id, address user)`
-
-### 🔹 Returns:
-
-Whether user has signed milestone
-
-### 🔹 When to call?
-
-* Show "Signed / Pending" UI
-* Approval progress tracking
-
----
-
-# 🏗️ BIDDING / SETUP
-
-## 5. `selectContractor(address _contractor, uint256 _winningBid)`
-
-### 🔹 Who calls?
-
-Government
-
-### 🔹 When?
-
-After bidding phase ends
-
-### 🔹 Effect:
-
-* Sets contractor
-* Activates contract
-* Assigns CONTRACTOR role
-
----
-
-# 📊 MILESTONE FLOW
-
----
-
-## 6. `submitMilestone(uint256 id)`
-
-### 🔹 Who calls?
-
-Contractor
-
-### 🔹 When?
-
-When milestone work is completed
-
-### 🔹 Conditions:
-
-* Must be current milestone
-* Must be ACTIVE
-
-### 🔹 Effect:
-
-* Changes status → `UNDER_REVIEW`
-* Starts multisig process
-
----
-
-## 7. `executeMilestone(uint256 id, bytes[] signatures)`
-
-### 🔹 Who calls?
-
-Anyone (backend or relayer typically)
-
-### 🔹 When?
-
-After collecting all 4 admin signatures
-
-### 🔹 Inputs:
-
-* `id` → milestone id
-* `signatures` → 4 EIP-712 signatures
-
-### 🔹 What it does:
-
-1. Verifies all signatures
-2. Confirms each signer is an admin
-3. Ensures no duplicates
-4. Executes milestone
-
-### 🔹 Effect:
-
-* Funds transferred
-* Milestone → APPROVED
-* Moves to next milestone
-
----
-
-# 🔐 EIP-712 SIGNING (Frontend / Backend)
-
-Each admin signs:
-
+# 🎭 3. ROLE MANAGEMENT (FACTORY)
+
+## Role Pools
+
+```solidity
+address[] public onSiteEngineers;
+address[] public complianceOfficers;
+address[] public financialAuditors;
+address[] public sanctioningAuthorities;
 ```
-Domain:
-- name: "Tender"
-- version: "1"
-- chainId
-- verifyingContract
 
-Types:
-Approve:
-  - milestoneId (uint256)
-  - tender (address)
+Each address can belong to **only one role**.
+
+---
+
+## ➕ addToRole(address user, RoleType role)
+
+### Purpose
+
+Assign a user to a specific role pool.
+
+### Parameters
+
+* `user`: wallet address
+* `role`: enum (Engineer, Auditor, etc.)
+
+### Rules
+
+* Only owner can call
+* User cannot have multiple roles
+
+---
+
+## ➖ removeFromRole(address user)
+
+### Purpose
+
+Remove user from their assigned role pool.
+
+---
+
+## 📦 getAllRolePools()
+
+### Returns
+
+```solidity
+(
+  address[] onSiteEngineers,
+  address[] complianceOfficers,
+  address[] financialAuditors,
+  address[] sanctioningAuthorities
+)
+```
+
+### Used for
+
+* Jury selection in dispute system
+
+---
+
+# 🎲 4. RANDOM ADMIN ASSIGNMENT
+
+## 📍 Inside createTender()
+
+### Logic
+
+* 1 random address is picked from each role pool
+* Assigned as:
+
+  * On-Site Engineer
+  * Compliance Officer
+  * Financial Auditor
+  * Sanctioning Authority
+
+---
+
+## Randomness
+
+```solidity
+keccak256(block.timestamp, block.prevrandao, msg.sender)
 ```
 
 ---
 
-# 📌 MILESTONE ID
+## Constraints
 
-* Milestone ID = index in array
-* Starts from 0
-* Controlled by `currentMilestone`
-
----
-
-# 🔄 IMPORTANT RULES
-
-* Only **current milestone** can be processed
-* Requires **exactly 4 signatures**
-* Each admin can sign **only once**
-* Execution happens **only after all signatures**
-
----
-
-# 🧠 FRONTEND FLOW (ANTIGRAVITY)
-
-## Dashboard Load
-
-1. Call `getUserTenders(user)`
-2. For each tender:
-
-   * `getUserInfo(user)`
-   * `getRoleName(user)`
-
----
-
-## Milestone View
-
-1. Fetch `currentMilestone`
-2. Show:
-
-   * Status
-   * Who signed → `hasUserSigned`
-
----
-
-## Signing Flow
-
-1. Admin clicks "Sign"
-2. Generate EIP-712 signature (OFF-CHAIN)
-3. Send signature to backend
-
----
-
-## Execution Flow
-
-1. Collect 4 signatures
-2. Call:
-
-```
-executeMilestone(id, signatures)
+```solidity
+require(onSiteEngineers.length > 0);
+require(complianceOfficers.length > 0);
+require(financialAuditors.length > 0);
+require(sanctioningAuthorities.length > 0);
 ```
 
 ---
 
-# ⚠️ IMPORTANT DESIGN NOTES
+# ⚖️ 5. DISPUTE SYSTEM
 
-* Multisig is **fully on-chain verified**
-* Backend is **NOT trusted**, only used for coordination
-* No duplicate signatures allowed
-* Signatures are tied to:
+## Dispute Struct
 
-  * milestoneId
-  * contract address
-
----
-
-# 🚀 SUMMARY
-
-This system provides:
-
-* ✅ Trustless milestone approvals
-* ✅ Gas-efficient multisig (1 tx instead of 4)
-* ✅ Role-based access control
-* ✅ Clean frontend integration
-* ✅ Production-grade architecture
+```solidity
+struct Dispute {
+    uint256 milestoneId;
+    string reason;
+    address[] voters;
+    uint256 votesForGov;
+    uint256 votesForContractor;
+    bool resolved;
+}
+```
 
 ---
 
-# 🧩 OPTIONAL FUTURE EXTENSIONS
+## State Variables
 
-* Partial multisig (3/4 quorum)
-* Rejection flow
-* Deadline penalties
-* Meta-transactions (gasless execution)
-* Event indexing for real-time UI
+```solidity
+address public tenderOwner;
+Dispute public dispute;
+mapping(address => bool) public hasVoted;
+```
 
 ---
 
-**End of Documentation**
+# 🚨 6. RAISE DISPUTE
+
+## Function
+
+```solidity
+raiseDispute(uint256 milestoneId, string reason)
+```
+
+---
+
+## Who Can Call
+
+* Government
+* Contractor
+
+---
+
+## Conditions
+
+```solidity
+require(dispute.voters.length == 0 || dispute.resolved);
+require(pool.length >= 3);
+require(milestoneId < milestones.length);
+```
+
+---
+
+## Jury Selection Logic
+
+| Total Pool Size | Jury Size   |
+| --------------- | ----------- |
+| ≤ 11            | nearest odd |
+| > 11            | 11          |
+
+---
+
+## Examples
+
+| Pool | Jury |
+| ---- | ---- |
+| 10   | 9    |
+| 9    | 9    |
+| 4    | 3    |
+
+---
+
+## Random Selection
+
+```solidity
+voters[i] = pool[random % pool.length];
+```
+
+---
+
+## Frontend Behavior
+
+When dispute is raised:
+
+Display:
+
+* Dispute reason
+* Milestone ID
+* Jury members
+
+---
+
+# 🗳️ 7. VOTING SYSTEM
+
+## Function
+
+```solidity
+vote(bool supportGovernment)
+```
+
+---
+
+## Parameters
+
+* `true` → Government wins
+* `false` → Contractor wins
+
+---
+
+## Conditions
+
+* Must be part of jury
+* Cannot vote twice
+
+---
+
+## Frontend Behavior
+
+### If user is voter:
+
+* Show voting buttons
+
+### If already voted:
+
+* Disable voting
+* Show confirmation
+
+### If not voter:
+
+* Show read-only view
+
+---
+
+# ⚡ 8. DISPUTE RESOLUTION
+
+## Trigger Condition
+
+```solidity
+totalVotes == voters.length
+```
+
+---
+
+## Outcomes
+
+### 🟥 Government Wins
+
+* 100% funds → Government
+
+```solidity
+transfer entire balance → tenderOwner
+```
+
+---
+
+### 🟩 Contractor Wins
+
+* Contractor gets milestone payout
+* Remaining funds → Government
+
+```solidity
+payout = (winningBid * milestonePercentage) / 100
+```
+
+---
+
+## Final State
+
+```solidity
+tenderStatus = VOID;
+```
+
+---
+
+# 🚫 9. VOID STATE
+
+## Meaning
+
+* Tender is terminated permanently
+* No further actions allowed
+
+---
+
+## Frontend Behavior
+
+| State  | UI                                |
+| ------ | --------------------------------- |
+| ACTIVE | normal                            |
+| VOID   | disabled, show "Dispute Resolved" |
+
+---
+
+# 💰 10. FUND FLOW
+
+## Before Dispute
+
+* Funds locked in contract
+
+## After Dispute
+
+| Outcome         | Distribution                                |
+| --------------- | ------------------------------------------- |
+| Government wins | 100% → Government                           |
+| Contractor wins | milestone % → contractor, rest → government |
+
+---
+
+# 🧠 11. FRONTEND REQUIREMENTS
+
+## Dispute UI
+
+Display:
+
+* Reason
+* Milestone
+* Voters
+* Vote counts
+* Resolution status
+
+---
+
+## Voting UI
+
+* Enable voting for jury members
+* Disable after vote
+* Show result status
+
+---
+
+## Tender Display
+
+* Add support for:
+
+```solidity
+VOID
+```
+
+---
+
+# 🔐 12. SECURITY NOTES
+
+## Randomness
+
+```solidity
+block.timestamp + prevrandao
+```
+
+### Status
+
+* ✅ Acceptable for hackathon
+* ❌ Not secure for production
+
+---
+
+## Known Limitations
+
+* Duplicate voters possible
+* No early majority (all votes required)
+
+---
+
+# 🚀 13. SYSTEM STRENGTH
+
+This system achieves:
+
+* Anti-bribery admin assignment
+* Decentralized arbitration
+* Transparent voting
+* Automated payouts
+* Strong lifecycle control
+
+---
+
+# 🧾 FINAL SUMMARY
+
+Your system now includes:
+
+* 🎲 Random admin selection
+* 🧑‍⚖️ Jury-based dispute resolution
+* 🗳️ On-chain voting
+* 💸 Automated fund settlement
+* 🚫 VOID contract lifecycle
+
+---
+
+# 🔮 OPTIONAL FUTURE IMPROVEMENTS
+
+* Chainlink VRF randomness
+* Unique jury selection (no duplicates)
+* Early majority resolution
+* Commit-reveal voting
+
+---

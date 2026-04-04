@@ -3,6 +3,15 @@ pragma solidity ^0.8.20;
 
 interface ITenderFactory {
     function isGovernment(address) external view returns (bool);
+    function getAllRolePools()
+        external
+        view
+        returns (
+            address[] memory,
+            address[] memory,
+            address[] memory,
+            address[] memory
+        );
 }
 
 contract Tender {
@@ -10,7 +19,8 @@ contract Tender {
         BIDDING,
         ACTIVE,
         COMPLETED,
-        CANCELLED
+        CANCELLED,
+        VOID
     }
     enum MilestoneStatus {
         PENDING,
@@ -30,6 +40,7 @@ contract Tender {
 
     address public factory;
     address public contractor;
+    address public tenderOwner;
 
     uint256 public startTime;
     uint256 public endTime;
@@ -89,6 +100,8 @@ contract Tender {
 
     mapping(uint256 => mapping(address => bool)) public hasSigned;
     mapping(uint256 => bool) public executed;
+    mapping(uint256 => uint256) public milestoneSubmissionTime;
+    mapping(uint256 => uint256) public milestoneCompletionTime;
 
     // ---------------- MILESTONES ----------------
     struct Milestone {
@@ -99,6 +112,30 @@ contract Tender {
     }
 
     Milestone[] public milestones;
+
+    // --------------- DISPUTES --------------
+
+    struct Dispute {
+        uint256 milestoneId;
+        string reason;
+        address[] voters;
+        uint256 votesForGov;
+        uint256 votesForContractor;
+        bool resolved;
+    }
+
+    Dispute public dispute;
+
+    mapping(address => bool) public hasVoted;
+
+    modifier onlyGovOrContractor() {
+        require(
+            ITenderFactory(factory).isGovernment(msg.sender) ||
+                msg.sender == contractor,
+            "Not allowed"
+        );
+        _;
+    }
 
     // ---------------- EVENTS ----------------
     event Funded(uint256 amount);
@@ -144,7 +181,7 @@ contract Tender {
                 _names.length == _deadlines.length,
             "Invalid milestone input"
         );
-
+        tenderOwner = msg.sender;
         factory = _factory;
 
         admins = [_admins[0], _admins[1], _admins[2], _admins[3]];
@@ -256,9 +293,11 @@ contract Tender {
 
     function submitMilestone(uint256 id) external onlyContractor onlyActive {
         require(id == currentMilestone, "Wrong id");
+        require(milestoneSubmissionTime[id] == 0, "Already submitted");
 
         milestones[id].status = MilestoneStatus.UNDER_REVIEW;
 
+        milestoneSubmissionTime[id] = block.timestamp;
         emit MilestoneSubmitted(id);
     }
 
@@ -339,6 +378,9 @@ contract Tender {
 
         m.status = MilestoneStatus.APPROVED;
 
+        // ✅ ADD THIS BACK
+        milestoneCompletionTime[id] = block.timestamp;
+
         currentMilestone++;
 
         if (currentMilestone == milestones.length) {
@@ -400,5 +442,134 @@ contract Tender {
                 signedCount: sigCount
             });
         }
+    }
+    function getTotalCompletionTime() external view returns (uint256) {
+        if (currentMilestone == milestones.length) {
+            return milestoneCompletionTime[milestones.length - 1] - startTime;
+        }
+        return 0; // not completed yet
+    }
+
+    function raiseDispute(
+        uint256 milestoneId,
+        string calldata reason
+    ) external onlyGovOrContractor onlyActive {
+        require(
+            dispute.voters.length == 0 || dispute.resolved,
+            "Dispute active"
+        );
+
+        (
+            address[] memory a,
+            address[] memory b,
+            address[] memory c,
+            address[] memory d
+        ) = ITenderFactory(factory).getAllRolePools();
+
+        uint total = a.length + b.length + c.length + d.length;
+
+        address[] memory pool = new address[](total);
+
+        uint k = 0;
+        for (uint i = 0; i < a.length; i++) pool[k++] = a[i];
+        for (uint i = 0; i < b.length; i++) pool[k++] = b[i];
+        for (uint i = 0; i < c.length; i++) pool[k++] = c[i];
+        for (uint i = 0; i < d.length; i++) pool[k++] = d[i];
+
+        require(pool.length >= 3, "Not enough voters");
+
+        uint n;
+
+        if (pool.length <= 11) {
+            n = (pool.length % 2 == 0) ? pool.length - 1 : pool.length;
+        } else {
+            n = 11;
+        }
+
+        address[] memory voters = new address[](n);
+
+        for (uint i = 0; i < n; i++) {
+            uint rand = uint(
+                keccak256(
+                    abi.encodePacked(block.timestamp, block.prevrandao, i)
+                )
+            ) % pool.length;
+
+            voters[i] = pool[rand];
+        }
+
+        dispute = Dispute({
+            milestoneId: milestoneId,
+            reason: reason,
+            voters: voters,
+            votesForGov: 0,
+            votesForContractor: 0,
+            resolved: false
+        });
+
+        // 🔥 RESET votes mapping
+        for (uint i = 0; i < voters.length; i++) {
+            hasVoted[voters[i]] = false;
+        }
+    }
+
+    function vote(bool supportGovernment) external {
+        require(!dispute.resolved, "Resolved");
+
+        bool isVoter = false;
+
+        for (uint i = 0; i < dispute.voters.length; i++) {
+            if (dispute.voters[i] == msg.sender) {
+                isVoter = true;
+                break;
+            }
+        }
+
+        require(isVoter, "Not voter");
+        require(!hasVoted[msg.sender], "Already voted");
+
+        hasVoted[msg.sender] = true;
+
+        if (supportGovernment) {
+            dispute.votesForGov++;
+        } else {
+            dispute.votesForContractor++;
+        }
+
+        uint totalVotes = dispute.votesForGov + dispute.votesForContractor;
+
+        if (totalVotes == dispute.voters.length) {
+            _resolveDispute();
+        }
+    }
+    function _resolveDispute() internal {
+        dispute.resolved = true;
+
+        if (dispute.votesForGov > dispute.votesForContractor) {
+            // Government wins → full refund
+            (bool sent, ) = payable(tenderOwner).call{
+                value: address(this).balance
+            }("");
+            require(sent, "Refund failed");
+        } else {
+            // Contractor wins → milestone payout
+            Milestone storage m = milestones[dispute.milestoneId];
+
+            uint payout = (winningBid * m.percentage) / 100;
+
+            (bool sent1, ) = contractor.call{value: payout}("");
+            require(sent1, "Contractor payment failed");
+
+            uint remaining = address(this).balance;
+
+            if (remaining > 0) {
+                (bool sent2, ) = payable(tenderOwner).call{value: remaining}(
+                    ""
+                );
+                require(sent2, "Gov refund failed");
+            }
+        }
+
+        tenderStatus = TenderStatus.VOID;
     }
 }

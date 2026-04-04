@@ -41,5 +41,5 @@ Thumbs.db
 # Local Copilot config
 .github/copilot-instructions.md
 
-# Mirror Folder
-projectSatya-main/
+__pycache__/
+*.pyc

@@ -9,48 +9,8 @@ from config import CONTRACT_ADDRESS, RPC_URL, PRIVATE_KEY, FACTORY_ADDRESS
 # ── Factory Info ──
 # FACTORY_ADDRESS imported from config
 
-FACTORY_ABI = [
-    {
-        "inputs": [{"internalType": "address", "name": "_gov", "type": "address"}],
-        "name": "addGovernment",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "getAllTenders",
-        "outputs": [
-            {
-                "components": [
-                    {"internalType": "address", "name": "tender", "type": "address"},
-                    {"internalType": "uint256", "name": "startTime", "type": "uint256"},
-                    {"internalType": "uint256", "name": "endTime", "type": "uint256"},
-                    {"internalType": "uint256", "name": "biddingEndTime", "type": "uint256"}
-                ],
-                "internalType": "struct TenderFactory.TenderMeta[]",
-                "name": "",
-                "type": "tuple[]"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [{"internalType": "address", "name": "", "type": "address"}],
-        "name": "isGovernment",
-        "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [{"internalType": "address", "name": "user", "type": "address"}],
-        "name": "getUserTenders",
-        "outputs": [{"internalType": "address[]", "name": "", "type": "address[]"}],
-        "stateMutability": "view",
-        "type": "function"
-    }
-]
+with open(os.path.join(os.path.dirname(__file__), '..', 'contracts', 'TenderFactoryABI.json'), 'r') as f:
+    FACTORY_ABI = json.load(f)
 
 
 # Shared ABI from report.py
@@ -504,9 +464,14 @@ def get_tender_details(tender_address: str) -> dict:
         tv, admins, bids_raw, milestones_raw = raw
 
         # 2. MAP BASIC STATE (TenderView tuple)
+        # Note: TenderStatus inside Solidity is now extended with 'VOID' at index 4 (0: BIDDING, 1: ACTIVE, 2: COMPLETED, 3: CANCELLED, 4: VOID)
+        STATUS_MAP = ["BIDDING", "ACTIVE", "COMPLETED", "CANCELLED", "VOID"]
+        status_idx = tv[0]
+        status_str = STATUS_MAP[status_idx] if status_idx < len(STATUS_MAP) else "UNKNOWN"
+
         data = {
             "tender_address": tender_address,
-            "status": ["BIDDING", "ACTIVE", "COMPLETED", "CANCELLED"][tv[0]],
+            "status": status_str,
             "contractor": tv[1],
             "winning_bid": str(tv[2]),
             "total_funds": str(tv[3]),
@@ -525,7 +490,6 @@ def get_tender_details(tender_address: str) -> dict:
         data["bids"] = [{"bidder": b[0], "amount": str(b[1])} for b in bids_raw]
 
         # 4. MAP MILESTONES
-        # MilestoneView indices: 0:name, 1:percentage, 2:deadline, 3:status(uint8), 4:isExecuted, 5:signedCount
         data["milestones"] = [{
             "name": m[0],
             "percentage": m[1],
@@ -534,6 +498,20 @@ def get_tender_details(tender_address: str) -> dict:
             "is_executed": m[4],
             "signatures_collected": m[5]
         } for m in milestones_raw]
+
+        # 5. MAP DISPUTE
+        try:
+            disp = tender_contract.functions.dispute().call()
+            # dispute struct: (milestoneId, reason, votesForGov, votesForContractor, resolved)
+            data["dispute"] = {
+                "milestone_id": disp[0],
+                "reason": disp[1],
+                "votes_for_gov": disp[2],
+                "votes_for_contractor": disp[3],
+                "resolved": disp[4],
+            }
+        except Exception as e:
+            data["dispute"] = None
 
         return data
 
@@ -605,3 +583,66 @@ def check_signatory_contracts(wallet_address: str) -> list:
         if role in ("OnSiteEngineer", "ComplianceOfficer", "FinancialAuditor", "SanctioningAuthority"):
             committee_tenders.append(t_addr)
     return committee_tenders
+
+
+# ── Role Management & Dispute API Methods ──
+
+def add_to_role(user_address: str, role_id: int):
+    if not account:
+        raise Exception("Government signer not configured")
+    try:
+        tx = factory_contract.functions.addToRole(w3.to_checksum_address(user_address), role_id).build_transaction({
+            'from': account.address,
+            'nonce': w3.eth.get_transaction_count(account.address),
+            'maxFeePerGas': w3.eth.gas_price * 2,
+            'maxPriorityFeePerGas': w3.eth.max_priority_fee or w3.to_wei(1, 'gwei'),
+        })
+        signed = w3.eth.account.sign_transaction(tx, private_key=PRIVATE_KEY)
+        tx_hash = w3.eth.send_raw_transaction(signed.rawTransaction)
+        return TxWrapper(tx_hash)
+    except Exception as e:
+        print(f"Failed to add role: {e}")
+        raise e
+
+def remove_from_role(user_address: str):
+    if not account:
+        raise Exception("Government signer not configured")
+    try:
+        tx = factory_contract.functions.removeFromRole(w3.to_checksum_address(user_address)).build_transaction({
+            'from': account.address,
+            'nonce': w3.eth.get_transaction_count(account.address),
+            'maxFeePerGas': w3.eth.gas_price * 2,
+            'maxPriorityFeePerGas': w3.eth.max_priority_fee or w3.to_wei(1, 'gwei'),
+        })
+        signed = w3.eth.account.sign_transaction(tx, private_key=PRIVATE_KEY)
+        tx_hash = w3.eth.send_raw_transaction(signed.rawTransaction)
+        return TxWrapper(tx_hash)
+    except Exception as e:
+        print(f"Failed to remove role: {e}")
+        raise e
+
+def get_all_role_pools():
+    if not factory_contract:
+        return []
+    try:
+        pools = factory_contract.functions.getAllRolePools().call()
+        return {
+            "onSiteEngineers": pools[0],
+            "complianceOfficers": pools[1],
+            "financialAuditors": pools[2],
+            "sanctioningAuthorities": pools[3]
+        }
+    except Exception as e:
+        print(f"Failed to get role pools: {e}")
+        return {
+            "onSiteEngineers": [],
+            "complianceOfficers": [],
+            "financialAuditors": [],
+            "sanctioningAuthorities": []
+        }
+
+def get_dispute_voters(tender_address: str):
+    tender = w3.eth.contract(address=w3.to_checksum_address(tender_address), abi=TENDER_ABI)   
+    return tender.functions.getTenderData().call()[1]  # This gets admins, wait. The contract ABI for getting voters?
+
+
