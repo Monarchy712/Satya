@@ -203,23 +203,29 @@ export default function SignatoryDashboard() {
                       </div>
 
                       <div className="milestone-card__actions">
-                        <button 
-                          className={`signatory-btn ${task.alreadySigned ? 'signatory-btn--completed' : 'signatory-btn--primary'}`}
-                          onClick={() => handleApprove(task)}
-                          disabled={task.alreadySigned || isProcessing}
-                        >
-                          {isProcessing ? (
-                            <LoadingSpinner size="16px" color="white" label="Signing..." />
-                          ) : task.alreadySigned ? (
-                            'Approved'
-                          ) : (
-                            'Sign & Authorize'
-                          )}
-                        </button>
-                        {task.alreadySigned && (
-                          <p className="milestone-card__hint">
-                            Awaiting consensus...
-                          </p>
+                        {!task.alreadySigned ? (
+                          <button 
+                            className="signatory-btn signatory-btn--primary"
+                            onClick={() => handleApprove(task)}
+                            disabled={isProcessing}
+                          >
+                            {isProcessing ? (
+                              <LoadingSpinner size="16px" color="white" label="Signing..." />
+                            ) : (
+                              <>
+                                <span className="signatory-header__dot" />
+                                Sign & Authorize
+                              </>
+                            )}
+                          </button>
+                        ) : (
+                          <div className="milestone-card__success">
+                            <span className="milestone-card__success-icon">✓</span>
+                            <div className="milestone-card__success-text">
+                              <strong>Identity Verified</strong>
+                              <span>Consensus Registered on Ledger</span>
+                            </div>
+                          </div>
                         )}
                       </div>
                     </div>
