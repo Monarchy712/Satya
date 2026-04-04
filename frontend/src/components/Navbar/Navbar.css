@@ -267,14 +267,14 @@
 
 .aadhaar-profile__number-clipper {
   position: relative;
-  width: 58px;
+  width: 105px;
   height: 16px;
   overflow: hidden;
   transition: width 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .aadhaar-profile:hover .aadhaar-profile__number-clipper {
-  width: 105px;
+  width: 110px;
 }
 
 .aadhaar-profile__text-masked,
