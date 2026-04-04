@@ -258,6 +258,60 @@
   cursor: pointer;
   transition: all 0.2s ease;
   width: fit-content;
+  margin-top: 4px;
+}
+
+.tenders-card__heading {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  color: var(--gray-800);
+  margin: 8px 0 4px;
+  line-height: 1.2;
+}
+
+.tenders-card__metadata-preview {
+  margin-bottom: 8px;
+}
+
+.tenders-card__desc {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--gray-500);
+  margin-bottom: 8px;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.tenders-card__pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.tenders-card__pill {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.tenders-card__pill--dept {
+  background: var(--pink-50);
+  color: var(--pink-700);
+  border: 1px solid var(--pink-200);
+}
+
+.tenders-card__pill--loc {
+  background: var(--gray-50);
+  color: var(--gray-600);
+  border: 1px solid var(--gray-200);
 }
 
 .tenders-card__address-chip:hover {

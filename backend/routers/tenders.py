@@ -21,11 +21,15 @@ def list_tenders(db: Session = Depends(get_db)):
                 td["tender_name"] = meta.tender_name
                 td["tender_description"] = meta.tender_description
                 td["created_by_dept"] = meta.created_by_dept
+                td["latitude"] = meta.latitude
+                td["longitude"] = meta.longitude
                 td["selection_note"] = meta.selection_note
             else:
                 td["tender_name"] = None
                 td["tender_description"] = None
                 td["created_by_dept"] = None
+                td["latitude"] = None
+                td["longitude"] = None
                 td["selection_note"] = None
 
         return data
@@ -42,11 +46,15 @@ def get_tender(address: str, db: Session = Depends(get_db)):
             data["tender_name"] = meta.tender_name
             data["tender_description"] = meta.tender_description
             data["created_by_dept"] = meta.created_by_dept
+            data["latitude"] = meta.latitude
+            data["longitude"] = meta.longitude
             data["selection_note"] = meta.selection_note
         else:
             data["tender_name"] = None
             data["tender_description"] = None
             data["created_by_dept"] = None
+            data["latitude"] = None
+            data["longitude"] = None
             data["selection_note"] = None
         return data
     except Exception as e:
