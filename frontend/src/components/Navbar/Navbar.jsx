@@ -1,20 +1,37 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import FullScreenLoader from '../UI/FullScreenLoader';
 import './Navbar.css';
 
+const AADHAAR_PEOPLE = [
+  { name: "Aanya Sharma", dob: "12/08/1990", address: "New Delhi, DL", fullAadhaar: "9342 5678 7836", maskedAadhaar: "•••• 7836" },
+  { name: "Rahul Verma", dob: "05/03/1985", address: "Mumbai, MH", fullAadhaar: "4521 8934 1256", maskedAadhaar: "•••• 1256" },
+  { name: "Priya Patel", dob: "22/11/1992", address: "Ahmedabad, GJ", fullAadhaar: "7845 1290 3476", maskedAadhaar: "•••• 3476" },
+  { name: "Amit Singh", dob: "15/06/1988", address: "Lucknow, UP", fullAadhaar: "3214 6789 5432", maskedAadhaar: "•••• 5432" },
+  { name: "Sneha Reddy", dob: "09/09/1995", address: "Hyderabad, TS", fullAadhaar: "6543 2189 0987", maskedAadhaar: "•••• 0987" },
+  { name: "Vikram Malhotra", dob: "30/01/1982", address: "Chandigarh, CH", fullAadhaar: "9876 5432 1098", maskedAadhaar: "•••• 1098" },
+  { name: "Neha Gupta", dob: "18/04/1991", address: "Pune, MH", fullAadhaar: "1234 5678 9012", maskedAadhaar: "•••• 9012" },
+  { name: "Rohan Das", dob: "25/12/1989", address: "Kolkata, WB", fullAadhaar: "5678 9012 3456", maskedAadhaar: "•••• 3456" },
+  { name: "Kavita Rathi", dob: "07/07/1994", address: "Jaipur, RJ", fullAadhaar: "3456 7890 1234", maskedAadhaar: "•••• 1234" },
+  { name: "Suresh Pillai", dob: "14/02/1986", address: "Chennai, TN", fullAadhaar: "9012 3456 7890", maskedAadhaar: "•••• 7890" }
+];
+
 // --- Profile Widget (Moved outside to prevent remounting on Navbar re-renders) ---
 const AadhaarProfile = ({ user }) => {
-  // Hardcoded per requirements
-  const fullAadhaar = "9342 5678 7836";
-  const maskedAadhaar = "•••• 7836";
+  const selectedPerson = useMemo(() => {
+    if (!user) return AADHAAR_PEOPLE[0];
+    const userString = JSON.stringify(user);
+    let hash = 0;
+    for (let i = 0; i < userString.length; i++) {
+        hash = userString.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return AADHAAR_PEOPLE[Math.abs(hash) % AADHAAR_PEOPLE.length];
+  }, [user]);
+
+  const fullAadhaar = selectedPerson.fullAadhaar;
+  const maskedAadhaar = selectedPerson.maskedAadhaar;
   const roleName = user?.role?.charAt(0).toUpperCase() + user?.role?.slice(1) || 'Citizen';
-  
-  const details = {
-    name: "Aanya Sharma",
-    dob: "12/08/1990",
-    address: "New Delhi, DL"
-  };
+  const details = selectedPerson;
 
   return (
     <div className="aadhaar-profile">
