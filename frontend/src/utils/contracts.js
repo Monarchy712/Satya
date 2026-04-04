@@ -1,7 +1,7 @@
 import { ethers } from 'ethers';
 
 // ── Factory Contract ──
-export const FACTORY_ADDRESS = "0x14Ad25e51ccfa7Dab42Daa3f61db604D68a29305";
+export const FACTORY_ADDRESS = "0xaad03A7F079b0eEeF31672Ae44eA9e51dAeb5EC4";
 
 export const FACTORY_ABI = [
   {

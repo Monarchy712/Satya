@@ -479,7 +479,7 @@ def check_is_government(wallet_address: str) -> bool:
 # ── Tender Aggregation Logic ──
 
 def get_tender_details(tender_address: str) -> dict:
-    """Aggregates all tender data from the blockchain. Uses the new admins array and EIP-712 multisig fields."""
+    """Aggregates all tender data from the blockchain in a single high-speed call."""
     contract_addr = w3.to_checksum_address(tender_address)
     tender_contract = w3.eth.contract(address=contract_addr, abi=TENDER_ABI)
 
@@ -499,65 +499,66 @@ def get_tender_details(tender_address: str) -> dict:
 
     # Admins array lookup
     try:
-        data["on_site_engineer"] = tender_contract.functions.admins(0).call()
-        data["compliance_officer"] = tender_contract.functions.admins(1).call()
-        data["financial_auditor"] = tender_contract.functions.admins(2).call()
-        data["sanctioning_authority"] = tender_contract.functions.admins(3).call()
-    except Exception:
-        # Fallback for older contracts if any exist
+        # 1. FETCH EVERYTHING IN ONE CALL
+        raw = tender_contract.functions.getTenderData().call()
+        tv, admins, bids_raw, milestones_raw = raw
+
+        # 2. MAP BASIC STATE (TenderView tuple)
+        data = {
+            "tender_address": tender_address,
+            "status": ["BIDDING", "ACTIVE", "COMPLETED", "CANCELLED"][tv[0]],
+            "contractor": tv[1],
+            "winning_bid": str(tv[2]),
+            "total_funds": str(tv[3]),
+            "current_milestone": tv[4],
+            "start_time": tv[5],
+            "end_time": tv[6],
+            "bidding_end_time": tv[7],
+            "retained_percent": tv[8],
+            "on_site_engineer": admins[0],
+            "compliance_officer": admins[1],
+            "financial_auditor": admins[2],
+            "sanctioning_authority": admins[3],
+        }
+
+        # 3. MAP BIDS
+        data["bids"] = [{"bidder": b[0], "amount": str(b[1])} for b in bids_raw]
+
+        # 4. MAP MILESTONES
+        # MilestoneView indices: 0:name, 1:percentage, 2:deadline, 3:status(uint8), 4:isExecuted, 5:signedCount
+        data["milestones"] = [{
+            "name": m[0],
+            "percentage": m[1],
+            "deadline": m[2],
+            "status": m[3], # Keep as int (0:PENDING, 1:UNDER_REVIEW, 2:APPROVED)
+            "is_executed": m[4],
+            "signatures_collected": m[5]
+        } for m in milestones_raw]
+
+        return data
+
+    except Exception as e:
+        print(f"Fast-sync failed for {tender_address}: {e}")
         zero_addr = "0x0000000000000000000000000000000000000000"
-        data["on_site_engineer"] = zero_addr
-        data["compliance_officer"] = zero_addr
-        data["financial_auditor"] = zero_addr
-        data["sanctioning_authority"] = zero_addr
+        return {
+            "tender_address": tender_address,
+            "status": "SYNC_ERROR",
+            "contractor": zero_addr,
+            "start_time": 0,
+            "end_time": 0,
+            "bidding_end_time": 0,
+            "winning_bid": "0",
+            "retained_percent": 0,
+            "current_milestone": 0,
+            "on_site_engineer": zero_addr,
+            "compliance_officer": zero_addr,
+            "financial_auditor": zero_addr,
+            "sanctioning_authority": zero_addr,
+            "bids": [],
+            "milestones": []
+        }
 
-    # Bids (Index Loop)
-    bids = []
-    idx = 0
-    while True:
-        try:
-            # Note: Tender.sol doesnt have a bids count, so we loop until error
-            bid = tender_contract.functions.bids(idx).call()
-            bids.append({"bidder": bid[0], "amount": str(bid[1])})
-            idx += 1
-        except Exception:
-            break
-    data["bids"] = bids
 
-    # Milestones (Index Loop)
-    milestones = []
-    idx = 0
-    while True:
-        try:
-            m = tender_contract.functions.milestones(idx).call()
-            # New Indices: 0: name, 1: percentage, 2: deadline, 3: status
-            
-            # Check signatures for this milestone
-            sig_count = 0
-            # Indices for admins: on_site(0), compliance(1), financial(2), sanctioning(3)
-            for i in range(4):
-                try:
-                    admin_addr = tender_contract.functions.admins(i).call()
-                    if admin_addr and admin_addr != "0x0000000000000000000000000000000000000000":
-                        if tender_contract.functions.hasSigned(idx, admin_addr).call():
-                            sig_count += 1
-                except:
-                    continue
-
-            milestones.append({
-                "name": m[0],
-                "percentage": m[1],
-                "deadline": m[2],
-                "status": m[3],
-                "signatures_collected": sig_count,
-                "is_executed": tender_contract.functions.executed(idx).call()
-            })
-            idx += 1
-        except Exception:
-            break
-    data["milestones"] = milestones
-
-    return data
 
 
 def get_all_tenders_aggregated() -> list:

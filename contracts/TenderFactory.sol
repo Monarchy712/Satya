@@ -4,7 +4,6 @@ pragma solidity ^0.8.20;
 import "./Tender.sol";
 
 contract TenderFactory {
-
     mapping(address => bool) public isGovernment;
     address[] public governmentList;
 
@@ -53,7 +52,6 @@ contract TenderFactory {
         uint256[] memory _percentages,
         uint256[] memory _deadlines
     ) external onlyGovernment returns (address) {
-
         Tender newTender = new Tender(
             address(this),
             _admins,
@@ -68,12 +66,14 @@ contract TenderFactory {
 
         address tAddr = address(newTender);
 
-        tenders.push(TenderMeta({
-            tender: tAddr,
-            startTime: _startTime,
-            endTime: _endTime,
-            biddingEndTime: _biddingEndTime
-        }));
+        tenders.push(
+            TenderMeta({
+                tender: tAddr,
+                startTime: _startTime,
+                endTime: _endTime,
+                biddingEndTime: _biddingEndTime
+            })
+        );
 
         for (uint i = 0; i < _admins.length; i++) {
             userToTenders[_admins[i]].push(tAddr);
@@ -86,19 +86,13 @@ contract TenderFactory {
         return tAddr;
     }
 
-    function getUserTenders(address user)
-        external
-        view
-        returns (address[] memory)
-    {
+    function getUserTenders(
+        address user
+    ) external view returns (address[] memory) {
         return userToTenders[user];
     }
 
-    function getAllTenders()
-        external
-        view
-        returns (TenderMeta[] memory)
-    {
+    function getAllTenders() external view returns (TenderMeta[] memory) {
         return tenders;
     }
 
