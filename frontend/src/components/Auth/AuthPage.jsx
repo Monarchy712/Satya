@@ -276,15 +276,18 @@ export default function AuthPage() {
             </div>
           )}
 
-          {/* ── Wallet Signing Step ── */}
+          {/* ── Wallet Verification Step ── */}
           {step === STEPS.WALLET_SIGNING && (
-            <div className="auth-step auth-step--fade-in">
-              <button className="auth-back" onClick={handleBack}>← Back</button>
-              <div className={`auth-step__badge auth-step__badge--${walletRole}`}>
-                <span className="auth-step__badge-icon">{walletRole === 'admin' ? '🛡️' : '🏗️'}</span>
-                {walletRole === 'admin' ? 'Admin Verification' : 'Contractor Verification'}
+            <div className="auth-step auth-step--fade-in auth-step--center">
+              <div className="auth-step__header">
+                <button className="auth-back" onClick={handleBack}>← Back</button>
+                <div className={`auth-step__badge auth-step__badge--${walletRole}`}>
+                  <span className="auth-step__badge-icon">{walletRole === 'admin' ? '🛡️' : '🏗️'}</span>
+                  {walletRole === 'admin' ? 'Admin Verification' : 'Contractor Verification'}
+                </div>
               </div>
-              <h2 className="auth-step__title">Sign Message</h2>
+              
+              <h2 className="auth-step__title">Identity Verification</h2>
               <p className="auth-step__desc">
                 Wallet connected! Sign the verification message in MetaMask to prove ownership.
               </p>

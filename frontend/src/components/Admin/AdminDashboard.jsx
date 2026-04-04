@@ -6,7 +6,66 @@ import {
 } from '../../utils/contracts';
 import { useAuth } from '../../context/AuthContext';
 import LoadingOverlay from '../UI/LoadingOverlay';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 import './AdminDashboard.css';
+
+// ── Helper Component for Independent Time Selection ──
+const IndependentTimePicker = ({ label, value, onChange, placeholder = "Select Date" }) => {
+  const date = value ? new Date(value) : new Date();
+  const hours = date.getHours();
+  const minutes = date.getMinutes();
+
+  const handleDateChange = (newDate) => {
+    if (!newDate) return;
+    const updated = new Date(newDate);
+    updated.setHours(hours, minutes, 0, 0); // Preserve chosen time
+    onChange(updated);
+  };
+
+  const handleHourChange = (e) => {
+    const updated = new Date(date);
+    updated.setHours(parseInt(e.target.value), minutes, 0, 0);
+    onChange(updated);
+  };
+
+  const handleMinuteChange = (e) => {
+    const updated = new Date(date);
+    updated.setHours(hours, parseInt(e.target.value), 0, 0);
+    onChange(updated);
+  };
+
+  return (
+    <div className="admin-form__field">
+      {label && <label className="admin-form__label">{label}</label>}
+      <div className="admin-form__time-group">
+        <div className="admin-form__date-wrapper">
+          <DatePicker 
+            selected={value ? new Date(value) : null}
+            onChange={handleDateChange}
+            dateFormat="MMMM d, yyyy"
+            className="admin-form__input admin-form__input--date-only"
+            placeholderText={placeholder}
+            required 
+          />
+        </div>
+        <div className="admin-form__time-selectors">
+          <select className="admin-form__input admin-form__input--time" value={hours} onChange={handleHourChange}>
+            {Array.from({ length: 24 }, (_, i) => (
+              <option key={i} value={i}>{i.toString().padStart(2, '0')}</option>
+            ))}
+          </select>
+          <span className="admin-form__time-sep">:</span>
+          <select className="admin-form__input admin-form__input--time" value={minutes} onChange={handleMinuteChange}>
+            {Array.from({ length: 60 }, (_, i) => (
+              <option key={i} value={i}>{i.toString().padStart(2, '0')}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default function AdminDashboard() {
   const { user } = useAuth();
@@ -18,17 +77,21 @@ export default function AdminDashboard() {
   const [now] = useState(Math.floor(Date.now() / 1000));
 
   // Form State
-  const [formData, setFormData] = useState({
-    admins: ['', '', '', ''],
-    startTime: '',
-    endTime: '',
-    biddingEndTime: '',
-    retainedPercent: '30',
-    milestones: [
-      { name: 'Initial Research & Logistics', percentage: '20', deadline: '' },
-      { name: 'Primary Infrastructure Execution', percentage: '50', deadline: '' },
-      { name: 'Final Integration & Compliance', percentage: '30', deadline: '' }
-    ]
+  const [formData, setFormData] = useState(() => {
+    const defaultDate = new Date();
+    defaultDate.setSeconds(0, 0);
+    return {
+      admins: ['', '', '', ''],
+      startTime: defaultDate,
+      endTime: defaultDate,
+      biddingEndTime: defaultDate,
+      retainedPercent: '30',
+      milestones: [
+        { name: 'Initial Research & Logistics', percentage: '20', deadline: defaultDate },
+        { name: 'Primary Infrastructure Execution', percentage: '50', deadline: defaultDate },
+        { name: 'Final Integration & Compliance', percentage: '30', deadline: defaultDate }
+      ]
+    };
   });
 
   // Derived State
@@ -203,18 +266,24 @@ export default function AdminDashboard() {
                 <div className="admin-form__section">
                   <h3 className="admin-form__section-title"><span className="admin-form__section-icon">📅</span> Temporal Constraints</h3>
                   <div className="admin-form__grid">
-                    <div className="admin-form__field">
-                      <label className="admin-form__label">Bidding Deadline (Cut-off)</label>
-                      <input type="datetime-local" className="admin-form__input" value={formData.biddingEndTime} onChange={(e) => setFormData({...formData, biddingEndTime: e.target.value})} required />
-                    </div>
-                    <div className="admin-form__field">
-                      <label className="admin-form__label">Execution Commencement</label>
-                      <input type="datetime-local" className="admin-form__input" value={formData.startTime} onChange={(e) => setFormData({...formData, startTime: e.target.value})} required />
-                    </div>
-                    <div className="admin-form__field">
-                      <label className="admin-form__label">Estimated Termination</label>
-                      <input type="datetime-local" className="admin-form__input" value={formData.endTime} onChange={(e) => setFormData({...formData, endTime: e.target.value})} required />
-                    </div>
+                    <IndependentTimePicker 
+                      label="Bidding Deadline (Cut-off)"
+                      value={formData.biddingEndTime}
+                      onChange={(d) => setFormData({...formData, biddingEndTime: d})}
+                      placeholder="Select Deadline"
+                    />
+                    <IndependentTimePicker 
+                      label="Execution Commencement"
+                      value={formData.startTime}
+                      onChange={(d) => setFormData({...formData, startTime: d})}
+                      placeholder="Select Start Time"
+                    />
+                    <IndependentTimePicker 
+                      label="Estimated Termination"
+                      value={formData.endTime}
+                      onChange={(d) => setFormData({...formData, endTime: d})}
+                      placeholder="Select End Time"
+                    />
                   </div>
                 </div>
 
@@ -235,11 +304,12 @@ export default function AdminDashboard() {
                   </div>
 
                   <div className="admin-form__milestones">
-                    <div style={{display:'flex', justifyContent:'space-between', marginBottom:'10px', padding:'0 16px', fontSize:'0.7rem', fontWeight:'700', color:'var(--gray-400)'}}>
-                       <span style={{flex: 2}}>PHASE DESCRIPTION</span>
-                       <span style={{width: '70px', textAlign:'center'}}>ALLOCATION %</span>
-                       <span style={{flex: 1.5}}>ESTIMATED DEADLINE</span>
-                       <span style={{width: '30px'}}></span>
+                    <div style={{display:'flex', alignItems:'center', gap:'var(--space-md)', marginBottom:'10px', padding:'0 16px', fontSize:'0.7rem', fontWeight:'700', color:'var(--gray-400)', textTransform:'uppercase'}}>
+                       <span style={{width: '34px', flexShrink: 0}}></span>
+                       <span style={{flex: 2}}>Phase Description</span>
+                       <span style={{width: '70px', flexShrink: 0, textAlign:'center'}}>Allocation %</span>
+                       <span style={{flex: 1.5}}>Estimated Deadline</span>
+                       <span style={{width: '30px', flexShrink: 0}}></span>
                     </div>
                     {formData.milestones.map((m, idx) => (
                       <div key={idx} className="admin-form__milestone-row">
@@ -254,11 +324,15 @@ export default function AdminDashboard() {
                           nm[idx].percentage = e.target.value;
                           setFormData({...formData, milestones: nm});
                         }} required />
-                        <input type="datetime-local" className="admin-form__input admin-form__input--date" value={m.deadline} onChange={e => {
-                          const nm = [...formData.milestones];
-                          nm[idx].deadline = e.target.value;
-                          setFormData({...formData, milestones: nm});
-                        }} required />
+                        <IndependentTimePicker 
+                          value={m.deadline}
+                          onChange={(d) => {
+                            const nm = [...formData.milestones];
+                            nm[idx].deadline = d;
+                            setFormData({...formData, milestones: nm});
+                          }}
+                          placeholder="Select Deadline"
+                        />
                         <button type="button" className="admin-form__remove" onClick={() => handleRemovePhase(idx)} style={{background:'none', border:'none', cursor:'pointer', color:'var(--pink-500)', fontSize:'1.2rem'}} title="Remove Phase">×</button>
                       </div>
                     ))}

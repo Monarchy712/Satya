@@ -10,6 +10,61 @@ export default function Navbar({ user, onLogout }) {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // --- Profile Widget ---
+  const AadhaarProfile = ({ user }) => {
+    // Hardcoded per requirements
+    const fullAadhaar = "9342 5678 7836";
+    const maskedAadhaar = "•••• 7836";
+    const roleName = user?.role?.charAt(0).toUpperCase() + user?.role?.slice(1) || 'Citizen';
+    
+    const details = {
+      name: "Aanya Sharma",
+      dob: "12/08/1990",
+      address: "New Delhi, DL"
+    };
+
+    return (
+      <div className="aadhaar-profile">
+        <div className="aadhaar-profile__trigger">
+          <img 
+            src={`https://api.dicebear.com/7.x/notionists/svg?seed=${details.name}&backgroundColor=ffe4e6`} 
+            alt="Profile Avatar" 
+            className="aadhaar-profile__avatar" 
+          />
+          <div className="aadhaar-profile__text">
+            <span className="aadhaar-profile__role">{roleName}</span>
+            <div className="aadhaar-profile__number-clipper">
+               <span className="aadhaar-profile__text-masked">{maskedAadhaar}</span>
+               <span className="aadhaar-profile__text-full">{fullAadhaar}</span>
+            </div>
+          </div>
+        </div>
+        <div className="aadhaar-profile__dropdown-wrapper">
+          <div className="aadhaar-profile__dropdown">
+            <div className="aadhaar-profile__dropdown-header">
+               <h4>UIDAI Portal</h4>
+               <span className="aadhaar-profile__verified-badge">✓ Verified</span>
+            </div>
+            <div className="aadhaar-profile__dropdown-body">
+               <div className="aadhaar-profile__field">
+                 <span className="aadhaar-profile__label">Full Name</span>
+                 <span className="aadhaar-profile__value">{details.name}</span>
+               </div>
+               <div className="aadhaar-profile__field">
+                 <span className="aadhaar-profile__label">Date of Birth</span>
+                 <span className="aadhaar-profile__value">{details.dob}</span>
+               </div>
+               <div className="aadhaar-profile__field">
+                 <span className="aadhaar-profile__label">Registered Address</span>
+                 <span className="aadhaar-profile__value">{details.address}</span>
+               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const handleLogoutClick = async () => {
     setIsLoggingOut(true);
     await new Promise(r => setTimeout(r, 800));
@@ -125,7 +180,7 @@ export default function Navbar({ user, onLogout }) {
         <div className="navbar__right">
           {user ? (
             <div className="navbar__user">
-              <span className="navbar__user-name">{user.name || user.role}</span>
+              <AadhaarProfile user={user} />
               <button className="navbar__logout-btn" onClick={handleLogoutClick}>
                 Logout
               </button>

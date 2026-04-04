@@ -433,25 +433,30 @@
 }
 
 .admin-ongoing__grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: var(--space-lg);
 }
 
 /* ── Tender Cards ── */
 .admin-tender-card {
+  width: 100%;
+  max-width: 320px;
   background: var(--white);
   border: 1px solid var(--pink-100);
   border-radius: var(--radius-lg);
   padding: var(--space-lg);
-  box-shadow: 0 2px 12px rgba(0,0,0,0.03);
-  transition: all 0.25s ease;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  display: flex;
+  flex-direction: column;
 }
 
 .admin-tender-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 28px rgba(0,0,0,0.06);
-  border-color: var(--pink-300);
+  transform: translateY(-6px);
+  box-shadow: 0 16px 40px rgba(113, 139, 77, 0.1);
+  border-color: rgba(113, 139, 77, 0.3);
 }
 
 .admin-tender-card__header {
@@ -463,11 +468,11 @@
 
 .admin-tender-card__status {
   font-family: var(--font-mono);
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  padding: 4px 10px;
+  padding: 6px 12px;
   border-radius: var(--radius-pill);
 }
 
@@ -502,8 +507,13 @@
 
 .admin-tender-card__index {
   font-family: var(--font-mono);
-  font-size: 0.72rem;
-  color: var(--gray-400);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--pink-700);
+  background: var(--ivory);
+  padding: 4px 10px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--pink-200);
 }
 
 /* MODIFIED: Replaced full address styling with info button + tooltip */
@@ -577,26 +587,79 @@
 .admin-tender-card__meta-row {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-end;
+  border-bottom: 1.5px dotted var(--pink-200);
+  padding-bottom: 6px;
 }
 
 .admin-tender-card__meta-label {
   font-family: var(--font-mono);
-  font-size: 0.68rem;
-  color: var(--gray-400);
+  font-size: 0.75rem;
+  color: var(--gray-500);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  background: var(--white);
+  padding-right: 8px;
+  margin-bottom: -10px; /* pull down over dotted line */
 }
 
 .admin-tender-card__meta-value {
   font-family: var(--font-mono);
-  font-size: 0.78rem;
-  color: var(--gray-700);
-  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--gray-800);
+  font-weight: 700;
+  background: var(--white);
+  padding-left: 8px;
+  margin-bottom: -10px;
 }
 
 .admin-tender-card__meta-value--highlight {
   color: var(--pink-700);
+}
+
+.admin-form__time-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.admin-form__date-wrapper {
+  flex: 1;
+}
+
+.admin-form__time-selectors {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--gray-50);
+  border: 1.5px solid var(--gray-300);
+  border-radius: var(--radius-md);
+  padding: 0 10px;
+  height: 48px; /* Match standard input height */
+}
+
+.admin-form__input--time {
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+  width: 40px;
+  text-align: center;
+  box-shadow: none !important;
+  font-weight: 700;
+  cursor: pointer;
+  appearance: none; /* Hide default arrow to keep it clean */
+  -webkit-appearance: none;
+}
+
+.admin-form__time-sep {
+  font-weight: 800;
+  color: var(--pink-600);
+  margin-top: -2px;
+}
+
+.admin-form__input--date-only {
+  width: 100%;
 }
 
 .admin-tender-card__contractor {
@@ -606,6 +669,75 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+/* ── Custom Datepicker Theme ── */
+.react-datepicker-wrapper {
+  display: block;
+  width: 100%;
+}
+
+.react-datepicker__input-container {
+  display: block;
+  width: 100%;
+}
+
+.react-datepicker__input-container input {
+  width: 100%;
+}
+
+.react-datepicker {
+  font-family: var(--font-body) !important;
+  border: 1px solid var(--pink-200) !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-md) !important;
+  background: var(--white) !important;
+}
+
+.react-datepicker__header {
+  background: var(--pink-50) !important;
+  border-bottom: 1px solid var(--pink-200) !important;
+  border-top-left-radius: var(--radius-md) !important;
+  border-top-right-radius: var(--radius-md) !important;
+  padding-top: 12px !important;
+}
+
+.react-datepicker__current-month, .react-datepicker-time__header {
+  color: var(--gray-800) !important;
+  font-family: var(--font-display) !important;
+  font-size: 1rem !important;
+  font-weight: 700 !important;
+}
+
+.react-datepicker__day-name {
+  color: var(--pink-700) !important;
+  font-weight: 600 !important;
+}
+
+.react-datepicker__day {
+  color: var(--gray-700) !important;
+}
+
+.react-datepicker__day:hover {
+  background-color: var(--pink-200) !important;
+}
+
+.react-datepicker__day--selected, .react-datepicker__day--keyboard-selected {
+  background-color: var(--pink-600) !important;
+  color: var(--white) !important;
+  font-weight: 700 !important;
+}
+
+.react-datepicker__time-container {
+  border-left: 1px solid var(--pink-200) !important;
+}
+
+.react-datepicker__time-list-item:hover {
+  background-color: var(--pink-100) !important;
+}
+
+.react-datepicker__time-list-item--selected {
+  background-color: var(--pink-600) !important;
 }
 
 /* ── Responsive ── */

@@ -205,6 +205,76 @@
   to { transform: rotate(360deg); }
 }
 
+/* ── TENDER WRITING ANIMATION ── */
+.lo-tender-anim-container {
+  position: relative;
+  width: 70px;
+  height: 70px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.lo-tender-doc {
+  position: relative;
+  width: 48px;
+  height: 58px;
+  background: var(--white);
+  border: 1.5px solid var(--pink-400);
+  border-radius: 4px;
+  box-shadow: 2px 4px 10px rgba(113, 139, 77, 0.15);
+  padding: 8px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  overflow: hidden;
+  animation: docFloat 3s ease-in-out infinite;
+}
+
+.lo-tender-doc__header {
+  display: flex;
+  margin-bottom: 2px;
+}
+
+.lo-tender-doc__seal {
+  width: 10px;
+  height: 10px;
+  background: var(--gold);
+  border-radius: 50%;
+  transform: scale(0);
+  animation: sealStamp 3s cubic-bezier(0.175, 0.885, 0.32, 1.275) infinite 1.6s;
+}
+
+.lo-tender-line {
+  height: 4px;
+  background: var(--pink-600);
+  border-radius: 2px;
+  transform-origin: left;
+  transform: scaleX(0);
+}
+
+.lo-tender-line--1 { width: 85%; animation: writeLine 3s ease-out infinite 0s; }
+.lo-tender-line--2 { width: 65%; animation: writeLine 3s ease-out infinite 0.3s; }
+.lo-tender-line--3 { width: 95%; animation: writeLine 3s ease-out infinite 0.6s; }
+.lo-tender-line--4 { width: 55%; animation: writeLine 3s ease-out infinite 0.9s; }
+
+@keyframes writeLine {
+  0% { transform: scaleX(0); opacity: 0; }
+  15%, 85% { transform: scaleX(1); opacity: 1; }
+  95%, 100% { transform: scaleX(0); opacity: 0; }
+}
+
+@keyframes docFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes sealStamp {
+  0%, 5% { transform: scale(0); opacity: 0; }
+  15%, 85% { transform: scale(1); opacity: 1; }
+  95%, 100% { transform: scale(0); opacity: 0; }
+}
+
 /* ── Message ── */
 .lo-card__message {
   font-family: var(--font-mono);

@@ -104,7 +104,7 @@
   text-transform: uppercase;
   color: var(--gray-500);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   display: flex;
   align-items: center;
   gap: 4px;
@@ -112,18 +112,21 @@
 
 .navbar__nav-link:hover {
   color: var(--pink-700);
-  background: rgba(113, 139, 77, 0.08);
+  background: rgba(113, 139, 77, 0.08); /* slight green/gold */
+  transform: translateY(-2px);
 }
 
 .navbar__nav-link--active {
   background: var(--pink-600);
   color: var(--white);
-  box-shadow: 0 2px 6px rgba(113, 139, 77, 0.2);
+  box-shadow: 0 4px 12px rgba(113, 139, 77, 0.2);
 }
 
 .navbar__nav-link--active:hover {
   background: var(--pink-600);
   color: var(--white);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(113, 139, 77, 0.25);
 }
 
 .navbar__nav-link--admin {
@@ -183,6 +186,29 @@
   }
 }
 
+@media (max-width: 768px) {
+  .navbar__inner {
+    height: auto;
+    flex-wrap: wrap;
+    padding: 12px var(--space-xl);
+    gap: var(--space-md);
+  }
+  
+  .navbar__center {
+    order: 3;
+    width: 100%;
+  }
+
+  .navbar__right {
+    margin-left: auto;
+  }
+  
+  .navbar__nav-links {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
 /* ── User & Logout ── */
 .navbar__user {
   display: flex;
@@ -193,12 +219,173 @@
   border-right: 1px solid rgba(164, 183, 120, 0.2);
 }
 
-.navbar__user-name {
+/* ── Aadhaar Profile Widget ── */
+.aadhaar-profile {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.aadhaar-profile__trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: default;
+  padding: 4px 12px 4px 4px;
+  background: var(--pink-50);
+  border: 1px solid var(--pink-100);
+  border-radius: 20px;
+  transition: all 0.3s ease;
+}
+
+.aadhaar-profile:hover .aadhaar-profile__trigger {
+  background: var(--white);
+  border-color: var(--pink-300);
+  box-shadow: 0 4px 12px rgba(113, 139, 77, 0.1);
+}
+
+.aadhaar-profile__avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--white);
+  border: 1px solid var(--pink-200);
+}
+
+.aadhaar-profile__text {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.aadhaar-profile__role {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--gray-600);
+  font-weight: 700;
+}
+
+.aadhaar-profile__number-clipper {
+  position: relative;
+  width: 58px;
+  height: 16px;
+  overflow: hidden;
+  transition: width 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.aadhaar-profile:hover .aadhaar-profile__number-clipper {
+  width: 105px;
+}
+
+.aadhaar-profile__text-masked,
+.aadhaar-profile__text-full {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--pink-700);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  position: absolute;
+  top: 0;
+  left: 0;
+  transition: opacity 0.3s ease, transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.aadhaar-profile__text-full {
+  opacity: 0;
+  transform: translateX(-15px);
+}
+
+.aadhaar-profile:hover .aadhaar-profile__text-masked {
+  opacity: 0;
+  transform: translateX(15px);
+}
+
+.aadhaar-profile:hover .aadhaar-profile__text-full {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.aadhaar-profile__dropdown-wrapper {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  padding-top: 12px;
+  z-index: 100;
+  visibility: hidden;
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.aadhaar-profile:hover .aadhaar-profile__dropdown-wrapper {
+  visibility: visible;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.aadhaar-profile__dropdown {
+  width: 260px;
+  background: var(--white);
+  border: 1px solid var(--pink-200);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 16px 40px rgba(0,0,0,0.12);
+  overflow: hidden;
+}
+
+.aadhaar-profile__dropdown-header {
+  background: linear-gradient(135deg, var(--ivory) 0%, var(--pink-50) 100%);
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--pink-100);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.aadhaar-profile__dropdown-header h4 {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--gray-500);
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.aadhaar-profile__verified-badge {
+  font-size: 0.65rem;
+  font-family: var(--font-mono);
+  background: rgba(113, 139, 77, 0.15);
+  color: var(--status-ongoing);
+  padding: 3px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.aadhaar-profile__dropdown-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.aadhaar-profile__field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.aadhaar-profile__label {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  color: var(--gray-400);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.aadhaar-profile__value {
   font-family: var(--font-mono);
   font-size: 0.8rem;
-  color: var(--pink-700);
-  font-weight: bold;
-  letter-spacing: 0.05em;
+  color: var(--gray-700);
+  font-weight: 600;
 }
 
 .navbar__logout-btn {
