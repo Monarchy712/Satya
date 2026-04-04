@@ -100,8 +100,9 @@ export default function OversightDashboard() {
             // Backend may not have data yet
           }
 
-          // Get balance from backend
+          // Get balance + DB metadata from backend
           let balance = '0';
+          let tenderName = null, tenderDesc = null, createdByDept = null, lat = null, lng = null;
           try {
             const bres = await fetch(`http://localhost:8000/api/tenders/${tAddr}`, {
               headers: { Authorization: `Bearer ${token}` }
@@ -109,12 +110,16 @@ export default function OversightDashboard() {
             if (bres.ok) {
               const bdata = await bres.json();
               if (bdata.total_funds) {
-                // Convert wei string from backend to ETH
                 balance = ethers.formatEther(bdata.total_funds);
               }
+              tenderName      = bdata.tender_name        || null;
+              tenderDesc      = bdata.tender_description || null;
+              createdByDept   = bdata.created_by_dept    || null;
+              lat             = bdata.latitude           ?? null;
+              lng             = bdata.longitude          ?? null;
             }
           } catch (err) {
-            console.error(`Failed to fetch backend balance for ${tAddr}:`, err);
+            console.error(`Failed to fetch backend data for ${tAddr}:`, err);
           }
 
           results.push({
@@ -129,6 +134,11 @@ export default function OversightDashboard() {
             alreadySigned,
             sigCount,
             balance,
+            tenderName,
+            tenderDesc,
+            createdByDept,
+            lat,
+            lng,
           });
         } catch (err) {
           console.error(`Error loading tender ${tAddr}:`, err);
@@ -269,8 +279,27 @@ export default function OversightDashboard() {
                 >
                   <div className="oversight-card__info">
                     <h3 className="oversight-card__address">
-                      {t.address.slice(0, 8)}...{t.address.slice(-6)}
+                      {t.tenderName || <>{t.address.slice(0, 8)}...{t.address.slice(-6)}</>}
                     </h3>
+                    {(t.tenderDesc || t.createdByDept || t.lat != null) && (
+                      <div style={{display:'flex', flexWrap:'wrap', gap:'6px', margin:'6px 0 10px'}}>
+                        {t.tenderDesc && (
+                          <p style={{width:'100%', fontSize:'0.78rem', opacity:0.75, margin:'0 0 4px', lineHeight:'1.5'}}>
+                            {t.tenderDesc}
+                          </p>
+                        )}
+                        {t.createdByDept && (
+                          <span style={{fontSize:'0.7rem', background:'rgba(255,255,255,0.08)', padding:'2px 9px', borderRadius:'20px', opacity:0.85}}>
+                            🏛️ {t.createdByDept}
+                          </span>
+                        )}
+                        {t.lat != null && t.lng != null && (
+                          <span style={{fontSize:'0.7rem', background:'rgba(255,255,255,0.08)', padding:'2px 9px', borderRadius:'20px', opacity:0.85}}>
+                            📍 {Number(t.lat).toFixed(4)}, {Number(t.lng).toFixed(4)}
+                          </span>
+                        )}
+                      </div>
+                    )}
                     <div className="oversight-card__milestone">
                       Milestone #{t.currentMilestone + 1}:{' '}
                       <strong>{t.milestoneName}</strong>

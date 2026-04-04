@@ -5,6 +5,12 @@ from auth import get_current_user
 from config import ROBOFLOW_API_KEY, PRIVATE_KEY
 from blockchain import contract, w3, account, get_identity_hash
 from ml_utils import analyze_image, calculate_image_score
+from database import get_db
+from models import TenderMetadata
+from sqlalchemy.orm import Session
+import exifread
+import math
+import io
 
 router = APIRouter(prefix="/api/reports", tags=["Reports"])
 
@@ -20,11 +26,45 @@ class MLValidateRequest(BaseModel):
 
 # Blockchain logic is now handled in blockchain.py
 
+def get_image_gps(image_bytes):
+    """Extracts GPS latitude and longitude from image EXIF data."""
+    tags = exifread.process_file(io.BytesIO(image_bytes))
+    
+    def _to_decimal(values, ref):
+        d = float(values[0].num) / float(values[0].den)
+        m = float(values[1].num) / float(values[1].den)
+        s = float(values[2].num) / float(values[2].den)
+        decimal = d + (m / 60.0) + (s / 3600.0)
+        if ref in ['S', 'W']:
+            decimal = -decimal
+        return decimal
+
+    try:
+        lat_ref = tags.get('GPS GPSLatitudeRef').printable
+        lat_values = tags.get('GPS GPSLatitude').values
+        lon_ref = tags.get('GPS GPSLongitudeRef').printable
+        lon_values = tags.get('GPS GPSLongitude').values
+        
+        return _to_decimal(lat_values, lat_ref), _to_decimal(lon_values, lon_ref)
+    except Exception:
+        return None, None
+
+def calculate_distance(lat1, lon1, lat2, lon2):
+    """Calculates the Haversine distance between two points in km."""
+    R = 6371.0 # Earth radius in km
+    dlat = math.radians(lat2 - lat1)
+    dlon = math.radians(lon2 - lon1)
+    a = math.sin(dlat / 2)**2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon / 2)**2
+    c = 2 * math.asin(math.sqrt(a))
+    return R * c
+
 
 @router.post("/validate")
 async def validate_report(
+    contract_id: str = Header(None),
     files: List[UploadFile] = File(...),
-    user=Depends(get_current_user)
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
     """
     Real ML Validation Service using Roboflow.
@@ -37,6 +77,44 @@ async def validate_report(
     max_score = 0.0
     all_results = []
     
+    # ── 1. Geo-Location Verification (Pre-ML) ──
+    # We check the first image for GPS metadata and compare with tender location
+    if files:
+        first_file = files[0]
+        content = await first_file.read()
+        await first_file.seek(0) # Reset pointer for ML processing later
+        
+        print(f"--- GEO-LOCATION CHECK: {contract_id} ---")
+        if contract_id:
+            meta = db.query(TenderMetadata).filter(TenderMetadata.tender_address == contract_id.lower()).first()
+            if meta:
+                if meta.latitude is not None and meta.longitude is not None:
+                    img_lat, img_lon = get_image_gps(content)
+                    
+                    if img_lat is not None and img_lon is not None:
+                        dist = calculate_distance(img_lat, img_lon, meta.latitude, meta.longitude)
+                        print(f"Calculated Distance: {dist:.4f} km from project site.")
+                        
+                        if dist > 1.0:
+                            print(f"ACTION: REJECTED - Report from {dist:.2f} km is beyond 1 km radius.")
+                            return {
+                                "success": False,
+                                "confidence": 0,
+                                "message": f"Geo-verification failed: Report detected from {dist:.2f} km away. Submissions must be within 1 km of the project site."
+                            }
+                        else:
+                            print(f"ACTION: ACCEPTED - Report from {dist:.2f} km is within range. Proceeding to ML layer.")
+                    else:
+                        print("ACTION: PROCEEDING - No GPS metadata found in image, skipping range check.")
+                else:
+                    print("ACTION: PROCEEDING - Tender has no geographical metadata on-chain.")
+            else:
+                print(f"ACTION: PROCEEDING - No metadata found for address {contract_id}.")
+        else:
+            print("ACTION: PROCEEDING - No contract address provided for verification.")
+        print("------------------------------------------")
+
+    # ── 2. ML Analysis ──
     # Process each image until we find one that passes the threshold (20)
     for file in files[:3]:
         content = await file.read()

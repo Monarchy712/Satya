@@ -4,6 +4,7 @@ export default function FullScreenLoader({ isVisible, text = 'Loading...' }) {
   if (!isVisible) return null;
 
   const isWalletAuth = text.toLowerCase().includes('authenticating wallet');
+  const isLogout = text.toLowerCase().includes('securing session');
 
   return (
     <div className="fs-loader-overlay">
@@ -20,6 +21,17 @@ export default function FullScreenLoader({ isVisible, text = 'Loading...' }) {
             <div className="fs-coin fs-coin-1">₿</div>
             <div className="fs-coin fs-coin-2">₿</div>
             <div className="fs-coin fs-coin-3">₿</div>
+          </div>
+        ) : isLogout ? (
+          <div className="fs-loader-security-anim">
+            <div className="fs-shield-icon">
+              <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 22C12 22 20 18 20 12V5L12 2L4 5V12C4 18 12 22 12 22Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M9 12L11 14L15 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+            <div className="fs-pulse-ring fs-pulse-1"></div>
+            <div className="fs-pulse-ring fs-pulse-2"></div>
           </div>
         ) : (
           <div className="fs-loader-spinner"></div>

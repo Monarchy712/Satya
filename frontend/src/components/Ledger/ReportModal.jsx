@@ -90,7 +90,7 @@ export default function ReportModal({ contract, onClose }) {
 
     try {
       // 0. ML Validation Step
-      const mlResult = await validateReport(files);
+      const mlResult = await validateReport(files, contract.address || contract.id);
       
       if (!mlResult.success) {
         if (mlResult.banned) {

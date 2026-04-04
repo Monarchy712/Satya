@@ -190,27 +190,61 @@
 /* Progress bar inside meta */
 .contract-card__meta--progress {
   grid-column: 1 / -1;
+  background: rgba(255, 255, 255, 0.4);
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(164, 183, 120, 0.1);
 }
 
 .contract-card__progress-bar {
-  height: 6px;
+  height: 12px;
   background: var(--gray-200);
   border-radius: var(--radius-pill);
   overflow: hidden;
-  margin: 4px 0;
+  margin: 8px 0;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+  position: relative;
 }
 
 .contract-card__progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--pink-400), var(--pink-600));
+  background: linear-gradient(90deg, #b83462 0%, #e63975 50%, #b83462 100%);
+  background-size: 200% 100%;
   border-radius: var(--radius-pill);
-  transition: width 1s var(--ease-out);
+  transition: width 1.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 2px 8px rgba(184, 52, 98, 0.3);
+  position: relative;
+  animation: shine 3s linear infinite;
+}
+
+.contract-card__progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.2) 0%,
+    rgba(255, 255, 255, 0) 50%,
+    rgba(0, 0, 0, 0.05) 100%
+  );
+}
+
+@keyframes shine {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 
 .contract-card__meta-subvalue {
   font-family: var(--font-mono);
-  font-size: 0.7rem;
-  color: var(--gray-500);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--gray-600);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 /* ── Milestones Tracker ── */

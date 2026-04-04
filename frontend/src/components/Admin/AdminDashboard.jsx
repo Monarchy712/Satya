@@ -69,7 +69,7 @@ const IndependentTimePicker = ({ label, value, onChange, placeholder = "Select D
 };
 
 export default function AdminDashboard() {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const [activeTab, setActiveTab] = useState('ongoing');
   const [tenders, setTenders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -79,6 +79,11 @@ export default function AdminDashboard() {
 
   // Form State
   const [formData, setFormData] = useState({
+    tenderName: '',
+    tenderDescription: '',
+    createdByDept: '',
+    latitude: '',
+    longitude: '',
     admins: ['', '', '', ''],
     startTime: new Date(Date.now() + 3600000).toISOString(), // 1 hour buffer
     endTime: new Date(Date.now() + 604800000).toISOString(), // 1 week buffer
@@ -147,6 +152,29 @@ export default function AdminDashboard() {
         formData.milestones.map(m => BigInt(Math.floor(new Date(m.deadline).getTime() / 1000)))
       );
       await tx.wait();
+      
+      const allTenders = await factory.getAllTenders();
+      const lastTenderParams = allTenders[allTenders.length - 1];
+      const tenderAddress = lastTenderParams.tender;
+
+      const fallbackToken = localStorage.getItem('satya_token') || '';
+      
+      await fetch('http://localhost:8000/api/admin/tender-metadata', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token || fallbackToken}`
+        },
+        body: JSON.stringify({
+          tender_address: tenderAddress,
+          tender_name: formData.tenderName,
+          tender_description: formData.tenderDescription,
+          created_by_dept: formData.createdByDept,
+          latitude: formData.latitude ? parseFloat(formData.latitude) : null,
+          longitude: formData.longitude ? parseFloat(formData.longitude) : null
+        })
+      });
+
       alert('Tender Deployed Successfully!');
       setActiveTab('ongoing');
     } catch (err) {
@@ -179,6 +207,19 @@ export default function AdminDashboard() {
       setActionContext('finalizing'); // Update feedback from 'signing'
       await txSelect.wait();
       
+      const fallbackToken = localStorage.getItem('satya_token') || '';
+      await fetch('http://localhost:8000/api/admin/tender-metadata', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token || fallbackToken}`
+        },
+        body: JSON.stringify({
+          tender_address: selection.tender.tender_address,
+          note: selection.note
+        })
+      });
+
       alert('Contractor Finalized & Tender Activated Successfully!');
       setSelection({ show: false, tender: null, contractor: '', amount: '', note: '' });
       loadTenderData();
@@ -225,7 +266,7 @@ export default function AdminDashboard() {
                   <div key={t.tender_address} className="admin-tender-card">
                     <div className="admin-tender-card__header">
                        <div className={`admin-tender-card__status admin-tender-card__status--${t.status.toLowerCase()}`}>{t.status}</div>
-                       <span className="admin-tender-card__index">Asset #{i+1}</span>
+                       <span className="admin-tender-card__index">{t.tender_name || `Asset #${i+1}`}</span>
                     </div>
                     {/* MODIFIED: Replaced full hash with hoverable info button */}
                     <div className="admin-tender-card__asset-info">
@@ -252,6 +293,41 @@ export default function AdminDashboard() {
 
             {activeTab === 'create' && (
               <form className="admin-form" onSubmit={handleCreateTender}>
+                <div className="admin-form__section">
+                  <h3 className="admin-form__section-title"><span className="admin-form__section-icon">📑</span> Project Details</h3>
+                  <div className="admin-form__grid">
+                    <div className="admin-form__field">
+                      <label className="admin-form__label">Tender Name</label>
+                      <input type="text" className="admin-form__input" placeholder="e.g. Highway Construction Phase I" value={formData.tenderName} onChange={(e) => setFormData({...formData, tenderName: e.target.value})} required />
+                    </div>
+                    <div className="admin-form__field">
+                      <label className="admin-form__label">Department</label>
+                      <input type="text" className="admin-form__input" placeholder="e.g. Ministry of Roads" value={formData.createdByDept} onChange={(e) => setFormData({...formData, createdByDept: e.target.value})} required />
+                    </div>
+                  </div>
+                  <div className="admin-form__field" style={{marginTop:'15px'}}>
+                    <label className="admin-form__label">Tender Description</label>
+                    <textarea className="admin-form__input" rows="3" placeholder="Provide a detailed description of the project..." value={formData.tenderDescription} onChange={(e) => setFormData({...formData, tenderDescription: e.target.value})} required></textarea>
+                  </div>
+                </div>
+
+                <div className="admin-form__section">
+                  <h3 className="admin-form__section-title"><span className="admin-form__section-icon">📍</span> Geographic Constraints</h3>
+                  <div className="admin-form__grid">
+                    <div className="admin-form__field">
+                      <label className="admin-form__label">Site Latitude</label>
+                      <input type="number" step="any" className="admin-form__input" placeholder="e.g. 12.9716" value={formData.latitude} onChange={(e) => setFormData({...formData, latitude: e.target.value})} required />
+                    </div>
+                    <div className="admin-form__field">
+                      <label className="admin-form__label">Site Longitude</label>
+                      <input type="number" step="any" className="admin-form__input" placeholder="e.g. 77.5946" value={formData.longitude} onChange={(e) => setFormData({...formData, longitude: e.target.value})} required />
+                    </div>
+                  </div>
+                  <p className="admin-form__help-text" style={{fontSize: '0.75rem', color: 'var(--gray-500)', marginTop: '10px'}}>
+                    * Image submissions must be within 1km of these coordinates.
+                  </p>
+                </div>
+
                 <div className="admin-form__section">
                   <h3 className="admin-form__section-title"><span className="admin-form__section-icon">🔐</span> Multi-Signature Activation</h3>
                   <div className="admin-form__grid">
@@ -404,7 +480,7 @@ export default function AdminDashboard() {
                     <div key={t.tender_address} className="admin-tender-card">
                       <div className="admin-tender-card__header">
                         <div className="admin-tender-card__status admin-tender-card__status--bidding">SEALED</div>
-                        <span className="admin-tender-card__index">Ready for Finalization</span>
+                        <span className="admin-tender-card__index">{t.tender_name || 'Ready for Finalization'}</span>
                       </div>
                       {/* MODIFIED: Replaced full hash with hoverable info button */}
                       <div className="admin-tender-card__asset-info">
