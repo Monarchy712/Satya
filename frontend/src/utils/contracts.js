@@ -1,7 +1,7 @@
 import { ethers } from 'ethers';
 
 // ── Factory Contract ──
-export const FACTORY_ADDRESS = "0x11379E296f6777C23988268c4C779a691C724739";
+export const FACTORY_ADDRESS = "0x14Ad25e51ccfa7Dab42Daa3f61db604D68a29305";
 
 export const FACTORY_ABI = [
   {
@@ -275,7 +275,7 @@ export const TENDER_ABI = [
     ],
     "name": "selectContractor",
     "outputs": [],
-    "stateMutability": "nonpayable",
+    "stateMutability": "payable",
     "type": "function"
   },
   {

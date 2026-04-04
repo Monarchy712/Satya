@@ -11,6 +11,63 @@ import TimeColumnInput from './TimeColumnInput';
 import 'react-datepicker/dist/react-datepicker.css';
 import './AdminDashboard.css';
 
+// ── Helper Component for Independent Time Selection ──
+const IndependentTimePicker = ({ label, value, onChange, placeholder = "Select Date" }) => {
+  const date = value ? new Date(value) : new Date();
+  const hours = date.getHours();
+  const minutes = date.getMinutes();
+
+  const handleDateChange = (newDate) => {
+    if (!newDate) return;
+    const updated = new Date(newDate);
+    updated.setHours(hours, minutes, 0, 0); // Preserve chosen time
+    onChange(updated);
+  };
+
+  const handleHourChange = (e) => {
+    const updated = new Date(date);
+    updated.setHours(parseInt(e.target.value), minutes, 0, 0);
+    onChange(updated);
+  };
+
+  const handleMinuteChange = (e) => {
+    const updated = new Date(date);
+    updated.setHours(hours, parseInt(e.target.value), 0, 0);
+    onChange(updated);
+  };
+
+  return (
+    <div className="admin-form__field">
+      {label && <label className="admin-form__label">{label}</label>}
+      <div className="admin-form__time-group">
+        <div className="admin-form__date-wrapper">
+          <DatePicker 
+            selected={value ? new Date(value) : null}
+            onChange={handleDateChange}
+            dateFormat="MMMM d, yyyy"
+            className="admin-form__input admin-form__input--date-only"
+            placeholderText={placeholder}
+            required 
+          />
+        </div>
+        <div className="admin-form__time-selectors">
+          <select className="admin-form__input admin-form__input--time" value={hours} onChange={handleHourChange}>
+            {Array.from({ length: 24 }, (_, i) => (
+              <option key={i} value={i}>{i.toString().padStart(2, '0')}</option>
+            ))}
+          </select>
+          <span className="admin-form__time-sep">:</span>
+          <select className="admin-form__input admin-form__input--time" value={minutes} onChange={handleMinuteChange}>
+            {Array.from({ length: 60 }, (_, i) => (
+              <option key={i} value={i}>{i.toString().padStart(2, '0')}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function AdminDashboard() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('ongoing');
@@ -113,16 +170,16 @@ export default function AdminDashboard() {
       const signer = await getSigner();
       const tender = getTenderContract(selection.tender.tender_address, signer);
       
-      // 1. Select Contractor
-      const txSelect = await tender.selectContractor(selection.contractor, BigInt(selection.amount));
+      // 1. Select Contractor AND Fund (now a single payable call)
+      const txSelect = await tender.selectContractor(
+        selection.contractor, 
+        BigInt(selection.amount),
+        { value: BigInt(selection.amount) }
+      );
+      setActionContext('finalizing'); // Update feedback from 'signing'
       await txSelect.wait();
       
-      // 2. Fund Contract (transfer winning bid amount)
-      setActionContext('funding');
-      const txFund = await tender.fundContract({ value: BigInt(selection.amount) });
-      await txFund.wait();
-
-      alert('Contractor Finalized & Tender Funded Successfully!');
+      alert('Contractor Finalized & Tender Activated Successfully!');
       setSelection({ show: false, tender: null, contractor: '', amount: '', note: '' });
       loadTenderData();
     } catch (err) {

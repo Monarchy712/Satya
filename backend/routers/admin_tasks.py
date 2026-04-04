@@ -59,10 +59,25 @@ def get_signatures(
         MilestoneApproval.milestone_id == milestone_id,
     ).all()
 
+    count = len(sigs)
+
+    # Automatically trigger execution if not already done and we have 4 sigs
+    executed = is_milestone_executed(tender_address, milestone_id)
+    if not executed and count >= 4:
+        try:
+            sig_list = [s.signature for s in sigs[:4]]
+            print(f">>> Auto-triggering execution for tender {tender_address} milestone {milestone_id}...")
+            tx = execute_milestone_with_signatures(tender_address, milestone_id, sig_list)
+            tx.wait()
+            executed = True
+        except Exception as e:
+            print(f"Auto-trigger failed: {e}")
+
     return {
-        "count": len(sigs),
+        "count": count,
         "required": 4,
         "signers": [{"address": s.admin_address, "role": s.role} for s in sigs],
+        "executed": executed
     }
 
 

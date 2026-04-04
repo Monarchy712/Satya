@@ -444,7 +444,7 @@ def execute_milestone_with_signatures(tender_address: str, milestone_id: int, si
         'maxPriorityFeePerGas': w3.eth.max_priority_fee or w3.to_wei(1, 'gwei'),
     })
     signed = w3.eth.account.sign_transaction(tx, private_key=PRIVATE_KEY)
-    tx_hash = w3.eth.send_raw_transaction(signed.raw_transaction)
+    tx_hash = w3.eth.send_raw_transaction(signed.rawTransaction)
     return TxWrapper(tx_hash)
 
 

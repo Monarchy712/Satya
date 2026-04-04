@@ -107,6 +107,7 @@ contract Tender {
         uint256[] memory _deadlines
     ) {
         require(_admins.length == 4, "Need 4 admins");
+        require(_names.length == _percentages.length && _names.length == _deadlines.length, "Invalid milestone input");
 
         factory = _factory;
 
@@ -192,15 +193,21 @@ contract Tender {
 
     function selectContractor(address _contractor, uint256 _winningBid)
         external
+        payable
         onlyGovernment
     {
         require(block.timestamp >= biddingEndTime, "Not over");
         require(hasBid[_contractor], "Not bidder");
+        require(_contractor != address(0), "Invalid contractor");
+
+        require(msg.value == _winningBid, "Incorrect fund amount");
 
         contractor = _contractor;
         roles[_contractor] = Role.CONTRACTOR;
 
         winningBid = _winningBid;
+        totalFunds += msg.value;
+
         tenderStatus = TenderStatus.ACTIVE;
 
         emit ContractorSelected(_contractor, _winningBid);
@@ -228,6 +235,11 @@ contract Tender {
         require(!executed[id], "Done");
         require(signatures.length == 4, "Need 4");
 
+        require(
+            milestones[id].status == MilestoneStatus.UNDER_REVIEW,
+            "Not submitted"
+        );
+
         bytes32 structHash = keccak256(
             abi.encode(APPROVAL_TYPEHASH, id, address(this))
         );
@@ -237,8 +249,20 @@ contract Tender {
         );
 
         for (uint i = 0; i < 4; i++) {
+            require(signatures[i].length == 65, "Invalid signature length");
+
             address signer = recover(digest, signatures[i]);
+
             require(!hasSigned[id][signer], "Duplicate");
+
+            require(
+                roles[signer] == Role.ON_SITE_ENGINEER ||
+                roles[signer] == Role.COMPLIANCE_OFFICER ||
+                roles[signer] == Role.FINANCIAL_AUDITOR ||
+                roles[signer] == Role.SANCTIONING_AUTHORITY,
+                "Invalid signer"
+            );
+
             hasSigned[id][signer] = true;
         }
 
