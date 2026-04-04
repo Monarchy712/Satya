@@ -113,16 +113,16 @@ export default function AdminDashboard() {
       const signer = await getSigner();
       const tender = getTenderContract(selection.tender.tender_address, signer);
       
-      // 1. Select Contractor
-      const txSelect = await tender.selectContractor(selection.contractor, BigInt(selection.amount));
+      // 1. Select Contractor AND Fund (now a single payable call)
+      const txSelect = await tender.selectContractor(
+        selection.contractor, 
+        BigInt(selection.amount),
+        { value: BigInt(selection.amount) }
+      );
+      setActionContext('finalizing'); // Update feedback from 'signing'
       await txSelect.wait();
       
-      // 2. Fund Contract (transfer winning bid amount)
-      setActionContext('funding');
-      const txFund = await tender.fundContract({ value: BigInt(selection.amount) });
-      await txFund.wait();
-
-      alert('Contractor Finalized & Tender Funded Successfully!');
+      alert('Contractor Finalized & Tender Activated Successfully!');
       setSelection({ show: false, tender: null, contractor: '', amount: '', note: '' });
       loadTenderData();
     } catch (err) {
