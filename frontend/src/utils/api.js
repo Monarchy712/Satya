@@ -67,7 +67,7 @@ export function listContractors() {
   return request('/api/contractors/list', { method: 'GET' });
 }
 
-export function validateReport(files) {
+export function validateReport(files, contractId = null) {
   const token = localStorage.getItem('satya_token');
   const formData = new FormData();
   
@@ -77,12 +77,17 @@ export function validateReport(files) {
     formData.append('files', file);
   });
 
+  const headers = {
+    'Authorization': `Bearer ${token}`
+  };
+
+  if (contractId) {
+    headers['contract-id'] = contractId;
+  }
+
   return request('/api/reports/validate', {
     method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      // 'Content-Type' should NOT be set manually for FormData to let the browser set the boundary
-    },
+    headers,
     body: formData,
   });
 }

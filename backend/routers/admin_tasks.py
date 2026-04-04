@@ -255,7 +255,9 @@ def save_tender_metadata(
             selection_note=payload.note,
             tender_name=payload.tender_name,
             tender_description=payload.tender_description,
-            created_by_dept=payload.created_by_dept
+            created_by_dept=payload.created_by_dept,
+            latitude=payload.latitude,
+            longitude=payload.longitude
         )
         db.add(meta)
     else:
@@ -267,6 +269,10 @@ def save_tender_metadata(
             meta.tender_description = payload.tender_description
         if payload.created_by_dept is not None:
             meta.created_by_dept = payload.created_by_dept
+        if payload.latitude is not None:
+            meta.latitude = payload.latitude
+        if payload.longitude is not None:
+            meta.longitude = payload.longitude
     
     db.commit()
     return {"message": "Metadata saved", "success": True}

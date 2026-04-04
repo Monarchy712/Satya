@@ -82,6 +82,8 @@ export default function AdminDashboard() {
     tenderName: '',
     tenderDescription: '',
     createdByDept: '',
+    latitude: '',
+    longitude: '',
     admins: ['', '', '', ''],
     startTime: new Date(Date.now() + 3600000).toISOString(), // 1 hour buffer
     endTime: new Date(Date.now() + 604800000).toISOString(), // 1 week buffer
@@ -167,7 +169,9 @@ export default function AdminDashboard() {
           tender_address: tenderAddress,
           tender_name: formData.tenderName,
           tender_description: formData.tenderDescription,
-          created_by_dept: formData.createdByDept
+          created_by_dept: formData.createdByDept,
+          latitude: formData.latitude ? parseFloat(formData.latitude) : null,
+          longitude: formData.longitude ? parseFloat(formData.longitude) : null
         })
       });
 
@@ -305,6 +309,23 @@ export default function AdminDashboard() {
                     <label className="admin-form__label">Tender Description</label>
                     <textarea className="admin-form__input" rows="3" placeholder="Provide a detailed description of the project..." value={formData.tenderDescription} onChange={(e) => setFormData({...formData, tenderDescription: e.target.value})} required></textarea>
                   </div>
+                </div>
+
+                <div className="admin-form__section">
+                  <h3 className="admin-form__section-title"><span className="admin-form__section-icon">📍</span> Geographic Constraints</h3>
+                  <div className="admin-form__grid">
+                    <div className="admin-form__field">
+                      <label className="admin-form__label">Site Latitude</label>
+                      <input type="number" step="any" className="admin-form__input" placeholder="e.g. 12.9716" value={formData.latitude} onChange={(e) => setFormData({...formData, latitude: e.target.value})} required />
+                    </div>
+                    <div className="admin-form__field">
+                      <label className="admin-form__label">Site Longitude</label>
+                      <input type="number" step="any" className="admin-form__input" placeholder="e.g. 77.5946" value={formData.longitude} onChange={(e) => setFormData({...formData, longitude: e.target.value})} required />
+                    </div>
+                  </div>
+                  <p className="admin-form__help-text" style={{fontSize: '0.75rem', color: 'var(--gray-500)', marginTop: '10px'}}>
+                    * Image submissions must be within 1km of these coordinates.
+                  </p>
                 </div>
 
                 <div className="admin-form__section">
