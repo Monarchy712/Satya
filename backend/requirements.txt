@@ -12,3 +12,4 @@ setuptools
 pillow
 requests
 python-multipart
+exifread
