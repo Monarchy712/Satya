@@ -108,6 +108,25 @@ function FolderTransferAnimation() {
   );
 }
 
+function TenderWritingAnimation() {
+  return (
+    <div className="lo-tender-anim-container">
+      <div className="lo-tender-doc">
+        {/* Document header/logo simulation */}
+        <div className="lo-tender-doc__header">
+          <div className="lo-tender-doc__seal"></div>
+        </div>
+        
+        {/* Lines appearing sequentially */}
+        <div className="lo-tender-line lo-tender-line--1"></div>
+        <div className="lo-tender-line lo-tender-line--2"></div>
+        <div className="lo-tender-line lo-tender-line--3"></div>
+        <div className="lo-tender-line lo-tender-line--4"></div>
+      </div>
+    </div>
+  );
+}
+
 export default function LoadingOverlay({
   active,
   context = 'generic',
@@ -163,6 +182,7 @@ export default function LoadingOverlay({
   
   // TRIGGER: Show folder animation for admin/backend contexts
   const showFolderAnim = context === 'admin' || context === 'backend';
+  const showTenderAnim = context === 'tenders';
 
   if (inline) {
     return (
@@ -171,6 +191,8 @@ export default function LoadingOverlay({
           <div className="lo-spinner-box">
             {showFolderAnim ? (
               <FolderTransferAnimation />
+            ) : showTenderAnim ? (
+              <TenderWritingAnimation />
             ) : (
               <div className="lo-spinner">
                 <svg className="lo-spinner__svg" viewBox="0 0 50 50">
@@ -202,6 +224,8 @@ export default function LoadingOverlay({
         <div className="lo-animation-area">
           {showFolderAnim ? (
             <FolderTransferAnimation />
+          ) : showTenderAnim ? (
+            <TenderWritingAnimation />
           ) : (
             <div className="lo-spinner lo-spinner--lg">
               <svg className="lo-spinner__svg" viewBox="0 0 50 50">
