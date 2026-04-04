@@ -2,7 +2,7 @@ from web3 import Web3
 import json
 
 w3 = Web3(Web3.HTTPProvider("https://eth-sepolia.g.alchemy.com/v2/Qq97YUiLlpEOjydTQA3QE"))
-factory_address = "0x557f0988F9cD626799eb35E4D0a1b4B7fC484B11"
+factory_address = "0xaad03A7F079b0eEeF31672Ae44eA9e51dAeb5EC4"
 
 # isGovernment ABI
 abi = [{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"isGovernment","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"}]

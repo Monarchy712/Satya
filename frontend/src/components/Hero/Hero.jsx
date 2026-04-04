@@ -28,10 +28,10 @@ export default function Hero({ stats }) {
           <span className="hero__title-sub">Transparency Ledger</span>
         </h1>
 
-        <p className="hero__description">
-          An open, immutable record of every government contract — who builds, what they build,
-          and how public money flows. <em>Truth in every transaction.</em>
-        </p>
+        <a href="#ledger" className="hero__cta">
+          <span>VIEW LEDGER</span>
+          <span className="hero__cta-arrow">↓</span>
+        </a>
 
         {/* Stats bar */}
         <div className="hero__stats">
@@ -72,10 +72,7 @@ export default function Hero({ stats }) {
           </div>
         </div>
 
-        <a href="#ledger" className="hero__cta">
-          <span>VIEW LEDGER</span>
-          <span className="hero__cta-arrow">↓</span>
-        </a>
+
       </div>
 
       {/* Retro terminal tape */}

@@ -226,15 +226,16 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-sm);
-  padding: 16px 32px;
+  padding: 18px 40px;
+  margin: var(--space-xl) 0 var(--space-2xl);
   background: linear-gradient(135deg, var(--pink-500), var(--pink-600));
   color: var(--white);
   font-family: var(--font-mono);
   font-weight: 700;
-  font-size: 1rem;
-  letter-spacing: 0.1em;
+  font-size: 1.1rem;
+  letter-spacing: 0.12em;
   border-radius: var(--radius-pill);
-  box-shadow: 0 8px 16px rgba(230, 57, 117, 0.3);
+  box-shadow: 0 10px 20px rgba(230, 57, 117, 0.3);
   transition: all var(--duration-medium) var(--ease-bounce);
   text-decoration: none;
 }

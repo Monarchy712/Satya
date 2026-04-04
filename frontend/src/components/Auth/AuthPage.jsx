@@ -172,34 +172,36 @@ export default function AuthPage() {
                 Enter your 12-digit Aadhaar number to receive a one-time password
               </p>
 
-              <div className="auth-input-group">
-                <label className="auth-label">Aadhaar Number</label>
-                <input
-                  id="aadhaar-input"
-                  className="auth-input"
-                  type="text"
-                  placeholder="XXXX XXXX XXXX"
-                  value={aadhaar}
-                  onChange={(e) => setAadhaar(formatAadhaar(e.target.value))}
-                  maxLength={14}
-                  autoFocus
-                />
-              </div>
+              <form onSubmit={handleSendOTP}>
+                <div className="auth-input-group">
+                  <label className="auth-label">Aadhaar Number</label>
+                  <input
+                    id="aadhaar-input"
+                    className="auth-input"
+                    type="text"
+                    placeholder="XXXX XXXX XXXX"
+                    value={aadhaar}
+                    onChange={(e) => setAadhaar(formatAadhaar(e.target.value))}
+                    maxLength={14}
+                    autoFocus
+                  />
+                </div>
 
-              {error && <div className="auth-error">{error}</div>}
+                {error && <div className="auth-error">{error}</div>}
 
-              <button
-                id="send-otp-btn"
-                className="auth-btn auth-btn--primary"
-                onClick={handleSendOTP}
-                disabled={loading}
-              >
-                {loading ? (
-                  <span className="auth-btn__spinner" />
-                ) : (
-                  <>Send OTP</>
-                )}
-              </button>
+                <button
+                  id="send-otp-btn"
+                  className="auth-btn auth-btn--primary"
+                  type="submit"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <span className="auth-btn__spinner" />
+                  ) : (
+                    <>Send OTP</>
+                  )}
+                </button>
+              </form>
 
               <div className="auth-divider">
                 <span>or verify as</span>
@@ -249,30 +251,32 @@ export default function AuthPage() {
                 A one-time password has been sent to the mobile number linked with your Aadhaar
               </p>
 
-              <div className="auth-input-group">
-                <label className="auth-label">One-Time Password</label>
-                <input
-                  id="otp-input"
-                  className="auth-input auth-input--otp"
-                  type="text"
-                  placeholder="• • • •"
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                  maxLength={4}
-                  autoFocus
-                />
-              </div>
+              <form onSubmit={handleVerifyOTP}>
+                <div className="auth-input-group">
+                  <label className="auth-label">One-Time Password</label>
+                  <input
+                    id="otp-input"
+                    className="auth-input auth-input--otp"
+                    type="text"
+                    placeholder="• • • •"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                    maxLength={4}
+                    autoFocus
+                  />
+                </div>
 
-              {error && <div className="auth-error">{error}</div>}
+                {error && <div className="auth-error">{error}</div>}
 
-              <button
-                id="verify-otp-btn"
-                className="auth-btn auth-btn--primary"
-                onClick={handleVerifyOTP}
-                disabled={loading}
-              >
-                {loading ? <span className="auth-btn__spinner" /> : <>Verify & Sign In</>}
-              </button>
+                <button
+                  id="verify-otp-btn"
+                  className="auth-btn auth-btn--primary"
+                  type="submit"
+                  disabled={loading}
+                >
+                  {loading ? <span className="auth-btn__spinner" /> : <>Verify & Sign In</>}
+                </button>
+              </form>
             </div>
           )}
 
@@ -304,21 +308,23 @@ export default function AuthPage() {
 
               {error && <div className="auth-error">{error}</div>}
 
-              <button
-                id="sign-message-btn"
-                className="auth-btn auth-btn--primary auth-btn--metamask"
-                onClick={handleWalletSign}
-                disabled={loading}
-              >
-                {loading ? (
-                  <span className="auth-btn__spinner" />
-                ) : (
-                  <>
-                    <span className="auth-btn__fox">🦊</span>
-                    Sign with MetaMask
-                  </>
-                )}
-              </button>
+              <form onSubmit={(e) => { e.preventDefault(); handleWalletSign(); }}>
+                <button
+                  id="sign-message-btn"
+                  className="auth-btn auth-btn--primary auth-btn--metamask"
+                  type="submit"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <span className="auth-btn__spinner" />
+                  ) : (
+                    <>
+                      <span className="auth-btn__fox">🦊</span>
+                      Sign with MetaMask
+                    </>
+                  )}
+                </button>
+              </form>
             </div>
           )}
         </div>
