@@ -486,6 +486,13 @@ def get_tender_details(tender_address: str) -> dict:
             "sanctioning_authority": admins[3],
         }
 
+        # REAL CONTRACT ETH BALANCE
+        try:
+            wei_balance = w3.eth.get_balance(tender_address)
+            data["balance"] = str(round(float(w3.from_wei(wei_balance, 'ether')), 4))
+        except Exception:
+            data["balance"] = "0"
+
         # 3. MAP BIDS
         data["bids"] = [{"bidder": b[0], "amount": str(b[1])} for b in bids_raw]
 
