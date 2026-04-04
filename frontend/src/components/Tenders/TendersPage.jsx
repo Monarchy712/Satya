@@ -140,27 +140,31 @@ export default function TendersPage() {
 
              <div className="tenders-card__cta">
                {isBiddingActive && isContractor ? (
-                 <div style={{display:'flex', flexDirection:'column', gap:'10px'}}>
-                    <div style={{display:'flex', gap:'10px'}}>
-                      <input 
-                        type="number" 
-                        className="admin-form__input"
-                        style={{flex:1}}
-                        value={bidAmount} 
-                        onChange={e => setBidAmount(e.target.value)} 
-                        placeholder="Enter bid amount (Wei)" 
-                      />
-                      <button 
-                        className="admin-header__back" 
-                        style={{background:'var(--pink-600)', color:'white', border:'none', padding:'0 20px'}}
-                        onClick={() => handlePlaceBid(t.address)} 
-                        disabled={bidding}
-                      >
-                        {bidding ? 'Signing...' : 'Submit Bid'}
-                      </button>
-                    </div>
+                  <div style={{display:'flex', flexDirection:'column', gap:'10px'}}>
+                    <input 
+                      type="number" 
+                      className="admin-form__input"
+                      value={bidAmount} 
+                      onChange={e => setBidAmount(e.target.value)} 
+                      placeholder="Enter bid amount (Wei)" 
+                    />
+                    <button 
+                      className="admin-header__back" 
+                      style={{
+                        background:'var(--pink-600)', 
+                        color:'white', 
+                        border:'none', 
+                        padding:'12px 20px',
+                        width: '100%',
+                        cursor: bidding ? 'not-allowed' : 'pointer'
+                      }}
+                      onClick={() => handlePlaceBid(t.address)} 
+                      disabled={bidding}
+                    >
+                      {bidding ? 'Signing...' : 'Submit Bid'}
+                    </button>
                     {txStatus && <p style={{fontSize:'0.8rem', color:'var(--pink-700)', fontWeight:'500'}}>{txStatus}</p>}
-                 </div>
+                  </div>
                ) : (
                  <div style={{padding:'15px', background: isAwaitingSelection ? 'var(--pink-50)' : 'var(--gray-50)', borderRadius:'4px', border: isAwaitingSelection ? '1px solid var(--pink-200)' : 'none'}}>
                     <p style={{fontSize:'0.85rem', color: isAwaitingSelection ? 'var(--pink-700)' : 'var(--gray-500)', fontWeight:'500'}}>
