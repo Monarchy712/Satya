@@ -325,6 +325,125 @@
 		"type": "function"
 	},
 	{
+		"inputs": [],
+		"name": "getTenderData",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "enum Tender.TenderStatus",
+						"name": "status",
+						"type": "uint8"
+					},
+					{
+						"internalType": "address",
+						"name": "contractor",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "winningBid",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "totalFunds",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "currentMilestone",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "startTime",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "endTime",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "biddingEndTime",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "retainedPercent",
+						"type": "uint256"
+					}
+				],
+				"internalType": "struct Tender.TenderView",
+				"name": "tenderData",
+				"type": "tuple"
+			},
+			{
+				"internalType": "address[4]",
+				"name": "adminList",
+				"type": "address[4]"
+			},
+			{
+				"components": [
+					{
+						"internalType": "address",
+						"name": "bidder",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					}
+				],
+				"internalType": "struct Tender.BidView[]",
+				"name": "allBids",
+				"type": "tuple[]"
+			},
+			{
+				"components": [
+					{
+						"internalType": "string",
+						"name": "name",
+						"type": "string"
+					},
+					{
+						"internalType": "uint256",
+						"name": "percentage",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "deadline",
+						"type": "uint256"
+					},
+					{
+						"internalType": "enum Tender.MilestoneStatus",
+						"name": "status",
+						"type": "uint8"
+					},
+					{
+						"internalType": "bool",
+						"name": "isExecuted",
+						"type": "bool"
+					},
+					{
+						"internalType": "uint256",
+						"name": "signedCount",
+						"type": "uint256"
+					}
+				],
+				"internalType": "struct Tender.MilestoneView[]",
+				"name": "allMilestones",
+				"type": "tuple[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
 		"inputs": [
 			{
 				"internalType": "address",

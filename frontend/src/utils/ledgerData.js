@@ -8,86 +8,58 @@ function formatDate(ts) {
 
 export async function getUnifiedLedgerData() {
   try {
-    const provider = getProvider();
-    const factory = getFactoryContract(provider);
+    // 1. Fetch data from backend (Single trip for everything)
+    const [contractorsRes, tendersRes] = await Promise.all([
+      fetch('http://localhost:8000/api/contractors/list'),
+      fetch('http://localhost:8000/api/tenders/list')
+    ]);
+
+    if (!contractorsRes.ok || !tendersRes.ok) throw new Error('Backend aggregation layer unavailable');
     
-    // 1. Fetch real contractors from backend
-    const res = await fetch('http://localhost:8000/api/contractors/list');
-    if (!res.ok) throw new Error('Backend unavailable');
-    const realContractorsRes = await res.json();
+    const realContractorsRes = await contractorsRes.json();
+    const allTenders = await tendersRes.json();
     
-    // 2. Fetch all tenders from blockchain
-    const tenderMetas = await factory.getAllTenders();
-    
-    // 3. Map real contractors to their on-chain projects
-    const realContractors = await Promise.all(realContractorsRes.map(async (rc) => {
-      const myTenders = [];
+    // 2. Map real contractors to their on-chain projects (In-memory)
+    const realContractors = realContractorsRes.map((rc) => {
       const wallet = rc.wallet_address.toLowerCase();
       
-      await Promise.all(tenderMetas.map(async (meta) => {
-        try {
-          const tender = getTenderContract(meta.tender, provider);
-          const [contractorAddr, statusNum, bids] = await Promise.all([
-            tender.contractor(),
-            tender.tenderStatus(),
-            tender.getAllBids()
-          ]);
-          
-          const status = TENDER_STATUS[Number(statusNum)].toLowerCase();
-          
-          // Case A: Contractor WON or project is ACTIVE
-          if (contractorAddr.toLowerCase() === wallet && status !== 'bidding') {
-            const currentIdx = await tender.currentMilestone();
-            const milestone = await tender.getMilestone(currentIdx);
-            
-            myTenders.push({
-              id: meta.tender.slice(0, 10),
-              title: `Project ${meta.tender.slice(0, 8)}`,
-              status: status,
-              department: 'Public Works Department',
-              startDate: formatDate(meta.startTime),
-              expectedEnd: formatDate(meta.endTime),
-              budget: 0,
-              spent: 0,
-              description: 'Live blockchain contract data.',
-              milestones: [{ 
-                name: milestone.name, 
-                status: ['PENDING', 'UNDER_REVIEW', 'APPROVED'][Number(milestone.status)], 
-                date: formatDate(milestone.deadline)
-              }],
-              location: rc.location || 'Unknown',
-              address: meta.tender
-            });
-          }
-          // Case B: Currently BIDDING and is in Top 3
-          else if (status === 'bidding') {
-            const sortedBids = [...bids].sort((a, b) => Number(a.amount) - Number(b.amount));
-            const top3 = sortedBids.slice(0, 3);
-            const myRankIdx = top3.findIndex(b => b.bidder.toLowerCase() === wallet);
-            
-            const now = Math.floor(Date.now() / 1000);
-            if (myRankIdx !== -1 && now >= Number(meta.biddingEndTime)) {
-              myTenders.push({
-                id: meta.tender.slice(0, 10),
-                title: `Tender ${meta.tender.slice(0, 8)}`,
-                status: 'bidding',
-                shortlisted: true,
-                rank: myRankIdx + 1,
-                department: 'Public Works Department',
-                startDate: formatDate(meta.startTime),
-                expectedEnd: formatDate(meta.endTime),
-                description: `Finalist: Ranked #${myRankIdx + 1} in competitive bidding.`,
-                milestones: [],
-                location: rc.location || 'India',
-                address: meta.tender
-              });
-            }
-
-          }
-        } catch (e) {
-          console.warn('Tender mapping error:', e);
+      // Filter the pre-aggregated tenders for this specific contractor
+      const myTenders = allTenders.filter(t => {
+        const isOwner = t.contractor.toLowerCase() === wallet;
+        const isAdmin = [
+          t.on_site_engineer, t.compliance_officer, 
+          t.financial_auditor, t.sanctioning_authority
+        ].some(addr => addr.toLowerCase() === wallet);
+        
+        return isOwner || isAdmin;
+      }).map(t => {
+        const status = t.status.toLowerCase();
+        
+        // Find current milestone info if active
+        let milestones = [];
+        if (status === 'active' || status === 'completed') {
+           milestones = t.milestones.map(m => ({
+              name: m.name,
+              status: m.status,
+              date: formatDate(m.deadline)
+           }));
         }
-      }));
+
+        return {
+          id: t.tender_address.slice(0, 10),
+          title: `Project ${t.tender_address.slice(0, 8)}`,
+          status: status,
+          department: 'Public Works Department',
+          startDate: formatDate(t.start_time),
+          expectedEnd: formatDate(t.end_time),
+          budget: Number(t.winning_bid) || 0,
+          spent: Number(t.total_funds) || 0,
+          description: 'Verified Blockchain Ledger Data.',
+          milestones: milestones,
+          location: rc.location || 'India',
+          address: t.tender_address
+        };
+      });
 
       return {
         id: rc.registration_id || rc.id,
@@ -96,17 +68,18 @@ export async function getUnifiedLedgerData() {
         registrationDate: rc.created_at || '2026-01-01',
         rating: rc.trust_score / 20 || 4.5,
         totalContracts: myTenders.length,
-        activeContracts: myTenders.filter(t => t.status === 'active' || t.status === 'ongoing').length,
+        activeContracts: myTenders.filter(t => t.status === 'active').length,
         location: rc.location || 'India',
         licenseNo: rc.license_no || 'P-VERIFIED',
         contracts: myTenders,
         isReal: true
       };
-    }));
+    });
 
     return [...realContractors, ...syntheticContractors];
   } catch (err) {
-    console.warn('Fallback to synthetic data:', err);
+    console.warn('[Satya] High-speed sync failed, using synthetic fallback:', err);
     return syntheticContractors;
   }
 }
+
