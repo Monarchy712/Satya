@@ -58,3 +58,56 @@
 @keyframes fsSpin {
   to { transform: rotate(360deg); }
 }
+
+/* ── Wallet Animation ── */
+.fs-loader-wallet-anim {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--teal);
+  margin-bottom: 5px;
+}
+
+.fs-wallet-icon {
+  animation: walletBounce 1.5s ease-in-out infinite;
+  z-index: 2;
+}
+
+.fs-coin {
+  position: absolute;
+  font-size: 1.5rem;
+  color: var(--gold);
+  pointer-events: none;
+  opacity: 0;
+  z-index: 1;
+}
+
+.fs-coin-1 { animation: coinDrop 2s ease-in-out infinite; }
+.fs-coin-2 { animation: coinDrop 2s ease-in-out infinite 0.7s; }
+.fs-coin-3 { animation: coinDrop 2s ease-in-out infinite 1.4s; }
+
+@keyframes walletBounce {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-5px) scale(1.02); }
+}
+
+@keyframes coinDrop {
+  0% {
+    transform: translate(30px, -70px) scale(0.5) rotate(0deg);
+    opacity: 0;
+  }
+  25% {
+    opacity: 1;
+  }
+  75% {
+    transform: translate(0, -10px) scale(1.2) rotate(180deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-10px, 10px) scale(0.8) rotate(360deg);
+    opacity: 0;
+  }
+}
