@@ -68,7 +68,22 @@ export default function OversightDashboard() {
           const mStatusNum = Number(milestone.status);
 
           // Check if this user already signed (mapping: hasSigned[id][user])
-          const alreadySigned = await tender.hasSigned(mIdx, user.wallet);
+          const onchainSigned = await tender.hasSigned(mIdx, user.wallet);
+
+          let offchainSigned = false;
+          try {
+            const hasSignedRes = await fetch(
+              `http://localhost:8000/api/committee/has-signed?tender_address=${tAddr}&milestone_id=${mIdx}`,
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+            if (hasSignedRes.ok) {
+              offchainSigned = await hasSignedRes.json();
+            }
+          } catch {
+            // Ignore
+          }
+
+          const alreadySigned = onchainSigned || offchainSigned;
 
           // Get signature count from backend
           let sigCount = 0;
@@ -312,7 +327,7 @@ export default function OversightDashboard() {
                           onClick={() => handleSign(t.address, t.currentMilestone)}
                           disabled={signing}
                         >
-                          🖋️ Sign & Approve
+                          Sign & Approve
                         </button>
                       )
                     ) : t.milestoneStatusNum === 2 ? (
