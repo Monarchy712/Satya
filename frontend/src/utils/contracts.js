@@ -119,8 +119,8 @@ export async function submitDispute(signer, tenderAddress, milestoneId, reason) 
   return tx.wait();
 }
 
-export async function castDisputeVote(signer, tenderAddress, supportGovernment) {
+export async function castDisputeVote(signer, tenderAddress, choice) {
   const tender = getTenderContract(tenderAddress, signer);
-  const tx = await tender.vote(supportGovernment, { gasLimit: 300000 });
+  const tx = await tender.vote(choice, { gasLimit: 300000 });
   return tx.wait();
 }

@@ -121,6 +121,7 @@ contract Tender {
         address[] voters;
         uint256 votesForGov;
         uint256 votesForContractor;
+        uint256 votesForNone;
         bool resolved;
     }
 
@@ -476,63 +477,26 @@ contract Tender {
         for (uint i = 0; i < c.length; i++) pool[k++] = c[i];
         for (uint i = 0; i < d.length; i++) pool[k++] = d[i];
 
-        require(pool.length >= 3, "Not enough voters");
-
-        uint n;
-
-        if (pool.length <= 11) {
-            n = (pool.length % 2 == 0) ? pool.length - 1 : pool.length;
-        } else {
-            n = 11;
-        }
-
-        address[] memory voters = new address[](n);
-
-        uint selected = 0;
-        uint nonce = 0;
-
-        while (selected < n) {
-            uint rand = uint(
-                keccak256(
-                    abi.encodePacked(block.timestamp, block.prevrandao, nonce++)
-                )
-            ) % pool.length;
-
-            address candidate = pool[rand];
-            
-            bool alreadyPicked = false;
-            for (uint i = 0; i < selected; i++) {
-                if (voters[i] == candidate) {
-                    alreadyPicked = true;
-                    break;
-                }
-            }
-
-            if (!alreadyPicked) {
-                voters[selected++] = candidate;
-            }
-        }
-
         dispute = Dispute({
             milestoneId: milestoneId,
             reason: reason,
-            voters: voters,
+            voters: pool,
             votesForGov: 0,
             votesForContractor: 0,
+            votesForNone: 0,
             resolved: false
         });
 
-        // 🔥 RESET votes mapping
-        for (uint i = 0; i < voters.length; i++) {
-            hasVoted[voters[i]] = false;
+        // 🔥 RESET votes mapping for the entire pool
+        for (uint i = 0; i < pool.length; i++) {
+            hasVoted[pool[i]] = false;
         }
     }
 
-    function vote(bool supportGovernment) external {
+    function vote(uint8 choice) external {
         require(!dispute.resolved, "Resolved");
 
         bool isVoter = false;
-
         for (uint i = 0; i < dispute.voters.length; i++) {
             if (dispute.voters[i] == msg.sender) {
                 isVoter = true;
@@ -545,46 +509,61 @@ contract Tender {
 
         hasVoted[msg.sender] = true;
 
-        if (supportGovernment) {
+        if (choice == 0) {
             dispute.votesForGov++;
-        } else {
+        } else if (choice == 1) {
             dispute.votesForContractor++;
+        } else if (choice == 2) {
+            dispute.votesForNone++;
+        } else {
+            revert("Invalid choice");
         }
 
-        uint totalVotes = dispute.votesForGov + dispute.votesForContractor;
+        uint totalVotes = dispute.votesForGov +
+            dispute.votesForContractor +
+            dispute.votesForNone;
 
-        if (totalVotes == dispute.voters.length) {
+        if (totalVotes >= 3) {
             _resolveDispute();
         }
     }
+
     function _resolveDispute() internal {
         dispute.resolved = true;
 
-        if (dispute.votesForGov > dispute.votesForContractor) {
+        if (
+            dispute.votesForGov > dispute.votesForContractor &&
+            dispute.votesForGov > dispute.votesForNone
+        ) {
             // Government wins → full refund
             (bool sent, ) = payable(tenderOwner).call{
                 value: address(this).balance
             }("");
             require(sent, "Refund failed");
-        } else {
+            tenderStatus = TenderStatus.VOID;
+        } else if (
+            dispute.votesForContractor > dispute.votesForGov &&
+            dispute.votesForContractor > dispute.votesForNone
+        ) {
             // Contractor wins → milestone payout
             Milestone storage m = milestones[dispute.milestoneId];
-
             uint payout = (winningBid * m.percentage) / 100;
 
             (bool sent1, ) = contractor.call{value: payout}("");
             require(sent1, "Contractor payment failed");
 
             uint remaining = address(this).balance;
-
             if (remaining > 0) {
                 (bool sent2, ) = payable(tenderOwner).call{value: remaining}(
                     ""
                 );
                 require(sent2, "Gov refund failed");
             }
+            tenderStatus = TenderStatus.VOID;
+        } else {
+            // None wins or Tie → Reset to ACTIVE, Dismiss dispute
+            milestones[dispute.milestoneId].status = MilestoneStatus.PENDING;
+            tenderStatus = TenderStatus.ACTIVE;
         }
-
-        tenderStatus = TenderStatus.VOID;
     }
 }

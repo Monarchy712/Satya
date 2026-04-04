@@ -152,7 +152,8 @@ export default function OversightDashboard() {
                  reason: dState[1],
                  votesForGov: Number(dState[2]),
                  votesForContractor: Number(dState[3]),
-                 resolved: dState[4],
+                 votesForNone: Number(dState[4]),
+                 resolved: dState[5],
                  isVoter,
                  hasVoted
                };
@@ -290,13 +291,13 @@ export default function OversightDashboard() {
     }
   }
 
-  async function handleVote(tenderAddr, supportGov) {
+  async function handleVote(tenderAddr, choice) {
     setSigning(true);
     setToast('');
     setError('');
     try {
       const signer = await getSigner();
-      await castDisputeVote(signer, tenderAddr, supportGov);
+      await castDisputeVote(signer, tenderAddr, choice);
       setToast('Vote cast successfully!');
       loadData();
     } catch(err) {
@@ -422,26 +423,28 @@ export default function OversightDashboard() {
                        <div className="oversight-dispute-panel" style={{ width: '100%', marginTop: '10px', padding: '10px', background: 'rgba(255,0,0,0.1)', border: '1px solid var(--pink-600)', borderRadius: '6px' }}>
                           <h4 style={{ color: 'var(--pink-500)', marginBottom: '8px' }}>🚨 Active Dispute</h4>
                           <p style={{ fontSize: '0.8rem', marginBottom: '10px' }}><strong>Reason:</strong> {t.dispute.reason}</p>
-                          <div style={{ display: 'flex', gap: '15px', fontSize: '0.8rem', marginBottom: '10px' }}>
+                          <div style={{ display: 'flex', gap: '15px', fontSize: '0.8rem', marginBottom: '10px', flexWrap: 'wrap' }}>
                             <span><strong>Gov Votes:</strong> {t.dispute.votesForGov}</span>
                             <span><strong>Contractor Votes:</strong> {t.dispute.votesForContractor}</span>
+                            <span><strong>Neutral Votes:</strong> {t.dispute.votesForNone}</span>
                           </div>
-                          {!t.dispute.resolved && t.dispute.isVoter && !t.dispute.hasVoted && (
-                            <div style={{ display: 'flex', gap: '10px' }}>
-                              <button className="oversight-card__btn" style={{ flex: 1, backgroundColor: '#3498db', borderColor: '#3498db', fontSize: '0.8rem', padding: '8px' }} onClick={() => handleVote(t.address, true)} disabled={signing}>
-                                Vote Government <br/><small>(Void & Refund Gov)</small>
+                          <p style={{fontSize:'0.7rem', color:'var(--pink-400)', marginBottom:'10px'}}>
+                            <strong>Rule:</strong> First 3 votes from the committee pool will resolve the dispute.
+                          </p>
+                          {!t.dispute.resolved && !t.dispute.hasVoted && (
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                              <button className="oversight-card__btn" style={{ flex: 1, backgroundColor: '#3498db', borderColor: '#3498db', fontSize: '0.72rem', padding: '10px 5px' }} onClick={() => handleVote(t.address, 0)} disabled={signing}>
+                                Vote Government <br/><small>(Refund Gov)</small>
                               </button>
-                              <button className="oversight-card__btn oversight-card__btn--execute" style={{ flex: 1, fontSize: '0.8rem', padding: '8px' }} onClick={() => handleVote(t.address, false)} disabled={signing}>
-                                Vote Contractor <br/><small>(Pay Phase & Void)</small>
+                              <button className="oversight-card__btn oversight-card__btn--execute" style={{ flex: 1, fontSize: '0.72rem', padding: '10px 5px' }} onClick={() => handleVote(t.address, 1)} disabled={signing}>
+                                Vote Contractor <br/><small>(Final Payout)</small>
+                              </button>
+                              <button className="oversight-card__btn" style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.1)', borderColor: 'var(--gray-500)', fontSize: '0.72rem', padding: '10px 5px' }} onClick={() => handleVote(t.address, 2)} disabled={signing}>
+                                Neutral / Dismiss <br/><small>(Continue Project)</small>
                               </button>
                             </div>
                           )}
-                          {!t.dispute.resolved && !t.dispute.isVoter && (
-                            <div className="oversight-card__status oversight-card__status--waiting" style={{ color: 'var(--gray-400)', borderColor: 'var(--gray-600)' }}>
-                              You are not in the randomly selected arbitration jury.
-                            </div>
-                          )}
-                          {!t.dispute.resolved && t.dispute.isVoter && t.dispute.hasVoted && (
+                          {!t.dispute.resolved && t.dispute.hasVoted && (
                              <div className="oversight-card__status oversight-card__status--signed">Vote Submitted ✓</div>
                           )}
                           {t.dispute.resolved && (

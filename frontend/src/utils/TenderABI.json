@@ -260,6 +260,11 @@
 				"type": "uint256"
 			},
 			{
+				"internalType": "uint256",
+				"name": "votesForNone",
+				"type": "uint256"
+			},
+			{
 				"internalType": "bool",
 				"name": "resolved",
 				"type": "bool"
@@ -772,9 +777,9 @@
 	{
 		"inputs": [
 			{
-				"internalType": "bool",
-				"name": "supportGovernment",
-				"type": "bool"
+				"internalType": "uint8",
+				"name": "choice",
+				"type": "uint8"
 			}
 		],
 		"name": "vote",
