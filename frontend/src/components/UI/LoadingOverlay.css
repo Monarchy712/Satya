@@ -6,15 +6,15 @@
 .lo-overlay {
   position: fixed;
   inset: 0;
-  z-index: 10000;
+  z-index: 10005; /* higher than the modal overlay (10001) */
   display: flex;
   align-items: center;
   justify-content: center;
   background: rgba(254, 232, 217, 0.88);
-  backdrop-filter: blur(12px) saturate(1.4);
-  -webkit-backdrop-filter: blur(12px) saturate(1.4);
+  backdrop-filter: blur(8px); /* simplified for stability */
+  -webkit-backdrop-filter: blur(8px);
   opacity: 0;
-  transition: opacity 0.35s var(--ease-out);
+  transition: opacity 0.3s var(--ease-out);
   pointer-events: none;
 }
 

@@ -1,32 +1,40 @@
+/* ===================================================================
+   ReportModal — Citizen Transparency Report
+   CRITICAL: No backdrop-filter here. The grain overlay (body::before z-index:9999)
+   causes continuous GPU recompositing on mouse-move when combined with blur().
+   Instead we use a fully opaque background to block the grain entirely.
+   =================================================================== */
+
 .report-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(254, 232, 217, 0.75); /* cream semi-transparent */
-  backdrop-filter: blur(12px) saturate(1.2);
-  -webkit-backdrop-filter: blur(12px) saturate(1.2);
-  z-index: 10000;
+  /* Fully opaque cream — no backdrop-filter, no flicker */
+  background: #fee8d9;
+  z-index: 10001;
   display: flex;
-  align-items: center;
+  align-items: stretch;
   justify-content: center;
-  padding: var(--space-md);
-  animation: fadeIn 0.3s ease;
+  padding: 0;
+  /* Simple opacity fade — no transforms to avoid composite layer thrashing */
+  animation: modalFadeIn 0.25s ease-out both;
 }
 
 .report-modal {
   background: var(--white);
-  border: 1px solid var(--pink-100);
-  border-radius: var(--radius-2xl);
-  padding: var(--space-2xl);
+  border-left: 1px solid var(--pink-100);
+  border-right: 1px solid var(--pink-100);
+  border-radius: 0;
+  padding: var(--space-2xl) var(--space-2xl) var(--space-lg);
   width: 100%;
   max-width: 580px;
-  max-height: 90vh;
+  height: 100vh;
   overflow-y: auto;
-  box-shadow: var(--shadow-xl);
+  box-shadow: -8px 0 30px rgba(0,0,0,0.06), 8px 0 30px rgba(0,0,0,0.06);
   display: flex;
   flex-direction: column;
-  gap: var(--space-xl);
   position: relative;
-  animation: fadeInUp 0.5s var(--ease-out);
+  /* No transform-based animation — just opacity */
+  animation: modalFadeIn 0.3s ease-out both;
 }
 
 .report-modal--success {
@@ -56,6 +64,8 @@
   display: flex;
   gap: var(--space-md);
   align-items: center;
+  flex-shrink: 0;
+  margin-bottom: var(--space-lg);
 }
 
 .report-modal__icon {
@@ -97,12 +107,15 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-lg);
+  flex: 1;
+  min-height: 0; /* allow flex children to shrink */
 }
 
 .report-modal__section {
   display: flex;
   flex-direction: column;
   gap: var(--space-sm);
+  flex-shrink: 0;
 }
 
 .report-modal__label-row {
@@ -152,7 +165,7 @@
   font-family: var(--font-mono);
   font-size: 0.85rem;
   font-weight: 600;
-  transition: all 0.3s var(--ease-out);
+  transition: background 0.2s ease, border-color 0.2s ease;
 }
 
 .report-modal__file-input:hover + .report-modal__file-trigger {
@@ -192,7 +205,7 @@
   font-size: 0.95rem;
   color: var(--gray-800);
   resize: none;
-  transition: all 0.3s var(--ease-out);
+  transition: border-color 0.2s ease, background 0.2s ease;
 }
 
 .report-modal__textarea:focus {
@@ -212,6 +225,39 @@
   font-family: var(--font-mono);
   font-size: 0.8rem;
   line-height: 1.4;
+  word-break: break-word; /* prevent long error messages from overflowing */
+}
+
+/* ── Inline Status Banner (replaces the full-screen overlay during analysis) ── */
+.report-modal__status-banner {
+  padding: var(--space-md) var(--space-lg);
+  background: var(--pink-50);
+  border: 1px solid var(--pink-200);
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex-shrink: 0;
+  animation: modalFadeIn 0.3s ease-out both;
+}
+
+.report-modal__status-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2.5px solid var(--pink-200);
+  border-top-color: var(--pink-700);
+  border-radius: 50%;
+  animation: statusSpin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+.report-modal__status-text {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--pink-800);
+  word-break: break-word;
+  line-height: 1.4;
 }
 
 .report-modal__submit {
@@ -225,16 +271,17 @@
   font-weight: 800;
   font-size: 1.1rem;
   cursor: pointer;
-  transition: all 0.3s var(--ease-out);
+  transition: background 0.2s ease, box-shadow 0.2s ease;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 12px;
+  flex-shrink: 0;
+  margin-top: auto; /* push to bottom of flex container */
 }
 
 .report-modal__submit:hover:not(:disabled) {
-  transform: translateY(-2px);
   background: var(--gray-900);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
 }
@@ -251,6 +298,8 @@
   flex-direction: column;
   align-items: center;
   gap: var(--space-md);
+  flex: 1;
+  justify-content: center;
 }
 
 .report-modal__success-icon {
@@ -264,7 +313,7 @@
   justify-content: center;
   font-size: 2rem;
   box-shadow: 0 0 20px rgba(78, 205, 196, 0.4);
-  animation: pulse 2s infinite;
+  animation: successPulse 2s infinite;
 }
 
 .report-modal__success-msg h3 {
@@ -284,6 +333,8 @@
 .report-modal__footer {
   padding-top: var(--space-md);
   border-top: 1px solid var(--pink-50);
+  flex-shrink: 0;
+  margin-top: var(--space-md);
 }
 
 .report-modal__footer p {
@@ -295,6 +346,21 @@
 
 .report-modal__footer strong {
   color: var(--pink-700);
+}
+
+/* ── Animations ── */
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes statusSpin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes successPulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 20px rgba(78, 205, 196, 0.4); }
+  50%      { opacity: 0.85; box-shadow: 0 0 30px rgba(78, 205, 196, 0.6); }
 }
 
 /* Scrollbar adjustment */

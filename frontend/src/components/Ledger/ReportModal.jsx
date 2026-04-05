@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { submitReport, validateReport } from '../../utils/api';
-import LoadingOverlay from '../UI/LoadingOverlay';
 import LoadingSpinner from '../UI/LoadingSpinner';
 import './ReportModal.css';
 
@@ -22,6 +21,12 @@ export default function ReportModal({ contract, onClose }) {
   useEffect(() => {
     return () => previews.forEach(url => URL.revokeObjectURL(url));
   }, [previews]);
+
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, []);
 
   const handleFileChange = (e) => {
     const selectedFiles = Array.from(e.target.files);
@@ -100,6 +105,7 @@ export default function ReportModal({ contract, onClose }) {
           setError(`Neural Verification Rejected: ${mlResult.message}`);
         }
         setIsSubmitting(false);
+        setStatus('');
         return;
       }
 
@@ -111,6 +117,7 @@ export default function ReportModal({ contract, onClose }) {
       for (let i = 0; i < files.length; i++) {
         const ext = files[i].name.split(".").pop() || "jpg";
         const fileName = `${timestamp}_${i + 1}.${ext}`;
+        setStatus(`Uploading evidence ${i + 1}/${files.length}...`);
         const cid = await uploadFile(files[i], fileName);
         
         imagesData.push({
@@ -131,7 +138,7 @@ export default function ReportModal({ contract, onClose }) {
       };
       
       const finalCID = await uploadJSON(reportData, `${timestamp}.json`);
-      setStatus("Commiting to Satya Blockchain...");
+      setStatus("Committing to Satya Blockchain...");
 
       // 3. Submit to backend
       await submitReport(contract.id, finalCID, mlResult.score);
@@ -149,9 +156,10 @@ export default function ReportModal({ contract, onClose }) {
   };
 
   return (
-    <div className="report-modal-overlay">
-      <LoadingOverlay active={isSubmitting} context="citizen_report" message={status} />
-      
+    <div className="report-modal-overlay" onClick={(e) => {
+      // Close on overlay click (not on modal content)
+      if (e.target === e.currentTarget && !isSubmitting) onClose();
+    }}>
       <div className={`report-modal ${success ? 'report-modal--success' : ''}`}>
         <button 
           className="report-modal__close" 
@@ -216,6 +224,14 @@ export default function ReportModal({ contract, onClose }) {
                 rows={4}
               />
             </div>
+
+            {/* Inline status banner — replaces full-screen LoadingOverlay */}
+            {status && (
+              <div className="report-modal__status-banner">
+                <div className="report-modal__status-spinner" />
+                <span className="report-modal__status-text">{status}</span>
+              </div>
+            )}
 
             {error && <div className="report-modal__error">⚠️ {error}</div>}
 
