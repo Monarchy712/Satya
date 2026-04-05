@@ -28,8 +28,11 @@ export default function Hero({ stats }) {
           <span className="hero__title-sub">Transparency Ledger</span>
         </h1>
 
-        <button className="hero__cta" onClick={() => {
-          document.getElementById('ledger-view')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        <button type="button" className="hero__cta" onClick={() => {
+          const el = document.getElementById('ledger-view');
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
         }}>
           <span>VIEW LEDGER</span>
           <span className="hero__cta-arrow">↓</span>

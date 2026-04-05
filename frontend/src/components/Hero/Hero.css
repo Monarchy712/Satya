@@ -234,6 +234,8 @@
   font-weight: 700;
   font-size: 1.1rem;
   letter-spacing: 0.12em;
+  border: none;
+  cursor: pointer;
   border-radius: var(--radius-pill);
   box-shadow: 0 10px 20px rgba(230, 57, 117, 0.3);
   transition: all var(--duration-medium) var(--ease-bounce);
