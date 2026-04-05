@@ -1,40 +1,35 @@
-/* ===================================================================
-   ReportModal — Citizen Transparency Report
-   CRITICAL: No backdrop-filter here. The grain overlay (body::before z-index:9999)
-   causes continuous GPU recompositing on mouse-move when combined with blur().
-   Instead we use a fully opaque background to block the grain entirely.
-   =================================================================== */
-
 .report-modal-overlay {
   position: fixed;
   inset: 0;
-  /* Fully opaque cream — no backdrop-filter, no flicker */
-  background: #fee8d9;
-  z-index: 10001;
+  background: rgba(26, 21, 18, 0.45); /* slightly darker tint for focus */
+  backdrop-filter: none; /* disabled to prevent flicker conflicts with navbar */
+  -webkit-backdrop-filter: none;
+  z-index: 100000; /* Extremely high to stay above EVERYTHING */
   display: flex;
-  align-items: stretch;
-  justify-content: center;
-  padding: 0;
-  /* Simple opacity fade — no transforms to avoid composite layer thrashing */
-  animation: modalFadeIn 0.25s ease-out both;
+  align-items: center; /* vertical center */
+  justify-content: center; /* horizontal center */
+  padding: var(--space-md);
+  animation: modalOverlayFade 0.25s ease-out both;
+  will-change: opacity;
 }
 
 .report-modal {
   background: var(--white);
-  border-left: 1px solid var(--pink-100);
-  border-right: 1px solid var(--pink-100);
-  border-radius: 0;
-  padding: var(--space-2xl) var(--space-2xl) var(--space-lg);
-  width: 100%;
-  max-width: 580px;
-  height: 100vh;
+  border: 1px solid var(--pink-100);
+  border-radius: var(--radius-xl);
+  padding: var(--space-xl) var(--space-xl) var(--space-lg);
+  width: 95%;
+  max-width: 520px;
+  max-height: 85vh; /* focused card height */
   overflow-y: auto;
-  box-shadow: -8px 0 30px rgba(0,0,0,0.06), 8px 0 30px rgba(0,0,0,0.06);
+  box-shadow: 
+    0 20px 50px rgba(0, 0, 0, 0.15),
+    0 0 0 1px rgba(164, 183, 120, 0.1);
   display: flex;
   flex-direction: column;
   position: relative;
-  /* No transform-based animation — just opacity */
-  animation: modalFadeIn 0.3s ease-out both;
+  animation: modalContentPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  will-change: transform, opacity;
 }
 
 .report-modal--success {
@@ -46,60 +41,76 @@
 .report-modal__close {
   position: absolute;
   top: var(--space-md);
-  right: var(--space-lg);
-  background: none;
-  border: none;
-  font-size: 1.8rem;
+  right: var(--space-md);
+  width: 32px;
+  height: 32px;
+  background: var(--gray-50);
+  border: 1px solid var(--pink-50);
+  border-radius: 50%;
+  font-size: 1.2rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  color: var(--pink-300);
-  transition: color 0.2s;
+  color: var(--gray-400);
+  transition: all 0.2s;
   z-index: 10;
 }
 
 .report-modal__close:hover {
+  background: var(--pink-100);
   color: var(--pink-700);
+  transform: rotate(90deg);
 }
 
 .report-modal__header {
   display: flex;
   gap: var(--space-md);
-  align-items: center;
+  align-items: flex-start;
   flex-shrink: 0;
-  margin-bottom: var(--space-lg);
+  margin-bottom: var(--space-xl);
 }
 
 .report-modal__icon {
-  width: 48px;
-  height: 48px;
-  background: var(--pink-50);
+  width: 52px;
+  height: 52px;
+  background: linear-gradient(135deg, var(--pink-50), var(--white));
+  border: 1px solid var(--pink-100);
   border-radius: var(--radius-lg);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
+  font-size: 1.8rem;
   flex-shrink: 0;
+  box-shadow: var(--shadow-sm);
 }
 
 .report-modal__title {
   font-family: var(--font-display);
   color: var(--gray-900);
-  font-size: 1.6rem;
+  font-size: 1.4rem;
   font-weight: 800;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
   margin: 0;
+  line-height: 1.2;
 }
 
 .report-modal__subtitle {
   font-family: var(--font-body);
-  font-size: 0.88rem;
+  font-size: 0.82rem;
   color: var(--gray-500);
-  margin-top: 4px;
+  margin-top: 6px;
+  line-height: 1.4;
 }
 
 .report-modal__id {
   font-family: var(--font-mono);
   color: var(--pink-700);
-  font-weight: 600;
+  font-weight: 700;
+  background: var(--pink-50);
+  padding: 0 4px;
+  border-radius: 3px;
 }
 
 /* ── Form ── */
@@ -108,35 +119,35 @@
   flex-direction: column;
   gap: var(--space-lg);
   flex: 1;
-  min-height: 0; /* allow flex children to shrink */
+  min-height: 0;
 }
 
 .report-modal__section {
   display: flex;
   flex-direction: column;
   gap: var(--space-sm);
-  flex-shrink: 0;
 }
 
 .report-modal__label-row {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: baseline;
 }
 
 .report-modal__label {
   font-family: var(--font-display);
   font-weight: 700;
   color: var(--gray-800);
-  font-size: 0.95rem;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 .report-modal__label-hint {
   font-family: var(--font-mono);
-  font-size: 0.65rem;
+  font-size: 0.6rem;
   color: var(--gray-400);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
 }
 
 /* ── File Zone ── */
@@ -154,39 +165,44 @@
 
 .report-modal__file-trigger {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  padding: var(--space-md);
-  background: var(--pink-50);
+  gap: 8px;
+  padding: var(--space-xl) var(--space-md);
+  background: var(--gray-50);
   border: 2px dashed var(--pink-200);
   border-radius: var(--radius-lg);
-  color: var(--pink-700);
-  font-family: var(--font-mono);
+  color: var(--gray-500);
+  font-family: var(--font-body);
   font-size: 0.85rem;
-  font-weight: 600;
-  transition: background 0.2s ease, border-color 0.2s ease;
+  transition: all 0.3s ease;
+}
+
+.report-modal__file-trigger span:first-child {
+  font-size: 1.5rem;
 }
 
 .report-modal__file-input:hover + .report-modal__file-trigger {
-  background: var(--pink-100);
+  background: var(--white);
   border-color: var(--pink-400);
+  color: var(--pink-700);
 }
 
 /* ── Preview Grid ── */
 .report-modal__preview-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
   gap: var(--space-sm);
-  margin-top: var(--space-sm);
+  margin-top: var(--space-xs);
 }
 
 .report-modal__preview-item {
   aspect-ratio: 1;
   border-radius: var(--radius-md);
   overflow: hidden;
-  border: 2px solid var(--white);
-  box-shadow: var(--shadow-sm);
+  border: 1.5px solid var(--pink-100);
+  animation: modalFadeIn 0.3s ease-out both;
 }
 
 .report-modal__preview-item img {
@@ -197,158 +213,147 @@
 
 /* ── Inputs ── */
 .report-modal__textarea {
-  background: var(--gray-50);
-  border: 1.5px solid var(--pink-100);
+  background: var(--white);
+  border: 1.5px solid var(--gray-200);
   border-radius: var(--radius-lg);
   padding: var(--space-md);
   font-family: var(--font-body);
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   color: var(--gray-800);
   resize: none;
-  transition: border-color 0.2s ease, background 0.2s ease;
+  min-height: 100px;
+  transition: all 0.2s ease;
 }
 
 .report-modal__textarea:focus {
   outline: none;
   border-color: var(--pink-500);
-  background: var(--white);
-  box-shadow: 0 0 0 4px rgba(164, 183, 120, 0.1);
+  box-shadow: 0 0 0 3px rgba(164, 183, 120, 0.15);
 }
 
-/* ── Status & Actions ── */
-.report-modal__error {
-  padding: var(--space-md);
-  background: rgba(255, 107, 107, 0.08);
-  border: 1px solid rgba(255, 107, 107, 0.2);
-  border-radius: var(--radius-md);
-  color: var(--status-pending);
-  font-family: var(--font-mono);
-  font-size: 0.8rem;
-  line-height: 1.4;
-  word-break: break-word; /* prevent long error messages from overflowing */
-}
-
-/* ── Inline Status Banner (replaces the full-screen overlay during analysis) ── */
+/* ── Status Banner ── */
 .report-modal__status-banner {
-  padding: var(--space-md) var(--space-lg);
-  background: var(--pink-50);
-  border: 1px solid var(--pink-200);
-  border-radius: var(--radius-lg);
+  padding: var(--space-md);
+  background: linear-gradient(to right, var(--pink-50), var(--white));
+  border: 1px solid var(--pink-100);
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   gap: var(--space-md);
-  flex-shrink: 0;
   animation: modalFadeIn 0.3s ease-out both;
 }
 
 .report-modal__status-spinner {
-  width: 20px;
-  height: 20px;
-  border: 2.5px solid var(--pink-200);
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--pink-200);
   border-top-color: var(--pink-700);
   border-radius: 50%;
   animation: statusSpin 0.8s linear infinite;
-  flex-shrink: 0;
 }
 
 .report-modal__status-text {
   font-family: var(--font-mono);
-  font-size: 0.8rem;
-  font-weight: 600;
+  font-size: 0.75rem;
+  font-weight: 700;
   color: var(--pink-800);
-  word-break: break-word;
-  line-height: 1.4;
+}
+
+.report-modal__error {
+  padding: var(--space-sm) var(--space-md);
+  background: #fff5f5;
+  border-left: 3px solid #ff6b6b;
+  color: #c92a2a;
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 600;
 }
 
 .report-modal__submit {
   width: 100%;
-  background: linear-gradient(135deg, var(--gray-800), var(--gray-900));
+  background: var(--gray-900);
   color: var(--white);
-  border: none;
   padding: var(--space-md);
   border-radius: var(--radius-lg);
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: 1.1rem;
-  cursor: pointer;
-  transition: background 0.2s ease, box-shadow 0.2s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  flex-shrink: 0;
-  margin-top: auto; /* push to bottom of flex container */
+  font-size: 1rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  transition: all 0.3s ease;
 }
 
 .report-modal__submit:hover:not(:disabled) {
-  background: var(--gray-900);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-}
-
-.report-modal__submit:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+  background: var(--pink-700);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(113, 139, 77, 0.3);
 }
 
 /* ── Success State ── */
 .report-modal__success-msg {
-  padding: var(--space-xl) 0;
+  padding: var(--space-2xl) 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-md);
-  flex: 1;
-  justify-content: center;
 }
 
 .report-modal__success-icon {
-  width: 64px;
-  height: 64px;
+  width: 56px;
+  height: 56px;
   background: var(--status-completed);
   color: var(--white);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2rem;
-  box-shadow: 0 0 20px rgba(78, 205, 196, 0.4);
-  animation: successPulse 2s infinite;
+  font-size: 1.8rem;
+  margin-bottom: var(--space-lg);
+  box-shadow: 0 8px 20px rgba(78, 205, 196, 0.3);
 }
 
 .report-modal__success-msg h3 {
   font-family: var(--font-display);
-  font-size: 1.4rem;
-  color: var(--gray-900);
-  margin: 0;
+  font-size: 1.3rem;
+  margin-bottom: 8px;
 }
 
 .report-modal__success-msg p {
   color: var(--gray-500);
-  font-size: 0.95rem;
-  max-width: 320px;
+  font-size: 0.9rem;
+  line-height: 1.5;
 }
 
 /* ── Footer ── */
 .report-modal__footer {
   padding-top: var(--space-md);
-  border-top: 1px solid var(--pink-50);
-  flex-shrink: 0;
+  border-top: 1px solid var(--gray-100);
   margin-top: var(--space-md);
 }
 
 .report-modal__footer p {
-  font-size: 0.75rem;
+  font-size: 0.65rem;
   color: var(--gray-400);
-  line-height: 1.5;
   text-align: center;
 }
 
-.report-modal__footer strong {
-  color: var(--pink-700);
+/* ── Animations ── */
+@keyframes modalOverlayFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-/* ── Animations ── */
+@keyframes modalContentPop {
+  from { 
+    opacity: 0; 
+    transform: scale(0.95) translateY(10px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: scale(1) translateY(0); 
+  }
+}
+
 @keyframes modalFadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -358,19 +363,14 @@
   to { transform: rotate(360deg); }
 }
 
-@keyframes successPulse {
-  0%, 100% { opacity: 1; box-shadow: 0 0 20px rgba(78, 205, 196, 0.4); }
-  50%      { opacity: 0.85; box-shadow: 0 0 30px rgba(78, 205, 196, 0.6); }
-}
-
 /* Scrollbar adjustment */
 .report-modal::-webkit-scrollbar {
-  width: 4px;
+  width: 5px;
 }
 .report-modal::-webkit-scrollbar-track {
   background: transparent;
 }
 .report-modal::-webkit-scrollbar-thumb {
   background: var(--pink-100);
-  border-radius: 4px;
+  border-radius: 10px;
 }

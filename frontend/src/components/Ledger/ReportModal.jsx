@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { submitReport, validateReport } from '../../utils/api';
 import LoadingSpinner from '../UI/LoadingSpinner';
@@ -155,7 +156,7 @@ export default function ReportModal({ contract, onClose }) {
     }
   };
 
-  return (
+  const modalContent = (
     <div className="report-modal-overlay" onClick={(e) => {
       // Close on overlay click (not on modal content)
       if (e.target === e.currentTarget && !isSubmitting) onClose();
@@ -247,16 +248,18 @@ export default function ReportModal({ contract, onClose }) {
           <div className="report-modal__success-msg">
             <div className="report-modal__success-icon">✓</div>
             <h3>Authentication Successful</h3>
-            <p>Your report has been committed to the decentralized transparency ledger. Our committee will review the AI-validated evidence shortly.</p>
+            <p>Your report has been committed to the decentralized transparency ledger.</p>
           </div>
         )}
 
         <footer className="report-modal__footer">
           <p>
-            <strong>Note:</strong> All reports are processed by the Satya Neural Engine and recorded permanently on the blockchain. False reports may lead to account suspension.
+            <strong>Note:</strong> Reports are processed by the Satya Neural Engine and recorded on the blockchain.
           </p>
         </footer>
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }
