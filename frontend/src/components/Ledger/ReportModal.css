@@ -14,10 +14,7 @@
 }
 
 .report-modal {
-  background: var(--white);
-  border: 1px solid var(--pink-100);
-  border-radius: var(--radius-xl);
-  padding: var(--space-xl) var(--space-xl) var(--space-lg);
+  padding: var(--space-xl) var(--space-xl) var(--space-2xl);
   width: 95%;
   max-width: 520px;
   max-height: 85vh; /* focused card height */
@@ -282,6 +279,7 @@
   text-transform: uppercase;
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   transition: all 0.3s ease;
+  margin-bottom: 4px;
 }
 
 .report-modal__submit:hover:not(:disabled) {
@@ -327,8 +325,10 @@
 /* ── Footer ── */
 .report-modal__footer {
   padding-top: var(--space-md);
+  padding-bottom: var(--space-md); /* Add padding here */
   border-top: 1px solid var(--gray-100);
   margin-top: var(--space-md);
+  flex-shrink: 0;
 }
 
 .report-modal__footer p {
